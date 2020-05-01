@@ -1,0 +1,14 @@
+*.o
+*.bs
+*~
+.#*
+._*
+*.bak*
+*.sav*
+foo*
+Untitled*
+.DS_Store
+.fuse*
+.RData*
+.Rhistory*
+.Rproj.user
