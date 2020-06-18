@@ -1,7 +1,8 @@
 #################################################################################
 ##
 ## Author:  Nat Goodman
-## Created: 20-01-14
+## Created: 20-05-03
+##          from frecl/R/source.R 20-01-14
 ##          from bayez/source.R created 19-05-22
 ##          from run.R 19-02-18
 ##          from ovrfx.R created 19-02-03 
@@ -19,7 +20,8 @@
 #################################################################################
 ## SOURCE=c('R/util.R','R/datman.R','R/doc.R','R/init.R','R/stats.R');
 ## SOURCE=c('R/util.R','R/init.R','R/doc_hiddn.R');
-SOURCE=c('R/util.R','R/init.R');
+SOURCE=cq(age,dat,doc,fit,import,init,plot,transform,util,util_file,util_plot);
+SOURCE=sapply(SOURCE,function(src) paste0('R/',src,'.R'));
 
 ## ---- source the files ----
 ## source default files. assume README doc until init runs
@@ -27,16 +29,16 @@ source_files=function(files=SOURCE) {
   sapply(files,source);
   invisible();
 }
-## source doc-specific files
-source_doc=function(doc=param(doc)) {
-  docr=paste(sep='.',doc,'R');
-  source_ifexists(paste(sep='_','R/dat',docr));
-  source_ifexists(paste(sep='_','R/doc',docr));
-  source_ifexists(paste(sep='_','R/docfun',docr));
-  source_ifexists(paste(sep='_','R/plot',docr));
-  source_ifexists(paste(sep='_','R/stats',docr));
-}
-## source optional doc-specific files
+## ## source doc-specific files
+## source_doc=function(doc=param(doc)) {
+##   docr=paste(sep='.',doc,'R');
+##   source_ifexists(paste(sep='_','R/dat',docr));
+##   source_ifexists(paste(sep='_','R/doc',docr));
+##   source_ifexists(paste(sep='_','R/docfun',docr));
+##   source_ifexists(paste(sep='_','R/plot',docr));
+##   source_ifexists(paste(sep='_','R/stats',docr));
+## }
+## source optional files
 source_ifexists=function(file) if (file.exists(file)) source(file);
                          
 ## source all files
@@ -46,7 +48,7 @@ source_all=function(files=SOURCE) {
   source_files(files);
   ## source dat_XXX, doc_XXX files so top level functions defined
   ## NOTE: these top level functions call init which re-sources doc-specific files
-  source_files(list.files('R',pattern='^(doc_|dat_).*.R',full.names=T));
-  if (exists('param.env')) source_doc();
+  ## source_files(list.files('R',pattern='^(doc_|dat_).*.R',full.names=T));
+  ## if (exists('param.env')) source_doc();
 }
 source_all();

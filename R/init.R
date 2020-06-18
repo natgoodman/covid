@@ -1,13 +1,14 @@
 #################################################################################
 ##
 ## Author:  Nat Goodman
-## Created: 20-01-15
-##          from misig/init.R created 19-01-01
+## Created: 20-05-01
+##          from frecl/R/init.R created 20-01-15
+##          from misig/R/init.R created 19-01-01
 ##          from repwr/R/init.R created 18-05-03
 ##
 ## Copyright (C) 2020 Nat Goodman.
 ## 
-## Initialization code for frecl
+## Initialization code for covid
 ##
 ## This software is open source, distributed under the MIT License. See LICENSE
 ## file at https://github.com/natgoodman/NewPro/FDR/LICENSE 
@@ -18,19 +19,24 @@
 ## initialization.
 ## process parameters and store in param environment.
 ## create output directories if necessary.
-doc.all=cq(readme,hiddn);
+## no docs at present
+## inputs and data are source specific, figures and tables global
+## doc.all=cq(readme,covid);
 init=function(
+  ## datasrc=cq(doh,ihme,jhu,tracking,c19pro),
+  datasrc=cq(doh,ihme,jhu,nyt,trk,yyg),
   ## doc parameters 
-  doc='readme',                             # controls data, figure, table subdirs
-  docx=match.arg(doc,doc.all),
+  ## doc=NULL,                             # controls data, figure, table subdirs
+  ## docx=match.arg(doc,doc.all),
+  ## docx=NULL,
   run.id=NULL,                              # to separate runs for tests
-  ## data directories
-  datadir=dirname('data',docx,run.id),      # data files
-  figdir=dirname('figure',docx,run.id),     # figures. default eg, figure/hiddn
-  tbldir=dirname('table',docx,run.id),      # tables. default eg, table/hiddn
-  tmpdir=dirname(datadir,'tmp'),            # directory for inner loop sim files
-  outdir=c(datadir,figdir,tbldir,tmpdir),   # output dirs doc needs
-  indir='input',                            # input files not doc-specific
+  ## data directories. 
+  indir='input',                            # top level input dir
+  datadir=filename('data',run.id),          # top level output data files
+  figdir=filename('figure',run.id),         # figures
+  tbldir=filename('table',run.id),          # tables
+  tmpdir=filename(datadir,'tmp'),           # tmp dir if needed
+  # outdir=c(datadir,figdir,tbldir,tmpdir),  # top level output dirs
   
   ## program control
   verbose=F,                     # print progress messages
@@ -49,7 +55,8 @@ init=function(
   save.tbl=save.out,             # save tables (when called via dotbl)
   save.txt.tbl=T,                # save txt tables. default T
                                  #    
-  clean=switch(docx,readme=T,F), # remove everything and start fresh
+  ## clean=switch(docx,readme=T,F), # remove everything and start fresh
+  clean=F,                       # remove everything and start fresh
   clean.data=clean,              # remove datadir
   clean.sim=F,                   # clean simulations. default F
   clean.top=F,                   # clean top level data. default F
@@ -58,11 +65,24 @@ init=function(
   clean.fig=clean.out,           # remove figdir
   clean.tbl=clean.out,           # remove tbldir
                                  # 
+  ## import params for specific data sources
+  doh.notKing=TRUE,              # compute state minus King
+  jhu.notKing=TRUE,              # compute state minus King
+  nyt.notKing=TRUE,              # compute state minus King
+  ihme.maxdate='latest',         # max date is latest version
+  yyg.maxdate='latest',          # max date is latest version
+                                 #
   end=NULL                       # placeholder for last parameter
   ) {
-  doc=docx;                      # to avoid confusion later
+  ## doc=docx;                      # to avoid confusion later
   ## source doc-specific files
-  source_doc(doc);
+  ## source_doc(doc);
+  ## inputs and data are source specific, figures and tables global
+  ## input dirs
+  indirs=sapply(datasrc,function(src) filename(indir,src));
+  ## output dirs
+  datadirs=sapply(datasrc,function(src) filename(datadir,src));
+  outdirs=c(datadirs,figdir,tbldir,tmpdir)
   ## assign parameters to param environment
   ## do it before calling any functions that rely on params
   init_param();
@@ -77,61 +97,18 @@ init=function(
   if (clean.fig) unlink(figdir,recursive=T);
   if (clean.tbl) unlink(tbldir,recursive=T);
   ## clean specific types if desired.
+  ## TODO: probably not right/useful here
   sapply(clean.type,clean_type);
+  ## create input directories. nop if already exist
+  sapply(indirs,function(dir) dir.create(dir,recursive=TRUE,showWarnings=FALSE));
   ## create output directories. nop if already exist
-  sapply(outdir,function(dir) dir.create(dir,recursive=TRUE,showWarnings=FALSE));
-  init_doc();
-  invisible();
-}
-## initialize doc parameters - figure labels and such
-## NG 19-01-11: abandon subdoc concept for 'supp' - not useful for effit
-##              retain for xperiment just in case...
-init_doc=function(
-  ## output label modifiers
-  outpfx=NULL,                  # prefix before figure or table number - NOT USED
-  outsfx=letters,               # suffix in figure and table blocks
-  sectpfx=F,                    # add section number to prefix eg, S1 - NOT USED
-  sectnum=1,                    # section number. usually set in docs
-  sect=NULL,
-  ## figures
-  figpfx=outpfx,
-  figsfx=outsfx,
-  fignum=1,
-  figblk=NULL,                  # index into figsfx if in figure block
-  ## for multiple plots per device (page) - CAUTION: works poorly!!
-  figdev=FALSE,                 # TRUE when multiple plots per device active
-  figdev.num=1,                 # device (page) number. to construct filenames
-  figdev.pfx='dev',             # prefix for device filenames
-  figdev.screen=NA,             # R dev number for plot to screen
-  figdev.file=NA,               # R dev number for plot to file
-  fig.file=NULL,                # figure filename - for plotting to screen and file
-  ## tables
-  tblpfx=outpfx,
-  tblsfx=outsfx,
-  tblnum=1,
-  tblblk=NULL,                  # index into tblsfx if in table block
-  ## xtra figures - not included in document
-  xfigpfx='X',
-  xfigsfx=outsfx,
-  ## xfignum=1,                 # extras now use same numbers and blocks as regulars
-  ## xfigblk=NULL,              # ditto
-  ## plot control
-  figscreen=if(param(doc)=='readme') T else !param(save.fig),
-                                 # plot figures on screen
-  fignew=figscreen,              # plot each figure in new window
-  figextra=F,                    # plot extra figures
-  ## doc generation function
-  docfun=get(paste(collapse='',c('doc_',param(doc)))),
-  docsect=NULL,                  # all document sections. set by docfun
-  end=NULL                       # placeholder for last parameter
-  ) {
-  ## assign parameters to param environment
-  ## do it before calling any functions that rely on params
-  assign_param();
+  sapply(outdirs,function(dir) dir.create(dir,recursive=TRUE,showWarnings=FALSE));
+  ## init_doc();
   invisible();
 }
 
 ## clean specific data type. deletes directory, and any top level files
+## TODO: probably not right/useful here
 clean_type=function(what,cleandir=T) {
   param(datadir);
   ## delete top level files if exist

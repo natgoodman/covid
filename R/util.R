@@ -13,7 +13,6 @@
 ## file at https://github.com/natgoodman/NewPro/FDR/LICENSE 
 ##
 #################################################################################
-
 ## ---- Utility Functions ----
 ## generate name=value
 paste_nv=function(name,value,sep='=') {
@@ -25,7 +24,7 @@ paste_nv=function(name,value,sep='=') {
 }
 ## generate list of name=value using values from parent environment. code adapted from base::rm
 ## IGNORE tells whether to ignore NULL and non-existant names
-nvq=function(...,sep=' ',IGNORE=F) {
+nvq=function(...,SEP=' ',IGNORE=F) {
   dots=match.call(expand.dots=FALSE)$...
    if (length(dots) &&
      !all(vapply(dots,function(x) is.symbol(x) || is.character(x),NA,USE.NAMES=FALSE))) 
@@ -40,8 +39,10 @@ nvq=function(...,sep=' ',IGNORE=F) {
   ## values=sapply(names,function(name)
   ##   if (exists(name,envir=parent.frame(n=2))) get(name,envir=parent.frame(n=2))
   ##   else stop(paste('no value for',name,'in parent environment')));
-  paste(collapse=sep,unlist(mapply(function(name,value)
-    if (!is.null(value)|!IGNORE) paste(sep='=',name,value) else NULL,names,values)));
+  paste(collapse=SEP,unlist(mapply(function(name,value) {
+    if (is.null(value)) value='NULL'
+    else if (is.na(value)) value='NA'
+    if (!is.null(value)|!IGNORE) paste(sep='=',name,value) else NULL},names,values)));
 }
 ## NG 19-09-25: extend nvq for filenames. also to allow nested calls
 ## TODO: merge nvq, nvq_file
@@ -86,7 +87,14 @@ m_pretty=function(m) {
   significand=m/10^exponent;
   paste0(significand,'e',exponent);
 }
-
+ucfirst=function(x) {
+  substr(x,1,1)=toupper(substr(x,1,1));
+  x;
+}
+lcfirst=function(x) {
+  substr(x,1,1)=tolower(substr(x,1,1));
+  x;
+}
 ## NG 19-01-31: CAUTION. doesn’t really work.
 ## NG 19-06-27: I think above CAUTION is wrong, at least partially
 ##   what it does is get value from parent frame. if not present,
@@ -338,6 +346,13 @@ fill_defaults=function(default,actual) {
   default[names(actual)]=actual;        # replace defaults elements by non-NULL actual
   default;
 }
+## replace or add elements in list. kinda like the way I set elements in Perl
+## new, old both lists
+set_elements=function(new,old) {
+  old=old[setdiff(names(old),names(new))];
+  c(old,new);
+}
+
 ## test if arg is "real" list, not data frame
 is_list=function(x) is.list(x)&&!is.data.frame(x);
 ## test blank field
@@ -345,8 +360,40 @@ is_blank=function(x) (x=='')|is.null(x)|is.na(x)
 ## test if x is subset of y. from stackoverflow.com/questions/26831041. thx!
 is_subset=function(x,y) all(x %in% y)
 is_superset=function(x,y) all(y %in% x)
-## test if x is an object of givrn class
-is_class(x,class) x %in% class(x)
+## test if x is an object of given class
+is_class=function(x,class) class %in% class(x)
+## test if x is Date
+is_date=function(x) is_class(x,'Date')
+is_POSIXdate=function(x) is_class(x,'POSIXt')
+## convert date strings we encounter in covid to Dates
+as_date=function(x) {
+  ## R seems to convert dates to numeric when passed through sapply. sigh...
+  dates=sapply(x,function(x) {
+    if (is_date(x)||is.numeric(x)) x
+    else if (is_POSIXdate(x)) as.Date(x)
+    else {
+      if (is.character(x)) {
+        ## if (endsWith(x,' UTC')) x=sub(' UTC$','',x); # for DOH >= 20-05-24
+        if (startsWith(x,'20-')) format='%y-%m-%d'
+        else if (startsWith(x,'2020-')) format='%Y-%m-%d'
+        else if (startsWith(x,'2020')) format='%Y%m%d'
+        else if (startsWith(x,'2019')) format='%Y%m%d'
+        else if (endsWith(x,'/20')) format='%m/%d/%y'
+        else stop('Unexpected date format: ',x);
+        as.Date(x,format=format);
+      }
+      ## else BREAKPOINT('Unable to create date from ',x);
+      else stop('Unable to create date from ',x);
+    }});
+  as.Date(dates,origin='1970-01-01');
+}
+## convert date to version strngs we use, eg, 20-05-13
+to_version=function(date) strftime(date,format='%y-%m-%d')
+## day-of-week manipulation we use
+Weekdays=cq(Sunday,Monday,Tuesday,Wednesday,Thursday,Friday,Saturday);
+dayofweek=Vectorize(function(day) which(Weekdays==day))
+match_day=function(day) match.arg(ucfirst(day),Weekdays)
+inc_day=function(day,i=0) Weekdays[((dayofweek(day)+i-1)%%7)+1]               
 
 ## round up or down to nearest multiple of u. from https://grokbase.com/t/r/r-help/125c2v4e14/
 round_up=function(x,u) ceiling(x/u)*u;
@@ -368,27 +415,121 @@ pick=function(x,n.want,n.min=1,rep.ok=FALSE,exclude=NULL) {
 }
 
 ## repeat rows or columns of 2-dimensional matrix-like object. like rep
+## or repeat vector into matrix
 ## like rep, ... can be times, length.out, or each
 ## based on StackOverflow https://stackoverflow.com/questions/11121385/repeat-rows-of-a-data-frame
 repr=function(x,...) {
+  if (is.null(dim(x))) x=matrix(x,nrow=1);
   i=rep(seq_len(nrow(x)),...);
   x=x[i,,drop=F];
   rownames(x)=NULL;
   x;
 }
 repc=function(x,...) {
+  if (is.null(dim(x))) x=matrix(x,ncol=1);
   j=rep(seq_len(ncol(x)),...);
   x=x[,j,drop=F];
-  colnames(x)=NULL;
+ ##  colnames(x)=NULL;
   x;
 }
+## fill matrix to desired number of rows or columns
+fillr=function(x,length.out,fill=NA) {
+  if (is.null(dim(x))) x=matrix(x,nrow=1);
+  if (nrow(x)<length.out) {
+    fill=matrix(fill,nrow=length.out-nrow(x),ncol=ncol(x));
+    colnames(fill)=colnames(x);
+    x=rbind(x,fill);
+  }
+  x;
+}
+fillc=function(x,length.out,fill=NA) {
+  if (is.null(dim(x))) x=matrix(x,ncol=1);
+  if (ncol(x)<length.out) {
+    fill=matrix(fill,nrow=nrow(x),ncol=length.out-ncol(x));
+    x=cbind(x,fill);
+  }
+  x;
+}
+## repeat variables in parent
+##   typically used to extend function arguments or object elements to same length
+## LENGTH.OUT, TIMES, or EACH analogous to R's rep (but uppercase to avoid conflict with ...)
+##   LENGTH.OUT can be 'max', 'min', or number. default: 'max'
+## FILL used to fill args that are too small
+## as with rep, EACH done first, then if both LENGTH.OUT & TIMES specified, LENGTH.OUT wins
+## TODO: if called with no args, extends all of parents args. cf parent_dots,... 
+repv=function(...,LENGTH.OUT=NA,EACH=1,TIMES=1,ENV,NAMES=character(),FILL=NULL) {
+  dots=match.call(expand.dots=FALSE)$...;
+  names=c(as.character(dots),NAMES);
+  if (missing(ENV)) ENV=parent.frame(n=1);
+  vals=mget(names,envir=ENV);
+  ## do in pieces starting with EACH
+  if (EACH>1)
+    vals=lapply(vals,function(val)
+      if(is.data.frame(val)) repr(val,each=EACH) else rep(val,each=EACH));
+  ## next, LENGTH or TIMES
+  if (is.na(LENGTH.OUT)&&TIMES>1) 
+    vals=lapply(vals,function(val)
+      if(is.data.frame(val)) repr(val,times=TIMES) else rep(val,times=TIMES))
+  else {
+    ## calculate desired length
+    if (is.na(LENGTH.OUT)) LENGTH.OUT='max';
+    if (!is.numeric(LENGTH.OUT)) {
+      if (LENGTH.OUT %notin% cq(max,min)) 
+        stop(paste("Invalid LENGTH.OUT: must be numeric, 'max', or 'min', not",LENGTH.OUT));
+      lengths=sapply(vals,function(val) if (is.data.frame(val)) nrow(val) else length(val));
+      LENGTH.OUT=if (LENGTH.OUT=='max') max(lengths) else min(lengths);
+    }
+    ## do it!
+    vals=lapply(vals,function(val)
+      if (is.null(FILL)) {
+        ## usual case. repeat to desired length
+        if (is.data.frame(val)) repr(val,length.out=LENGTH.OUT)
+        else rep(val,length.out=LENGTH.OUT);
+      }
+      else fill(val,LENGTH.OUT,FILL));
+  }
+  ## assign to same-named variables in parent
+  lapply(seq_along(vals),function(i) {
+    val=vals[[i]];
+    name=names[i];
+    assign(name,val,envir=ENV);
+  })
+  LENGTH.OUT;
+}
+fill=function(val,LENGTH.OUT,FILL=NA) {
+  if (is.data.frame(val)) {
+    if (nrow(val)<LENGTH.OUT) val[(nrow(val)+1):LENGTH.OUT,]=FILL
+    else val=head(val,LENGTH.OUT);
+  }
+  else {
+    if (length(val)<LENGTH.OUT) val[(length(val)+1):LENGTH.OUT]=FILL
+    else val=head(val,LENGTH.OUT);
+  }
+  val;
+};
+strip=function(val,LENGTH.OUT=NA,FILL=NA) {
+  ## get index of last real data
+  if (is.na(FILL))
+    i=if(is.data.frame(val)) apply(val,1,function(val) !all(is.na(val))) else !is.na(val)
+  else
+    i=if(is.data.frame(val)) apply(val,1,function(val) any(ifelse(is.na(val),TRUE,val!=FILL)))
+      else ifelse(is.na(val),TRUE,val!=FILL);
+  if (any(i)) {
+    last=max(which(i));
+    if (!is.na(LENGTH.OUT)) last=max(last,LENGTH.OUT);
+    val=head(val,last);
+  } else val=NULL;
+  val;
+};
+
+
 ## not in - based on example in RefMan - more intutive than !%in%
 "%notin%"=function(x,table) match(x,table,nomatch=0)==0
 ## between, near - to subset sim results. closed on bottom, open on top
 between=function(x,lo,hi,tol=0) x>=lo-tol&x<hi+tol;
 near=function(x,target,tol=.01) between(x,target-tol,target+tol)
 
-## debugging functions
+## debugging & software dev functions
 ## TODO: BREAKPOINT is sooo feeble :(
 ## BREAKPOINT=browser;
 BREAKPOINT=function(...,text="",condition=NULL,expr=TRUE,skipCalls=0L) {
@@ -407,3 +548,14 @@ pal=function(col,border="light gray",...) {
  plot(0,0,type="n",xlim=c(0,1),ylim=c(0,1),axes=FALSE,xlab="",ylab="",...)
  rect(0:(n-1)/n,0,1:n/n,1,col=col,border=border)
 }
+## helpers to cope with flaky internet during covid crisis
+plon=function(base='plot',file.png=filename('figure',base,suffix='png')) {
+  png(filename=file.png,height=8,width=8,units='in',res=200,pointsize=12);
+  dev.png<-dev.cur();
+  file.png<<-file.png;
+}
+ploff=function(dev=dev.png,file=file.png) {
+  dev.off(dev);
+  system(paste('pjto',file));
+}
+sv=function() {save.image(); savehistory(); }
