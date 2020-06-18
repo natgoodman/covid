@@ -20,7 +20,7 @@
 #################################################################################
 ## SOURCE=c('R/util.R','R/datman.R','R/doc.R','R/init.R','R/stats.R');
 ## SOURCE=c('R/util.R','R/init.R','R/doc_hiddn.R');
-SOURCE=cq(age,dat,doc,fit,import,init,plot,transform,util,util_file,util_plot);
+SOURCE=cq(age,dat,doc,fit,import,import_doh,init,plot,transform,util,util_file,util_plot);
 SOURCE=sapply(SOURCE,function(src) paste0('R/',src,'.R'));
 
 ## ---- source the files ----
