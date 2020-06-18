@@ -50,9 +50,10 @@ transform=function(what=cq(cases,deaths),datasrc=param(datasrc),version='latest'
 }
 
 ## read raw imported data and return as standard 'pseudo-object'
-raw=function(what=cq(cases,deaths),datasrc=param(datasrc),version='latest') {
+raw=function(what=cq(cases,admits,deaths),datasrc=param(datasrc),version='latest') {
   what=match.arg(what);
   datasrc=match.arg(datasrc);
+  if (what=='admits'&&datasrc!='doh') stop("Only have admits data for doh, not",datasrc);
   data=load_data(whatv=what,datasrc=datasrc,version=version);
   raw=c(list(data=data,datasrc=datasrc,what=what,version=version,fit='raw'),
            switch(datasrc,
@@ -68,93 +69,101 @@ raw=function(what=cq(cases,deaths),datasrc=param(datasrc),version='latest') {
 }
 ## fit standard pseudo-object data
 fit=function(obj,method='sspline',args=NULL,fit.unit=1) {
-  newobj=obj;
-  data=newobj$data;
+  obj$data=
+    if(obj$datasrc!='doh') fit1(obj$data,method,args,fit.unit)
+    else sapply(obj$data,function(data) fit1(data,method,args,fit.unit),simplify=FALSE);
+  set_elements(list(fit=method,fit.args=args),obj);
+}
+fit1=function(data,method,args,fit.unit) {
   dates=data[,1];
   fun=fit_fun(x=dates,y=data[,-1,drop=FALSE],method=method,args=args,unit=fit.unit);
   dates=seq(min(dates),max(dates),by=fit.unit);
-  newobj$data=data.frame(date=dates,do.call(data.frame,lapply(fun,function(f) f(dates))));
-  newobj=set_elements(list(fit=method,fit.args=args,fun=fun),newobj);
-  newobj;
+  data.frame(date=dates,do.call(data.frame,lapply(fun,function(f) f(dates))));
 }
 ## convert pseudo-object data to cumulative. nop if already cumulative
-cumulative=function(obj) {
-  newobj=obj;
-  if (!newobj$cumulative) {
-    data=newobj$data;
-    newobj$data=data.frame(date=data[,1],apply(data[,-1,drop=FALSE],2,cumsum));
-    newobj$cumulative=TRUE;
+cumulative=function(obj,week.end=FALSE) {
+  if (obj$cumulative) return(obj);
+  unit=obj$unit;
+  obj$data=
+    if(obj$datasrc!='doh') cum1(obj$data,unit,week.end)
+    else sapply(obj$data,function(data) cum1(data,unit,week.end),simplify=FALSE);
+  obj$cumulative=TRUE;
+  obj;
+}
+cum1=function(data,unit,week.end) {
+  data=data.frame(date=data[,1],apply(data[,-1,drop=FALSE],2,cumsum));
+  if (unit==7&&week.end) {
+    date.0=data$date[1]-1;
+    ## adjust dates to end of week and insert row of 0s at beginning
+    data$date=data$date+6;
+    data.0=data.frame(date.0,repc(0,ncol(data)-1));
+    colnames(data.0)=colnames(data)
+    data=rbind(data.0,data)
   }
-  newobj;
+  data;
 }
-## convert pseudo-object data to cumulative. nop if already cumulative
-## for weekly, adjust dates to end of week
-cum2=function(obj) {
-  newobj=obj;
-  if (!newobj$cumulative) {
-    data=newobj$data;
-    newobj$data=data=data.frame(date=data[,1],apply(data[,-1,drop=FALSE],2,cumsum));
-    newobj$cumulative=TRUE;
-    if (newobj$unit==7) {
-      date.0=data$date[1]-1;
-      ## adjust dates to end of week and insert row of 0s at beginning
-      data$date=data$date+6;
-      data.0=data.frame(date.0,repc(0,ncol(data)-1));
-      colnames(data.0)=colnames(data)
-      newobj$data=rbind(data.0,data)
-    }}
-  newobj;
-}
-
-## convert pseudo-object data to incrmental. nop if already incrmental
+## convert pseudo-object data to incremental. nop if already incrmental
 incremental=function(obj) {
-  newobj=obj;
-  if (obj$cumulative) {
-    data=newobj$data;
-    newobj$data=data.frame(date=data[,1],rbind(data[1,-1],apply(data[,-1],2,diff)))
-    newobj$cumulative=FALSE;
-  }
-  newobj;
+  if (!obj$cumulative) return(obj);
+  obj$data=
+    if(obj$datasrc!='doh') inc1(obj$data)
+    else sapply(obj$data,function(data) inc1(data),simplify=FALSE);
+  obj$cumulative=TRUE;
+  obj;
+}
+inc1=function(data) {
+  data.frame(date=data[,1],rbind(data[1,-1],apply(data[,-1],2,diff)))
 }
 ## convert pseudo-object data to weekly and optionally center
 weekly=function(obj,start.on='Sunday',center=TRUE) {
-  newobj=obj;
   if (obj$unit!=7) {
     start.on=match_day(start.on);
-    data=newobj$data;
-    dates=data$date;
-    days=weekdays(dates);
-    start=min(which(days==start.on));
-    num.weeks=as.integer((dates[length(dates)]+1-dates[start])/7);
-    weeks=seq(dates[start],by=7,length=num.weeks);
-    if (newobj$cumulative) data=data[data$date %in% weeks,]
-    else {
-      data=subset(data,subset=(date>=min(weeks)&date<=(max(weeks+6))));
-      byweek=split(data,cut(data$date,length(weeks),labels=weeks));
-      data=data.frame(date=weeks,do.call(rbind,lapply(byweek,function(data)
-        colSums(data[,-1,drop=FALSE]))));
-    }
-    rownames(data)=NULL;
-    newobj$data=data;
-    newobj=set_elements(list(unit=7,start.on=start.on,center=FALSE),newobj);
+    cumulative=obj$cumulative;
+    obj$data=
+      if(obj$datasrc!='doh') wly1(obj$data,cumulative,start.on)
+      else sapply(obj$data,function(data) wly1(data,cumulative,start.on),simplify=FALSE);
+    obj=set_elements(list(unit=7,start.on=start.on,center=FALSE),obj);
   }
-  if (center) newobj=center(newobj)
+  if (center) obj=center(obj)
   newobj;
+}
+wly1=function(data,cumulative,start.on) {
+  dates=data$date;
+  days=weekdays(dates);
+  start=min(which(days==start.on));
+  num.weeks=as.integer((dates[length(dates)]+1-dates[start])/7);
+  weeks=seq(dates[start],by=7,length=num.weeks);
+  if (cumulative) data=data[data$date %in% weeks,]
+  else {
+    data=subset(data,subset=(date>=min(weeks)&date<=(max(weeks+6))));
+    byweek=split(data,cut(data$date,length(weeks),labels=weeks));
+    data=data.frame(date=weeks,do.call(rbind,lapply(byweek,function(data)
+      colSums(data[,-1,drop=FALSE]))));
+  }
+  rownames(data)=NULL;
+  data;
 }
 ## convert pseudo-object data to daily. nop if already daily
 daily=function(obj,center=TRUE,method='linear',args=NULL) {
-  newobj=obj;
-  if (obj$unit!=1) {
-    if (center) obj=center(obj,center=TRUE);
-    data=obj$data;
-    if (!obj$cumulative) {
+  if (obj$unit==1) return(obj);
+  if (center) obj=center(obj,center=TRUE);
+  cumulative=obj$cumulative;
+  obj$data=
+      if(obj$datasrc!='doh') dly1(obj$data,cumulative,center)
+      else sapply(obj$data,function(data) dly1(data,cumulative,center),simplify=FALSE);
+  obj$unit=1;
+  obj=fit(obj,method=method,args=args,fit.unit=1);
+  obj;
+}
+dly1=function(data,cumulative,center) {
+  if (!cumulative) {
       data[,-1]=data[,-1]/7;            # scale data
       ## add data for first and last dates to anchor the fit
       mindate=if(center) min(data$date)-3 else min(data$date);
       maxdate=if(center) max(data$date)+3 else max(data$date)+6;
       minrow=data.frame(date=mindate,data[1,-1]);
       maxrow=data.frame(date=maxdate,data[nrow(data),-1]);
-      obj$data=rbind(minrow,data,maxrow);
+      data=rbind(minrow,data,maxrow);
     } else {
       ## stretch data to fill entire date range
       mindate=if(center) min(data$date)-3 else min(data$date);
@@ -162,22 +171,22 @@ daily=function(obj,center=TRUE,method='linear',args=NULL) {
       data$dates[1]=mindate
       data$dates[nrow(data)]=maxdate;
     }
-    newobj=fit(obj,method=method,args=args,fit.unit=1);
-    newobj$unit=1;
+  data;
   }
-  newobj;
-}
 ## center weekly data, ie, adjust dates to middle day of week. eg Wed for default Sun start
 ## revert to original dates if center=FALSE
 center=function(obj,center=TRUE)  {
   if (obj$unit==1) stop('Can only center weekly objects');
-  newobj=obj;
-  if (newobj$center!=center) {
-    if (center) inc=3 else inc=-3;
-    newobj$data$date=newobj$data$date+inc;
-    newobj=set_elements(list(report.on=inc_day(newobj$start.on,inc),center=center),newobj);
-  }
-  newobj;
+  if (obj$center==center) return(obj);
+  if (center) inc=3 else inc=-3;
+  obj$data=
+    if(obj$datasrc!='doh') ctr1(obj$data,inc)
+    else sapply(obj$data,function(data) ctr1(data,inc),simplify=FALSE);
+  set_elements(list(report.on=inc_day(obj$start.on,inc),center=center),obj);
+}
+ctr1=function(data,inc) {
+  data$date=data$date+inc;
+  data;
 }
 ## lagged correlation. not really a transformation but no place else to put it
 ## TODO: move to better place
