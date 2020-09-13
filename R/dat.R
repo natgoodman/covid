@@ -34,15 +34,14 @@ save_data=function(what,datasrc,version,file=NULL,suffix=NULL,data=NULL) {
 ## latest=TRUE means use latest version
 ## version='latest' also works
 ## file, if set, includes path and supercedes version. can be directory or single file
-load_data=function(what,datasrc,version='latest',file=NULL,whatv=NULL) {
+load_data=function(what,datasrc,version='latest',file=NULL,whatv=NULL,SIMPLIFY=TRUE) {
   what=if(is.null(whatv)) as.character(pryr::subs(what)) else whatv;
   if (!is.null(file)) {
     if (!file.exists(file)) stop(paste('File',file,'does not exist'))
     files=if(file.info(file)$isdir) list.files(file,full.names=TRUE) else file;
   } else {
     ## code copied to import. TODO: refactor!
-    latest=!is.null(version)&&version=='latest';
-    if (latest) version=NULL;
+    if (!is.null(version)&&version=='latest') version=latest_version(datasrc,what);
     pattern=paste0('^',what,'.',version);
     files=list.files(datadir(datasrc),pattern=pattern,full.names=TRUE);
   }
@@ -50,15 +49,10 @@ load_data=function(what,datasrc,version='latest',file=NULL,whatv=NULL) {
     stop(paste('No files found for',nvq(what,datarsc,version,file,SEP=', ')));
   files=sort(decreasing=TRUE,
              unique(resuffix(files,old.suffix=cq(RData,txt),suffix='RData',keep.dir=TRUE)));
-  if (latest) files=files[1];
   data=lapply(files,function(file) load_(file=file));
-  if (!is.null(version)||latest) {
-    ## should be just one file. return its data
-    if (length(data)>1)
-      stop(paste('Bad news: multiple files found for',nvq(what,datarsc,version,SEP=', ')));
-    return(invisible(data[[1]]));
-  }
-  names(data)=desuffix(files,suffix='RData',keep.dir=FALSE);
+  ## if just one file and SIMPLIFY is TRUE. return its data
+  if (SIMPLIFY&&length(data)==1) data=data[[1]]
+  else names(data)=desuffix(files,suffix='RData',keep.dir=FALSE);
   invisible(data)
 }
 get_data=load_data;
@@ -74,15 +68,19 @@ basename_data=function(what,datasrc,version,file=NULL,suffix=NULL) {
 list_versions=function(datasrc,what=NULL,dir=datadir(datasrc),version=NULL) {
   if (!is.null(what)) what=paste0('^',what);
   if (is.function(dir)) dir=dir(datasrc);
+  latest=!is.null(version)&&version=='latest';
+  if (latest) version=NULL;
   pattern=paste(collapse='.',c(what,version));
   files=list.files(dir,pattern=pattern,full.names=FALSE);
-  unique(regmatches(files,regexpr('\\d\\d-\\d\\d-\\d\\d',files)));
-  
+  versions=unique(regmatches(files,regexpr('\\d\\d-\\d\\d-\\d\\d',files)));
+  if (latest) tail(versions,n=1) else sort(versions);
 }
+latest_version=function(datasrc,what=NULL,dir=datadir(datasrc))
+  list_versions(datasrc,what,dir,'latest')
+
 ### directory names that are data source specific
 indir=function(datasrc) filename(param(indir),datasrc)
 datadir=function(datasrc) filename(param(datadir),datasrc)
-
 
 ########## BELOW HERE NOT PORTED ##########
 

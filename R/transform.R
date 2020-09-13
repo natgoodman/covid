@@ -8,7 +8,7 @@
 ## 
 ## Transform imported data for analysis
 ##
-## This software is open source, distributed under the MIT License. See LICENSE
+# This software is open source, distributed under the MIT License. See LICENSE
 ## file at https://github.com/natgoodman/NewPro/FDR/LICENSE 
 ##
 #################################################################################
@@ -16,7 +16,7 @@
 ## parameters of transformed data set
 ##   data source
 ##   what - cases or deaths
-##   raw or fit (aks interpolated or smoothed)
+##   raw or fit (aka interpolated or smoothed)
 ##   time unit - weekly or daily
 ##   cumulative vs incremental
 
@@ -54,9 +54,10 @@ raw=function(what=cq(cases,admits,deaths),datasrc=param(datasrc),version='latest
   what=match.arg(what);
   datasrc=match.arg(datasrc);
   if (what=='admits'&&datasrc!='doh') stop("Only have admits data for doh, not",datasrc);
+  if (!is.null(version)&&version=='latest') version=latest_version(datasrc,what);
   data=load_data(whatv=what,datasrc=datasrc,version=version);
-  raw=c(list(data=data,datasrc=datasrc,what=what,version=version,fit='raw'),
-           switch(datasrc,
+  obj=cvdat(data=data,datasrc=datasrc,what=what,version=version,fit='raw',extra=FALSE);
+  clc(obj,switch(datasrc,
                   doh=list(unit=7,start.on='Sunday',center=FALSE,cumulative=FALSE),
                   ihme=list(unit=1,cumulative=FALSE),
                   jhu=list(unit=1,cumulative=TRUE),
@@ -65,20 +66,30 @@ raw=function(what=cq(cases,admits,deaths),datasrc=param(datasrc),version='latest
                   yyg=list(unit=1,cumulative=FALSE),
                   stop(paste('Bad news: unknown data source',datarc,
                              'should have been caught earlier'))
-                  ));
+                 ));
 }
 ## fit standard pseudo-object data
-fit=function(obj,method='sspline',args=NULL,fit.unit=1) {
-  obj$data=
-    if(obj$datasrc!='doh') fit1(obj$data,method,args,fit.unit)
-    else sapply(obj$data,function(data) fit1(data,method,args,fit.unit),simplify=FALSE);
-  set_elements(list(fit=method,fit.args=args),obj);
-}
-fit1=function(data,method,args,fit.unit) {
-  dates=data[,1];
-  fun=fit_fun(x=dates,y=data[,-1,drop=FALSE],method=method,args=args,unit=fit.unit);
-  dates=seq(min(dates),max(dates),by=fit.unit);
-  data.frame(date=dates,do.call(data.frame,lapply(fun,function(f) f(dates))));
+fit=function(obj,method='sspline',args=list(),fit.clamp=0,fit.unit=1) {
+  data=obj$data;
+  if (obj$datasrc!='doh') {
+    dates=data[,1];
+    fun=fitfun(x=as.numeric(dates),y=data[,-1,drop=FALSE],method=method,args=args,clamp=fit.clamp);
+    dates=seq(min(dates),max(dates),by=fit.unit);
+    data=data.frame(date=dates,sapply(fun,function(f) f(dates)));
+  } else {
+    ages=names(data);
+    dates=data$all[,1];
+    fun=lapply(data,function(data)
+      fitfun(x=as.numeric(dates),y=data[,-1,drop=FALSE],method=method,args=args,clamp=fit.clamp));
+    dates=seq(min(dates),max(dates),by=fit.unit);
+    data=lapply(seq_along(obj$data),function(i) {
+      data=data[[i]];
+      fun=fun[[i]];
+      data.frame(date=dates,sapply(fun,function(f) f(dates)));
+    });
+    names(data)=ages;
+  }
+  clc(obj,list(data=data,fit.fun=fun,fit=method,fit.args=args));
 }
 ## convert pseudo-object data to cumulative. nop if already cumulative
 cumulative=function(obj,week.end=FALSE) {
@@ -108,11 +119,12 @@ incremental=function(obj) {
   obj$data=
     if(obj$datasrc!='doh') inc1(obj$data)
     else sapply(obj$data,function(data) inc1(data),simplify=FALSE);
-  obj$cumulative=TRUE;
+  obj$cumulative=FALSE;
   obj;
 }
 inc1=function(data) {
-  data.frame(date=data[,1],rbind(data[1,-1],apply(data[,-1],2,diff)))
+  ## use check.names=FALSE so R won't replace spaces in place names...
+  data.frame(date=data[,1],rbind(data[1,-1],apply(data[,-1],2,diff)),check.names=FALSE)
 }
 ## convert pseudo-object data to weekly and optionally center
 weekly=function(obj,start.on='Sunday',center=TRUE) {
@@ -122,10 +134,10 @@ weekly=function(obj,start.on='Sunday',center=TRUE) {
     obj$data=
       if(obj$datasrc!='doh') wly1(obj$data,cumulative,start.on)
       else sapply(obj$data,function(data) wly1(data,cumulative,start.on),simplify=FALSE);
-    obj=set_elements(list(unit=7,start.on=start.on,center=FALSE),obj);
+    obj=clc(obj,list(unit=7,start.on=start.on,center=FALSE));
   }
   if (center) obj=center(obj)
-  newobj;
+  obj;
 }
 wly1=function(data,cumulative,start.on) {
   dates=data$date;
@@ -182,102 +194,78 @@ center=function(obj,center=TRUE)  {
   obj$data=
     if(obj$datasrc!='doh') ctr1(obj$data,inc)
     else sapply(obj$data,function(data) ctr1(data,inc),simplify=FALSE);
-  set_elements(list(report.on=inc_day(obj$start.on,inc),center=center),obj);
+  clc(obj,list(report.on=inc_day(obj$start.on,inc),center=center));
 }
 ctr1=function(data,inc) {
   data$date=data$date+inc;
   data;
 }
-## lagged correlation. not really a transformation but no place else to put it
-## TODO: move to better place
+## add 'extra' counts to DOH objects to adjust for incomplete data near end
+## fun computed by 'extrafun' (via 'init_extra') function in extra.R
+extra=
+  function(obj,fun=NULL) {
+    if (obj$datasrc!='doh')
+      stop("'extra' transform only makes sense for 'doh' objects, not ",obj$datasrc," objects");
+    places=colnames(obj$data$all)[-1];
+    ages=names(obj$data);
+    ## R needs extra parens in is.null((fun=...)) to set 'fun' this way
+    if (is.null(fun)&&is.null((fun=param(list=paste(sep='.','extra',obj$what))))) {
+      fun=init_extra(what=obj$what);
+    }
+    vdate=as_date(obj$version);
+    data=sapply(ages,function(age) extra1(fun,obj$data[[age]],places,age,vdate),
+                simplify=FALSE);
+    clc(obj,list(data=data,extra.fun=fun,extra=TRUE));
+  }
+extra1=function(fun,data,places,age,vdate) {
+ data=do.call(rbind,lapply(1:nrow(data),function(i) {
+    date=data[i,'date'];
+    data=data[i,-1];
+    props=fun(date,places,age,vdate=vdate);
+    data=data.frame(date=date,round(data/props));
+  }));
+  data;
+}
+## lagged correlation
+## TODO: not really a transformation but no place else to put it. move to better place
 lag=function(obj1,obj2,name='state',lag.max=28,plot=FALSE) {
   if (obj1$unit!=obj2$unit) stop("Cannot compute lag for objects with different time units");
   lag.max=lag.max/obj1$unit;
   data1=obj1$data;
   data2=obj2$data;
-  dates=as_date(intersect(data1$date,data2$date));
+  dates=as_date(data1$date %&% data2$date);
   data1=subset(data1,subset=date%in%dates);
   data2=subset(data2,subset=date%in%dates);
   lag=ccf(data1[,name],data2[,name],lag.max=lag.max,plot=plot);
 }
-
-time_label=Vectorize(function(unit=cq(1,7,daily,weekly)) {
-  unit=as.character(unit);
-  unit=match.arg(unit);
-  switch(unit,'1'='daily','7'='weekly',unit);
-})
-time_unit=Vectorize(function(label=cq(1,7,daily,weekly)) {
-  label=as.character(label);
-  label=match.arg(label);
-  switch(label,daily=1,weekly=7,as.numeric(label));
-})
-cuminc_label=Vectorize(function(cum) if (cum) 'cumulative' else 'incremental')
-datasrc_label=Vectorize(function(datasrc)
-  switch(datasrc,doh='DOH',ihme='IHME',jhu='JHU',nyt='NYTimes',trk='CovidTrack',yyg='C19Pro',
-         datasrc),
-  USE.NAMES=FALSE)
-fit_label=Vectorize(function(fit) if (is.na(fit)) 'raw' else fit)
-name_label=function(name,val,SEP='&') {
-  if (is.null(val)) val=NA;
-  switch(name,
-         datasrc=datasrc_label(val),
-         unit=time_label(val),
-         cumulative=cuminc_label(val),
-         fit=fit_label(val),
-         val);
-}
-paste_label=function(labels,SEP='&') {
-  if (all(is.na(labels))) NULL else paste(collapse=SEP,unique(labels[!is.na(labels)]));
-}
-paste_title=function(name,labels,SEP='&') {
-  if (all(is.na(labels))) NULL
-  else {
-    labels=unique(labels);
-    if (name=='fit') {
-      raw=if('raw' %in% labels) TRUE else FALSE;
-      labels=labels[labels!='raw'];
+## ---- Format slices of 'pseudo-object' as data.frame ----
+## multiple ages for one place, or multiple places for one age
+##   in multi-place mode, can hande special 'other' place
+## TODO: not really a transform but no place else to put it. move to better place
+data_obj=function(obj,places='state',ages=NULL,per.capita=FALSE,pop=NULL) {
+  if (length(places)>1&&length(ages)>1)
+    stop("Only one of 'places' or 'ages' can have multiple values");
+  if (is.null(ages)&&obj$datasrc=='doh') ages=names(obj$data);
+  if (!(is.null(ages)||identical(ages,'all'))&&obj$datasrc!='doh')
+    stop("Can only select age groups from 'doh' objects, not ",obj$datasrc," objects");
+  data=obj$data;
+  if (length(ages)>1) {
+    ## multiple ages for one place
+    byage=data[ages];
+    data=data.frame(date=byage[[1]]['date'],
+                    do.call(cbind,sapply(byage,function(data) data[,places],simplify=FALSE)),
+                    check.names=FALSE); 
+  } else {
+    ## multiple places for one age or from object w/o age groups
+    if (obj$datasrc=='doh') data=data[[ages]];
+    if ('other' %in% places) {
+      places=places[places!='other'];
+      other=colnames(data)%-%c(places,cq(date,state,notKing));
+      data$other=rowSums(data[,other]);
+      places=c(places,'other');
     }
-    term=paste(collapse=SEP,
-          switch(name,
-                 unit=ucfirst(labels),
-                 cumulative=ucfirst(labels),
-                 what=ucfirst(labels),
-                 labels));
-    prefix=switch(name,
-                  datasrc='from',
-                  fit='fitted to',
-                  NULL);
-    title=if(length(labels)!=0) paste(collapse=' ',c(prefix,term)) else NULL;
-    if (name=='fit'&&raw) paste(collapse=SEP,c('raw',title)) else title;
+    data=data[,c('date',places)]
   }
+  if (per.capita) data=per_capita(data,pop,places,ages);
+  data;
 }
-paste_legend=function(row,SEP=', ') {
-  names=names(row);
-  terms=unlist(sapply(names,function(name) {
-    label=row[name];
-    if (is.na(label)) NULL else label;
-  }));
-  paste(collapse=SEP,terms);
-}
-ltitle_label=function(name) {
-  switch(name,
-         unit='Interval',
-         cumulative='Cum/Inc',
-         what='What',
-         datasrc='Source',
-         version='Version',
-         fit='Fit');
-}
-                 
-## produce data frame of obj typically single-valued params
-obj_attr=function(obj,names=cq(datasrc,what,unit,cumulative,version,fit),label=TRUE) {
-  vals=with(obj,mget(names,ifnotfound=list(NULL)));
-  if (label) vals=sapply(names,function(name) name_label(name,vals[[name]]),simplify=FALSE);
-  xattr=as.data.frame(vals,stringsAsFactors=FALSE);
-  rownames(xattr)=NULL;
-  xattr;
-}
-objs_attr=function(objs,names=cq(datasrc,what,unit,cumulative,version,fit),label=TRUE)
-  do.call(rbind,lapply(objs,function(obj) obj_attr(obj,names,label)));
-  
-

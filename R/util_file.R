@@ -15,49 +15,7 @@
 ## file at https://github.com/natgoodman/NewPro/FDR/LICENSE 
 ##
 #################################################################################
-## ---- Save and Load ----
-## save data in RData and optionally txt formats
-save_=function(data,base=NULL,save,save.txt=FALSE,file=NULL,suffix=cq(txt,RData)) {
-  if (is.null(base)&&is.null(file)) stop("No place to save data: 'base' and 'file' are both NULL");
-  if (!is.null(file)) {
-    if (!file.exists(file)) stop(paste('File',file,'does not exist'));
-  } else {
-    base=desuffix(base,suffix);
-    file=filename(base=base,suffix='RData');
-  }
-  if ((is.na(save)&!file.exists(file))|(!is.na(save)&save)) {
-    save(data,file=filename(base=base,suffix='RData'));
-    if (save.txt) {
-      file=filename(base=base,suffix='txt');
-      if (length(dim(data))==2) write.table(data,file=file,sep='\t',quote=F,row.names=F)
-      ## code for saving non-table data adapted from save_tbl
-      else if (is.list(data)) {
-        sink(file); print(data); sink();
-      }
-      else if (is.vector(data)) {
-        names=names(data);
-        if (!is.null(names)) {
-          data=data.frame(name=names,value=as.character(data));
-          write.table(data,file=file,sep='\t',quote=F,row.names=F);
-        } else writeLines(as.character(data),file);
-      }
-      else stop(paste('Unabe to save text for class',class(data),'. Sorry'));
-    }
-  }
-}
-## load data from RData file
-load_=function(base=NULL,file=NULL,suffix=cq(txt,RData)) {
-  if (is.null(base)&&is.null(file)) stop("No place to get data: 'base' and 'file' are both NULL");
-  if (!is.null(file)) {
-    if (!file.exists(file)) stop(paste('File',file,'does not exist'));
-  } else {
-      base=desuffix(file,suffix);
-      file=filename(base=base,suffix='RData');
-    }
-  what=load(file=file);                 # what is name of saved data
-  get(what);                            # return it
-}
-## ---- Manipulate file namess ----
+## ---- Manipulate file names ----
 ## construct file or directory pathname from components
 ## wrapper for file.path with base, tail and suffix pasted on
 ##  base appended with '.'
@@ -94,13 +52,12 @@ desuffix=function(path,suffix=NULL,keep.dir=TRUE) {
   if (keep.dir) sub(pattern,'',path) else sub(pattern,'',basename(path));
 }
 ## replace suffix from path or base
-resuffix=function(path,old.suffix=NULL,suffix,keep.dir=TRUE) {
+resuffix=function(path,old.suffix=cq(txt,RData),suffix='RData',keep.dir=TRUE) {
   sapply(path,function(path) {
     base=desuffix(path,old.suffix,keep.dir);
     filename(base,suffix=suffix);
   });
 }
-
 ## remove tail & suffix from path or base. leaves part of basename before first .
 baseonly=function(path,suffix=NULL,keep.dir=TRUE) {
   dir=dirname(path);

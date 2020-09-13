@@ -43,9 +43,11 @@ add_legend=
            ...);
     if (missing(legends)) do.call(legend_,c(list(x=x,y=y,legend=legend),default.args))
     else {
+      want.args=funargs(legend_,graphics::legend);
       sapply(legends,function(legend.args) {
         if (is.null(legend.args)) return();
         legend.args=fill_defaults(default.args,c(list(x=x,y=y),legend.args));
+        legend.args=legend.args[names(legend.args) %in% want.args];
         where.next=do.call(legend_,legend.args);
         ## <<- assigns to variables in outer scope, ie, function scope
         ##   from stackoverflow.com/questions/13640157. Thanks!
@@ -61,35 +63,36 @@ add_legend=
 ## labels and legend are synonyms
 legend_=
   function(x,y,cex=0.8,bty='n',title=NULL,title.col='black',
-           col='black',lty='solid',lwd=1,labels=NULL,legend=labels,...) {
+           col='black',lty='solid',lwd=1,labels=NULL,legend=labels,seg.len=4,...) {
     if (is.null(legend)) return();      # nothing to draw
-    where.next=graphics::legend(x,y,bty=bty,legend=legend,cex=cex,col=col,lwd=lwd,lty=lty,
-                                title=title,title.col=title.col,...);
+    where.next=graphics::legend(x,y,bty=bty,legend=legend,cex=cex,col=col,lty=lty,lwd=lwd,
+                                seg.len=seg.len,title=title,title.col=title.col,...);
     x=where.next$rect$left;
     y=where.next$rect$top-where.next$rect$h;
     c(x,y);
   }
 ## make colors from RColorBrewer palettes
-## palettes - RColorBrewer palette names
 ## n - number of colors
+## palettes - RColorBrewer palette names
 ## names - names to index colors. if set, overrides n
 ## skip - for seqeuential palettes, number of colors to skip  - 1st two usually too light
 ## dark.first - for seqeuential palettes, reverse so darker colors first
-col_brew=function(palettes,n=0,names=NULL,skip=2,dark.first=TRUE) {
+col_brew=function(n=0,palettes='Dark2',names=NULL,skip=2,dark.first=TRUE) {
   if (is.null(palettes)||(missing(n)&&missing(names))) return(NULL);
   bad=palettes %notin% rownames(brewer.pal.info);
   if (any(bad)) stop(paste('Invalid palette name(s):',paste(collapse=', ',palettes[bad])));
+  if (is.character(n)) names=n;
   if (!is.null(names)) n=length(names);
   n.pal=length(palettes);
   ns=if(n.pal==1) n else as.integer(table(cut(1:n,n.pal)));
   ## col=do.call(c,lapply(1:length(palettes),
   ##                      function(i) col_brew_(palettes[i],ns[i],skip,dark.first)));
-  col=do.call(c,col_brew_(palettes,ns,skip,dark.first));
+  col=do.call(c,col_brew_(ns,palettes,skip,dark.first));
   # if too many colors, use 1st n
   if (n<length(col)) col=head(col,n);
   setNames(col,names);
 }
-col_brew_=Vectorize(function(pal,n,skip,dark.first) {
+col_brew_=Vectorize(function(n,pal,skip,dark.first) {
   if (n==0) return(NULL);
   if (brewer.pal.info[pal,'category']!='seq') m=n else m=n+skip;
   m=min(m,brewer.pal.info[pal,'maxcolors']);
@@ -102,7 +105,7 @@ col_brew_=Vectorize(function(pal,n,skip,dark.first) {
   ## if want more colors than in palette, colorRampPalette will make more
   if (n>length(col)) col=colorRampPalette(col)(n);
   col;
-},vectorize.args=cq(pal,n),SIMPLIFY=FALSE,USE.NAMES=FALSE);
+},vectorize.args=cq(n,pal),SIMPLIFY=FALSE,USE.NAMES=FALSE);
 
 ## empty plot - just title & axes
 plotempty=
@@ -120,29 +123,33 @@ plotempty=
 ## helper functions to plot horizontal and vertical line segments
 vhline=function(vline=NULL,hline=NULL,vlab=TRUE,hlab=TRUE,vhdigits=2,col=NA,cex=0.75,...) {
   xylim=par('usr');
-  vline=vline[which(between(vline,xylim[1],xylim[2]))];
-  hline=hline[which(between(hline,xylim[3],xylim[4]))];
+  if (!is.null(vline)) {
+    vline=as_date(vline);
+    vline=vline[which(between(vline,as_date(xylim[1]),as_date(xylim[2])))];
+  }
+  if (!is.null(hline)) hline=hline[which(between(hline,xylim[3],xylim[4]))];
   abline(v=vline,h=hline,col=col,...);
   ## write vhline values along axes
   vline=vline[vlab];
   if (length(vline)>0)
-    mtext(round(vline,vhdigits),side=1,at=vline,col=col,line=0.25,cex=cex*par('cex'));
+    mtext(format(vline,"%b-%d"),side=1,at=vline,col=col,line=0.25,cex=cex*par('cex'));
   hline=hline[hlab];
   if (length(hline)>0)
     mtext(round(hline,vhdigits),side=2,at=hline,col=col,line=0.25,cex=cex*par('cex'));
 }
-hline=
+hseg=
   function(y,x0=0,x,col='black',lty='solid',lwd=1,cex=0.75,text=NULL,
            label=list(text=text,side=2,at=y,col=col,line=0.25,cex=cex*par('cex'),las=1)) {
     segments(x0=x0,x1=x,y0=y,y1=y,col=col,lty=lty,lwd=lwd);
     if (!is.null(text)) do.call(mtext,label);
   }
-vline=
+hseg=
   function(x,y0=0,y,col='black',lty='solid',lwd=1,cex=0.75,text=NULL,
            label=list(text=text,side=1,at=x,col=col,line=0.25,cex=cex*par('cex'),las=1)) {
     segments(x0=x,x1=x,y0=y0,y1=y,col=col,lty=lty,lwd=lwd);
     if (!is.null(text)) do.call(mtext,label);
   }
+
 ## display color palette - from util.R
 pal=function(col,border="light gray",...) {
  n=length(col)

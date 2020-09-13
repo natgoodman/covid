@@ -133,6 +133,7 @@ parent_=function(what,default) {
 ## call with quoted or unquoted variable names
 ## adapted from base::rm
 ## set params using par-like notation, eg, param(m=1e4)
+## TODO: 'list' should handle params with new values
 param=function(...,list=character()) {
   dots=match.call(expand.dots=FALSE)$...
   parent.env=parent.frame(n=1);
@@ -160,7 +161,7 @@ param=function(...,list=character()) {
   if (any(bad)) stop(paste(sep=' ','Invalid param(s):',paste(collapse=', ',names(bad))))
   retval=lapply(names,function(name) assign(name,get(name,envir=param.env),envir=parent.env));
   ## fix up return value
-  if (length(retval)==1) unlist(retval)
+  if (length(retval)==1) retval[[1]]
   else {
     names(retval)=names;
     retval;
@@ -177,7 +178,7 @@ init_param=function() {
   param.env=new.env(parent=emptyenv());
   parent.env=parent.frame(n=1);
   sapply(ls(envir=parent.env),
-        function(what) assign(what,get(what,envir=parent.env),envir=param.env));
+         function(what) assign(what,get(what,envir=parent.env),envir=param.env));
   assign('param.env',param.env,envir=.GlobalEnv);
 }
 assign_param=function() {
@@ -205,7 +206,9 @@ wrap_fun=function(fun,funfun=NULL,...) {
   args=c(args,dots[names(dots)%in%fx]);
   do.call(fun,args);
 }
-  
+## get function arguments - to remove args that will fail from ... and related
+funargs=function(...) do.call(c,lapply(list(...),function(fun) names(formals(fun)) %-% '...' ))
+
 ## like match.arg but uses general matching and, if several.ok, returns 'em all
 pmatch_choice=
   function(arg,choices,several.ok=T,none.ok=F,start=T,ignore.case=T,perl=F,fixed=F,invert=F) {
@@ -233,74 +236,6 @@ cq=function(...) {
 ## from https://stackoverflow.com/questions/18509527/first-letter-to-upper-case/18509816
 ucfirst=function(word) paste0(toupper(substr(word,1,1)),substr(word,2,nchar(word)));
   
-## wrapper for smooth methods
-## NG 19-12-31: extend for 'x', 'y' both matrices
-##   'x' must be vector or 2-dimensional matrix-like object with same number of columns as y'
-##   'y' must be vector or 2-dimensional matrix-like object
-## NG 20-01-02: replace special-case spar, span by method.args - additional args passed to method
-##    note defaults for aspline, spline, loess
-smooth=
-  function(x,y,method,length=100,
-           method.args=
-             switch(method,
-                    aspline=list(method='improved'),
-                    spline=list(spar=0.5),
-                    loess=list(span=0.75),
-                    list())) {
-    if (is.vector(x)) x=as.matrix(x)
-    else if (length(dim(x))!=2) stop("'x' must be vector or 2-dimensional matrix-like object");
-    if (is.vector(y)) y=as.matrix(y)
-    else if (length(dim(y))!=2) stop("'y' must be vector or 2-dimensional matrix-like object");
-    if (ncol(x)>1&&ncol(x)!=ncol(y))
-      stop("When 'x' has multiple columns, it must have same number of columns as 'y'");
-    if (method=='none') return(list(x=x,y=y));
-  
-    x.smooth=apply(x,2,function(x) seq(min(x),max(x),length=length));
-    y.smooth=do.call(cbind,lapply(seq_len(ncol(y)),function(j)
-      if (ncol(x)==1) smooth_(x[,1],y[,j],x.smooth,method,method.args)
-      else smooth_(x[,j],y[,j],x.smooth[,j],method,method.args)));
-    list(x=x.smooth,y=y.smooth);
-}
-smooth_=function(x,y,x.smooth,method,method.args) {
-  method.args=c(list(x,y,x.smooth),method.args);
-  method.fun=switch(method,
-                    aspline=aspline_,spline=spline_,loess=loess_,linear=approx_,approx=approx_,
-                    stop(paste('Invalid smoothing method:',method)));
-  y.smooth=do.call(method.fun,method.args);
-  as.matrix(y.smooth);
-}
-## these functions wrap underlying smoothing methods with consistent API
-## akima::aspline
-aspline_=function(x,y,x.smooth,...) {
-  y.smooth=if(all(is.na(y))) rep(NA,length(x.smooth))
-    else if (length(which(!is.na(y)))==1) rep(y[which(!is.na(y))],length(x.smooth))
-    else akima::aspline(x,y,x.smooth,...)$y;
-}
-## loess
-loess_=function(x,y,x.smooth,...) {
-  data=data.frame(x,y);
-  ## fmla=as.formula('y~x');
-  y.smooth=suppressWarnings(predict(loess(y~x,data=data,...),data.frame(x=x.smooth)));
-  y.smooth;
-}
-## smooth.spline
-## NG 18-11-07: remove NAs (same as akima::aspline) else smooth.spline barfs
-spline_=function(x,y,x.smooth,...) {
-  ## remove NAs. code adapted from akima::aspline
-  ## CAUTION: must use '<-' not '=' or place assignment in extra parens ((na=is.na(y)))
-  ##   see stackoverflow.com/questions/1741820 for explanation. gotta love R...
-  if (any(na<-is.na(y))) x=x[!na]; y=y[!na];
-  y.smooth=predict(smooth.spline(x,y,...),x.smooth)$y    
-  y.smooth;
-}
-## approx - probably only for completeness
-approx_=function(x,y,x.smooth,...) {
-  y.smooth=if (all(is.na(y))) rep(NA,length(x.smooth))
-    else if (length(which(!is.na(y)))==1) rep(y[which(!is.na(y))],length(x.smooth))
-    else approx(x,y,x.smooth,...)$y;
-  y.smooth;
-}
-
 ## with case
 ## like 'with' but works on vectors. I use it inside apply(cases,1,function(case)...)
 ## note that plain 'with' works fine when applied to cases as a whole
@@ -330,7 +265,7 @@ withrows=function(cases,case,expr) {
   expr=pryr::subs(expr);
   parent=parent.frame(n=1);
   lapply(1:nrow(cases),function(i) {
-    case=cases[i,];
+    case=cases[i,,drop=FALSE];
     ## assign case so it'll be data frame in called code
     env=list2env(case,parent=parent); # assign vars from case
     assign(var,case,envir=env);         # so case will be visible in called code
@@ -346,15 +281,87 @@ fill_defaults=function(default,actual) {
   default[names(actual)]=actual;        # replace defaults elements by non-NULL actual
   default;
 }
-## replace or add elements in list. kinda like the way I set elements in Perl
-## new, old both lists
-set_elements=function(new,old) {
-  old=old[setdiff(names(old),names(new))];
-  c(old,new);
+## combine lists, with elements in later lists overriding earlier
+## can be used to replace or add elements in list. kinda like the way I set elements in Perl
+## clc is same but preserves class of 1st argument
+## cl=function(...) Reduce(function(...) cl_(...),list(...))
+cl=function(...) {
+  dots=list(...);
+  names=names(dots);
+  ## workaround R's handling of nchar applied to NULL
+  if (is.null(names)) names=rep('',length(dots));
+  dots=do.call(
+    c,lapply(seq_along(dots),function(i)
+      if(nchar(names[i])==0) {
+        x=dots[i];
+        if (!is.list(x[[1]])) x=list(x);
+        x;
+      } else {
+        x=dots[i];
+        names(x)=names[i];
+        list(x);
+      }));
+  Reduce(function(...) cl_(...),dots);
 }
-
-## test if arg is "real" list, not data frame
-is_list=function(x) is.list(x)&&!is.data.frame(x);
+## NG 20-08-06: handle un-named elements
+## cl_=function(x,y) {
+##   x=x[names(x) %-% names(y)];
+##   c(x,y);
+## }
+cl_=function(x,y) {
+  x[names(y)]=NULL;
+  c(x,y);
+}
+clc=function(obj,...) {
+  newobj=cl(obj,...);
+  class(newobj)=class(obj);
+  newobj;
+}
+## generate sequence from min(x) to max(x). similar to R's 'seq'
+## x can be vector, matrix, data.frame, list of vectors
+## when relative=FALSE
+##   by, length.out are step-size and length as in R's seq
+##     except that if both are set, length wins insted of being an error
+## when relative=TRUE
+##   by is fraction of range (max(x)-min(x))
+##   length.out is number of elements between each elemnt of x
+## CAUTION: when x is matrix-like, 'by' may cause varying column lengths! 'length' is safer
+seqx=function(x,by=NULL,length.out=NULL,relative=FALSE,na.rm=TRUE) {
+  if (all(sapply(c(by,length.out),is.null))) stop("One of 'by' or 'length.out' must be specified");
+  ## is.list catches data.frames as well as 'real' lists
+  if (is_2d(x)) apply(x,2,function(x) seqx_(x,by,length.out,relative,na.rm))
+  else seqx_(x,by,length.out,relative,na.rm);
+}
+seqx_=function(x,by,length.out,relative,na.rm) {
+  lo=min(x,na.rm=na.rm);
+  hi=max(x,na.rm=na.rm);
+  if (!relative) {
+    if (!is.null(length.out)) seq(lo,hi,length.out=length.out) else seq(lo,hi,by=by);
+  } else {
+    if (!is.null(length.out)) {
+      ## length.out is elements per interval
+      ## code adapted from stackoverflow.com/questions/54449370. Thx!
+      c(do.call(c,lapply(1:(length(x)-1),function(i) {
+        lo=x[i]; hi=x[i+1]; delta=hi-lo; step=delta/length.out; seq(lo,hi-step,by=step)})),
+        hi);
+    } else {
+      ## by is fraction of total range
+      by=by*(hi-lo);
+      seq(lo,hi,by=by);
+    }}
+}
+## test if x is "real" list, not data frame
+is_list=function(x) is.list(x)&&!is.data.frame(x)
+## test if x is a vector - workaround for R's is.veector not working on Dates....
+is_vector=function(x) is_date(x)||is.vector(x)
+## test if x is named list -- all elements have names -- analogous to Perl hash
+is_nlist=is_hash=function(x)
+  is_list(x)&&!is.null(names(x))&&all(sapply(names(x),function(name) nchar(name)>0))
+## test if x is unnamed list -- no elements have names
+is_ulist=function(x)
+  is_list(x)&&(is.null(names(x))||all(sapply(names(x),function(name) nchar(name)==0)))
+## test if x is 2D matrix-like object
+is_2d=function(x) (!is.null(dim(x)))&&(length(dim(x))==2)
 ## test blank field
 is_blank=function(x) (x=='')|is.null(x)|is.na(x)
 ## test if x is subset of y. from stackoverflow.com/questions/26831041. thx!
@@ -369,7 +376,7 @@ is_POSIXdate=function(x) is_class(x,'POSIXt')
 as_date=function(x) {
   ## R seems to convert dates to numeric when passed through sapply. sigh...
   dates=sapply(x,function(x) {
-    if (is_date(x)||is.numeric(x)) x
+    if (is_date(x)||is.numeric(x)||is.na(x)) x
     else if (is_POSIXdate(x)) as.Date(x)
     else {
       if (is.character(x)) {
@@ -412,6 +419,24 @@ pick=function(x,n.want,n.min=1,rep.ok=FALSE,exclude=NULL) {
     probs=seq(step,by=step,len=n.want)
     unname(quantile(x,probs=probs,type=1))
   };
+}
+
+## expand.grid for data frames. args can be data frames or vectors
+## NULL args are skipped 
+expand_df=function(...) {
+  dots=list(...);
+  dots=dots[sapply(dots,function(x) !is.null(x))];
+  dots=lapply(seq_along(dots),function(i) {
+    df=dots[[i]]
+    if (!is.data.frame(df)) {
+      df=as.data.frame(df,stringsAsFactors=FALSE);
+      nm=names(dots)[i];
+      colnames(df)=if(!is.null(nm)&&nchar(nm)>0) nm else paste0('X',i);
+    }
+    df;
+  })
+  ## line below from stackoverflow.com/questions/13640157. Thanks!
+  Reduce(function(...) merge(..., by=NULL), dots)
 }
 
 ## repeat rows or columns of 2-dimensional matrix-like object. like rep
@@ -522,7 +547,10 @@ strip=function(val,LENGTH.OUT=NA,FILL=NA) {
   val;
 };
 
-
+## intersect operator
+"%&%"=function(x,y) intersect(x,y)
+## setdiff operator
+"%-%"=function(x,y) setdiff(x,y)
 ## not in - based on example in RefMan - more intutive than !%in%
 "%notin%"=function(x,table) match(x,table,nomatch=0)==0
 ## between, near - to subset sim results. closed on bottom, open on top
@@ -550,8 +578,9 @@ pal=function(col,border="light gray",...) {
 }
 ## helpers to cope with flaky internet during covid crisis
 plon=function(base='plot',file.png=filename('figure',base,suffix='png')) {
+  if (exists('dev.png')) ploff();
   png(filename=file.png,height=8,width=8,units='in',res=200,pointsize=12);
-  dev.png<-dev.cur();
+  dev.png<<-dev.cur();
   file.png<<-file.png;
 }
 ploff=function(dev=dev.png,file=file.png) {

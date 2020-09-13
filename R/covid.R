@@ -109,7 +109,7 @@ plotit=function(what,names=NULL) {
   x=data$week;
   names=if(is.null(names)) setdiff(colnames(data),'week') else names[names%in%colnames(data)]
   y=data[,names]
-  col=col_brew('Set1',n=ncol(y))
+  col=col_brew(n=ncol(y),'Set1')
   matplot(x,y,type='l',lty='solid',col=col,xlab=NA,ylab=what,main=what,xaxt='n');
   grid(nx=NA,ny=NULL) # draw y grid lines. we'll draw x ourselves at first day of month
   mon.01=mon_day(x,1)
@@ -128,7 +128,7 @@ plot_corlag=
     x=data$lag
     names=if(is.null(names)) setdiff(colnames(data),'lag') else names[names%in%colnames(data)]
     y=data[,names]
-    col=col_brew('Set1',n=ncol(y))
+    col=col_brew(n=ncol(y),'Set1')
     matplot(x,y,type='l',lty='solid',col=col,xlab='lag (in days)',ylab='correlation',
             main=title,cex.main=cex.title);
     grid();

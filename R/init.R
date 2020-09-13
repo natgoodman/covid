@@ -33,11 +33,32 @@ init=function(
   ## data directories. 
   indir='input',                            # top level input dir
   datadir=filename('data',run.id),          # top level output data files
+  metadir=filename('meta',run.id),          # metadata files
   figdir=filename('figure',run.id),         # figures
   tbldir=filename('table',run.id),          # tables
   tmpdir=filename(datadir,'tmp'),           # tmp dir if needed
+  acsplacedir=filename(indir,'censusreporter','place'),
+  ## fixed censusreporter files
+  acs5yr=filename(indir,'censusreporter','acs2018_5yr_B01001_05000US53041.csv'),
+  acsmeta=filename(indir,'censusreporter','metadata.json'),
+  popbyage=filename(metadir,'popbyage'),     # pop by age file
   # outdir=c(datadir,figdir,tbldir,tmpdir),  # top level output dirs
-  
+
+  ## cached data
+  pop=NULL,                      # population metadata. set in meta.R
+  extra.cases=NULL,              # extrafun for cases. set in transform/extra
+  extra.deaths=NULL,             # extrafun for deaths. set in transform/extra
+  extra.admits=NULL,             # extrafun for admits. set in transform/extra
+
+  ## import params for specific data sources
+  ihme.maxdate='latest',         # max date is latest version
+  yyg.maxdate='latest',          # max date is latest version
+                                 #
+  ## transform params
+  extra.wmax=6,                  # max weeks for computing models
+  extra.nvmin=extra.wmax,        # min versions covering data used in models
+  extra.exmin=0.25,              # min extra value. smaller values expand counts too much
+ 
   ## program control
   verbose=F,                     # print progress messages
   debug=FALSE,                   # call debug code
@@ -46,10 +67,12 @@ init=function(
                                  #   NA means save unless file exists
                                  #   T, F mean always or never save
   save.data=save,                # save top level data
+  save.meta=save,                # save metadata
   save.txt=NA,                   # save results in txt format as well as RData
                                  #   NA means use default rule for type:
                                  #   F for all but top level data
   save.txt.data=is.na(save.txt)|save.txt, # save txt top level results. default T
+  save.txt.meta=is.na(save.txt)|save.txt, # save txt metadata. default T
   save.out=T,                    # save outputs - figures and tables - when called via dofig
   save.fig=save.out,             # save figures (when called via dofig)
   save.tbl=save.out,             # save tables (when called via dotbl)
@@ -65,13 +88,6 @@ init=function(
   clean.fig=clean.out,           # remove figdir
   clean.tbl=clean.out,           # remove tbldir
                                  # 
-  ## import params for specific data sources
-  doh.notKing=TRUE,              # compute state minus King
-  jhu.notKing=TRUE,              # compute state minus King
-  nyt.notKing=TRUE,              # compute state minus King
-  ihme.maxdate='latest',         # max date is latest version
-  yyg.maxdate='latest',          # max date is latest version
-                                 #
   end=NULL                       # placeholder for last parameter
   ) {
   ## doc=docx;                      # to avoid confusion later
@@ -82,7 +98,7 @@ init=function(
   indirs=sapply(datasrc,function(src) filename(indir,src));
   ## output dirs
   datadirs=sapply(datasrc,function(src) filename(datadir,src));
-  outdirs=c(datadirs,figdir,tbldir,tmpdir)
+  outdirs=c(datadirs,metadir,figdir,tbldir,tmpdir)
   ## assign parameters to param environment
   ## do it before calling any functions that rely on params
   init_param();

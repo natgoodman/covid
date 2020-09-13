@@ -1,0 +1,139 @@
+#################################################################################
+##
+## Author:  Nat Goodman
+## Created  20-06-24
+##          from transform.R created 20-05-06
+##          from import.R created 20-05-02
+##
+## Copyright (C) 2020 Nat Goodman.
+## 
+## Transform imported data for analysis
+##
+## This software is open source, distributed under the MIT License. See LICENSE
+## file at https://github.com/natgoodman/NewPro/FDR/LICENSE 
+##
+#################################################################################
+## ---- Construct text strings from object attributes ----
+## attributes of interest
+##   data source
+##   what - cases or deaths
+##   raw or fit (aka interpolated or smoothed)
+##   extra - late time points extrapolated
+##   time unit - weekly or daily
+##   cumulative vs incremental
+time_label=Vectorize(function(unit=cq(1,7,daily,weekly)) {
+  unit=as.character(unit);
+  unit=match.arg(unit);
+  switch(unit,'1'='daily','7'='weekly',unit);
+})
+time_unit=Vectorize(function(label=cq(1,7,daily,weekly)) {
+  label=as.character(label);
+  label=match.arg(label);
+  switch(label,daily=1,weekly=7,as.numeric(label));
+})
+cuminc_label=Vectorize(function(cum,fmt=cq(title,legend,ylab)) {
+  fmt=match.arg(fmt);
+  if (cum) 'cumulative' else if (fmt=='legend') 'incremental' else NA},
+  vectorize.args='cum');
+
+datasrc_label=Vectorize(function(datasrc)
+  switch(datasrc,doh='DOH',ihme='IHME',jhu='JHU',nyt='NYTimes',trk='CovidTrack',yyg='C19Pro',
+         datasrc),
+  USE.NAMES=FALSE)
+fit_label=Vectorize(function(fit)
+  if (is.na(fit)) 'raw' else fit)
+extra_label=Vectorize(function(extra,fmt=cq(title,legend,ylab)) {
+  fmt=match.arg(fmt);
+  switch(fmt,
+         title=if(extra) '(late time points extrapolated)' else NA,
+         legend=if(extra) 'extra' else 'original',
+         ylab=NA)},
+  vectorize.args='extra');
+age_label=Vectorize(function(age,fmt=cq(title,legend,ylab)) {
+  fmt=match.arg(fmt);
+  label=switch(age,all='all ages','80_'='80+',sub('_','-',age));
+  if (age!='all') {
+    suffix=if(fmt=='title') 'year olds'
+           else if (fmt=='legend') 
+             paste0('year olds (',
+                    switch(age,
+                           '0_19'='children and teens',
+                           '20_39'='young adults',
+                           '40_59'='middle aged adults',
+                           '60_79'='young seniors',
+                           '80_'='old seniors'),
+                    ')')
+    else 'yrs';
+    label=paste(label,suffix)
+  }
+  label},
+  vectorize.args='age');
+name_label=function(name,val,fmt=cq(title,legend,ylab),SEP='&') {
+  if (is.null(val)) val=NA;
+  switch(name,
+         datasrc=datasrc_label(val),
+         unit=time_label(val),
+         cumulative=cuminc_label(val,fmt),
+         fit=fit_label(val),
+         extra=extra_label(val,fmt=fmt),
+         age=age_label(val,fmt=fmt),
+         val);
+}
+paste_label=function(labels,SEP='&') {
+  if (all(is.na(labels))) NULL else paste(collapse=SEP,unique(labels[!is.na(labels)]));
+}
+paste_title=function(attr,labels,SEP='&') {
+  if (all(is.na(labels))) NULL
+  else {
+    labels=unique(labels);
+    if (attr=='fit') labels=labels[labels!='raw'];
+    term=paste(collapse=SEP,
+          switch(attr,
+                 unit=ucfirst(labels),
+                 cumulative=ucfirst(labels),
+                 what=ucfirst(labels),
+                 labels));
+    prefix=switch(attr,
+                  datasrc='from',
+                  fit='fitted to',
+                  place='for',
+                  age='for',
+                  NULL);
+    title=if(length(labels)!=0) paste(collapse=' ',c(prefix,term)) else NULL;
+  }
+}
+paste_legend=function(row,SEP=', ') {
+  attrs=names(row);
+  terms=unlist(sapply(attrs,function(attr) {
+    label=name_label(attr,row[attr],fmt='legend');
+    if (is.na(label)) NULL else label;
+  }));
+  paste(collapse=SEP,terms);
+}
+ltitle_label=function(attr) {
+  switch(attr,
+         unit='Interval',
+         cumulative='Cum/Inc',
+         datasrc='Source',
+         ## what, version, fit, extra, place, age
+         ucfirst(attr));
+}
+                 
+## adapted from www.r-bloggers.com/dates-in-r-and-the-first-day-of-the-month. Thx!
+mon_day=function(date,day) {
+  date=as_date(date);                   # in case comes to us numeric
+  ## as.Date(paste(sep='-',unique(format(date,format="%Y-%m")),day))
+  as_date(paste(sep='-',unique(format(date,format="%Y-%m")),day))
+}
+
+## produce data frame of obj typically single-valued params
+obj_attr=function(obj,attrs=cq(datasrc,what,unit,cumulative,version,fit,extra),label=TRUE) {
+  vals=with(obj,mget(attrs,ifnotfound=list(NULL)));
+  if (label) vals=sapply(attrs,function(attr) name_label(attr,vals[[attr]]),simplify=FALSE);
+  xattr=as.data.frame(vals,stringsAsFactors=FALSE);
+  rownames(xattr)=NULL;
+  xattr;
+}
+objs_attr=function(objs,attrs=cq(datasrc,what,unit,cumulative,version,fit),label=TRUE)
+  do.call(rbind,lapply(objs,function(obj) obj_attr(obj,attrs,label)));
+
