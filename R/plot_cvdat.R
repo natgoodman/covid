@@ -133,13 +133,13 @@ auto_lprop=
     if (is.null(blocks)) {
     if (is.null(ct)) ct=ct_attrs(series,attrs);
     blocks=series_blocks(series,ct,blocks.order);
+    }
+    nseries=length(series$series);
+    col=auto_col(blocks,col.blocks,nseries,col,col.pal,col1);
+    lty=auto_lty(blocks,lty.blocks,nseries,lty,lty.range,lty1);
+    lwd=auto_lwd(blocks,lwd.blocks,nseries,lwd,lwd.range,lwd1);
+    cl(col,lty,lwd);
   }
-  nseries=length(series$series);
-  col=auto_col(blocks,col.blocks,nseries,col,col.pal,col1);
-  lty=auto_lty(blocks,lty.blocks,nseries,lty,lty.range,lty1);
-  lwd=auto_lwd(blocks,lwd.blocks,nseries,lwd,lwd.range,lwd1);
-  cl(col,lty,lwd);
-}
 auto_col=function(blocks,i,nseries,col,pal,col1) {
   if (!is.null(col)) return(list(col=rep(col,length=nseries)));
   nblocks=length(blocks);
