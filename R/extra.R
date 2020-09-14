@@ -49,7 +49,6 @@ extrafun=
     ## dates wth enough versions are vmin-1*7..vmax-6*7
     enuff=which(dates>=(vmin-7)&dates<=(vmax-nv.min*7));
     dates=dates[enuff];
-
     cases=expand.grid(place=places,age=ages,stringsAsFactors=FALSE);
     if (model.type=='split') extrafun_split(objs,cases,dates,ws,ex.min,formula.type)
     else extrafun_joint(objs,cases,dates,ws,ex.min,formula.type);
@@ -68,13 +67,14 @@ extrafun_split=function(objs,cases,dates,ws,ex.min,formula.type) {
                            function(var) if (length(unique(data[,var]))>1) var else NULL));
     fmla=paste0('y~',paste(collapse=formula.type,terms));
     model=lm(as.formula(fmla),data=data);
-    w.model=unique(data[,'w']);
-    w.max=max(ws);
+    w.model=as.numeric(unique(data[,'w']));
+    w.min=min(w.model);
+    w.max=max(w.model);
     fun=function(date,w) {
       ## if w too big, return 1
       if (w>w.max) return(1);
       ## if w too small, return NA
-      if (w<=0) return(NA);
+      if (w<w.min) return(NA);
       p=suppressWarnings(predict(model,list(date=date,w=as.factor(w))));
       pmax(ex.min,pmin(1,p));         # clamp to [ex.min,1]
     }})
