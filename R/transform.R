@@ -49,14 +49,15 @@ transform=function(what=cq(cases,deaths),datasrc=param(datasrc),version='latest'
   invisible(objs);
 }
 
-## read raw imported data and return as standard 'pseudo-object'
+## read raw imported data and return as object
 raw=function(what=cq(cases,admits,deaths),datasrc=param(datasrc),version='latest') {
   what=match.arg(what);
   datasrc=match.arg(datasrc);
   if (what=='admits'&&datasrc!='doh') stop("Only have admits data for doh, not",datasrc);
   if (!is.null(version)&&version=='latest') version=latest_version(datasrc,what);
   data=load_data(whatv=what,datasrc=datasrc,version=version);
-  obj=cvdat(data=data,datasrc=datasrc,what=what,version=version,fit='raw',extra=FALSE);
+  newobj=if(datasrc!='doh') cvdat else cvdoh;
+  obj=newobj(data=data,datasrc=datasrc,what=what,version=version,fit=FALSE,extra=FALSE);
   clc(obj,switch(datasrc,
                   doh=list(unit=7,start.on='Sunday',center=FALSE,cumulative=FALSE),
                   ihme=list(unit=1,cumulative=FALSE),
@@ -68,36 +69,41 @@ raw=function(what=cq(cases,admits,deaths),datasrc=param(datasrc),version='latest
                              'should have been caught earlier'))
                  ));
 }
-## fit standard pseudo-object data
-fit=function(obj,method='sspline',args=list(),fit.clamp=0,fit.unit=1) {
-  data=obj$data;
-  if (obj$datasrc!='doh') {
-    dates=data[,1];
-    fun=fitfun(x=as.numeric(dates),y=data[,-1,drop=FALSE],method=method,args=args,clamp=fit.clamp);
-    dates=seq(min(dates),max(dates),by=fit.unit);
-    data=data.frame(date=dates,sapply(fun,function(f) f(dates)));
-  } else {
-    ages=names(data);
-    dates=data$all[,1];
-    fun=lapply(data,function(data)
-      fitfun(x=as.numeric(dates),y=data[,-1,drop=FALSE],method=method,args=args,clamp=fit.clamp));
-    dates=seq(min(dates),max(dates),by=fit.unit);
-    data=lapply(seq_along(obj$data),function(i) {
-      data=data[[i]];
-      fun=fun[[i]];
-      data.frame(date=dates,sapply(fun,function(f) f(dates)));
-    });
-    names(data)=ages;
-  }
-  clc(obj,list(data=data,fit.fun=fun,fit=method,fit.args=args));
+## fit object data
+fit=function(obj,...) UseMethod('fit')
+fit.cvdat=function(obj,method='sspline',args=list(),fit.clamp=0,fit.unit=1) {
+  dates=dates(obj);
+  counts=counts(obj);
+  fun=fitfun(x=as.numeric(dates),y=counts,method=method,args=args,clamp=fit.clamp);
+  dates=seq(min(dates),max(dates),by=fit.unit);
+  data=data.frame(date=dates,sapply(fun,function(f) f(dates)));
+  clc(obj,list(data=data,fit=method,fit.fun=fun,fit.args=args));
 }
-## convert pseudo-object data to cumulative. nop if already cumulative
-cumulative=function(obj,week.end=FALSE) {
-  if (obj$cumulative) return(obj);
+fit.cvdoh=function(obj,method='sspline',args=list(),fit.clamp=0,fit.unit=1) {
+  dates=dates(obj);
+  ages=ages(obj);
+  x=as.numeric(dates);
+  fun=lapply(ages,function(age) 
+    fitfun(x=x,y=counts(obj,age),method=method,args=args,clamp=fit.clamp));
+  dates=seq(min(dates),max(dates),by=fit.unit);
+  data=lapply(fun,function(fun) data.frame(date=dates,sapply(fun,function(f) f(dates))));
+  names(data)=ages;
+  clc(obj,list(data=data,fit=method,fit.fun=fun,fit.args=args));
+}
+
+## convert object data to cumulative. nop if already cumulative
+cumulative=function(obj,...) UseMethod('cumulative')
+cumulative.cvdat=function(obj,week.end=FALSE) {
+  if (is_cumulative(obj)) return(obj);
   unit=obj$unit;
-  obj$data=
-    if(obj$datasrc!='doh') cum1(obj$data,unit,week.end)
-    else sapply(obj$data,function(data) cum1(data,unit,week.end),simplify=FALSE);
+  obj$data=cum1(obj$data,unit,week.end);
+  obj$cumulative=TRUE;
+  obj;
+}
+cumulative.cvdoh=function(obj,week.end=FALSE) {
+  if (is_cumulative(obj)) return(obj);
+  unit=obj$unit;
+  obj$data=sapply(obj$data,function(data) cum1(data,unit,week.end),simplify=FALSE);
   obj$cumulative=TRUE;
   obj;
 }
@@ -113,12 +119,17 @@ cum1=function(data,unit,week.end) {
   }
   data;
 }
-## convert pseudo-object data to incremental. nop if already incrmental
-incremental=function(obj) {
-  if (!obj$cumulative) return(obj);
-  obj$data=
-    if(obj$datasrc!='doh') inc1(obj$data)
-    else sapply(obj$data,function(data) inc1(data),simplify=FALSE);
+## convert object data to incremental. nop if already incrmental
+incremental=function(obj,...) UseMethod('incremental')
+incremental.cvdat=function(obj) {
+  if (is_incremental(obj)) return(obj);
+  obj$data=inc1(obj$data)
+  obj$cumulative=FALSE;
+  obj;
+}
+incremental.cvdoh=function(obj) {
+  if (is_incremental(obj)) return(obj);
+  obj$data=sapply(obj$data,function(data) inc1(data),simplify=FALSE);
   obj$cumulative=FALSE;
   obj;
 }
@@ -126,20 +137,27 @@ inc1=function(data) {
   ## use check.names=FALSE so R won't replace spaces in place names...
   data.frame(date=data[,1],rbind(data[1,-1],apply(data[,-1],2,diff)),check.names=FALSE)
 }
-## convert pseudo-object data to weekly and optionally center
-weekly=function(obj,start.on='Sunday',center=TRUE) {
-  if (obj$unit!=7) {
+## convert object data to weekly and optionally center
+weekly=function(obj,...) UseMethod('weekly')
+weekly.cvdat=function(obj,start.on='Sunday',center=TRUE) {
+  if (!is_weekly(obj)) {
     start.on=match_day(start.on);
-    cumulative=obj$cumulative;
-    obj$data=
-      if(obj$datasrc!='doh') wly1(obj$data,cumulative,start.on)
-      else sapply(obj$data,function(data) wly1(data,cumulative,start.on),simplify=FALSE);
+    obj$data=wkly1(obj$data,obj$cumulative,start.on);
     obj=clc(obj,list(unit=7,start.on=start.on,center=FALSE));
   }
   if (center) obj=center(obj)
   obj;
 }
-wly1=function(data,cumulative,start.on) {
+weekly.cvdoh=function(obj,start.on='Sunday',center=TRUE) {
+  if (!is_weekly(obj)) {
+    start.on=match_day(start.on);
+    obj$data=sapply(obj$data,function(data) wkly1(data,obj$cumulative,start.on),simplify=FALSE);
+    obj=clc(obj,list(unit=7,start.on=start.on,center=FALSE));
+  }
+  if (center) obj=center(obj)
+  obj;
+}
+wkly1=function(data,cumulative,start.on) {
   dates=data$date;
   days=weekdays(dates);
   start=min(which(days==start.on));
@@ -155,70 +173,80 @@ wly1=function(data,cumulative,start.on) {
   rownames(data)=NULL;
   data;
 }
-## convert pseudo-object data to daily. nop if already daily
-daily=function(obj,center=TRUE,method='linear',args=NULL) {
-  if (obj$unit==1) return(obj);
+## convert object data to daily. nop if already daily
+daily=function(obj,...) UseMethod('daily')
+daily.cvdat=function(obj,center=TRUE,method='linear',args=NULL) {
+  if (is_daily(obj)) return(obj);
   if (center) obj=center(obj,center=TRUE);
-  cumulative=obj$cumulative;
-  obj$data=
-      if(obj$datasrc!='doh') dly1(obj$data,cumulative,center)
-      else sapply(obj$data,function(data) dly1(data,cumulative,center),simplify=FALSE);
+  obj$data=dly1(obj$data,obj$cumulative,center);
   obj$unit=1;
-  obj=fit(obj,method=method,args=args,fit.unit=1);
-  obj;
+  fit(obj,method=method,args=args,fit.unit=1);
+}
+daily.cvdoh=function(obj,center=TRUE,method='linear',args=NULL) {
+  if (is_daily(obj)) return(obj);
+  if (center) obj=center(obj,center=TRUE);
+  obj$data=sapply(obj$data,function(data) dly1(data,obj$cumulative,center),simplify=FALSE);
+  obj$unit=1;
+  fit(obj,method=method,args=args,fit.unit=1);
 }
 dly1=function(data,cumulative,center) {
   if (!cumulative) {
-      data[,-1]=data[,-1]/7;            # scale data
-      ## add data for first and last dates to anchor the fit
-      mindate=if(center) min(data$date)-3 else min(data$date);
-      maxdate=if(center) max(data$date)+3 else max(data$date)+6;
-      minrow=data.frame(date=mindate,data[1,-1]);
-      maxrow=data.frame(date=maxdate,data[nrow(data),-1]);
-      data=rbind(minrow,data,maxrow);
-    } else {
-      ## stretch data to fill entire date range
-      mindate=if(center) min(data$date)-3 else min(data$date);
-      maxdate=if(center) max(data$date)+3 else max(data$date)+6;
-      data$dates[1]=mindate
-      data$dates[nrow(data)]=maxdate;
-    }
-  data;
+    data[,-1]=data[,-1]/7;            # scale data
+    ## add data for first and last dates to anchor the fit
+    mindate=if(center) min(data$date)-3 else min(data$date);
+    maxdate=if(center) max(data$date)+3 else max(data$date)+6;
+    minrow=data.frame(date=mindate,data[1,-1]);
+    maxrow=data.frame(date=maxdate,data[nrow(data),-1]);
+    data=rbind(minrow,data,maxrow);
+  } else {
+    ## stretch data to fill entire date range
+    mindate=if(center) min(data$date)-3 else min(data$date);
+    maxdate=if(center) max(data$date)+3 else max(data$date)+6;
+    data$dates[1]=mindate
+    data$dates[nrow(data)]=maxdate;
   }
+  data;
+}
 ## center weekly data, ie, adjust dates to middle day of week. eg Wed for default Sun start
 ## revert to original dates if center=FALSE
-center=function(obj,center=TRUE)  {
-  if (obj$unit==1) stop('Can only center weekly objects');
+center=function(obj,...) UseMethod('center')
+center.cvdat=function(obj,center=TRUE)  {
+  if (!is_weekly(obj)) stop('Can only center weekly objects');
   if (obj$center==center) return(obj);
   if (center) inc=3 else inc=-3;
-  obj$data=
-    if(obj$datasrc!='doh') ctr1(obj$data,inc)
-    else sapply(obj$data,function(data) ctr1(data,inc),simplify=FALSE);
+  obj$data=cntr1(obj$data,inc)
   clc(obj,list(report.on=inc_day(obj$start.on,inc),center=center));
 }
-ctr1=function(data,inc) {
+center.cvdoh=function(obj,center=TRUE)  {
+  if (!is_weekly(obj)) stop('Can only center weekly objects');
+  if (obj$center==center) return(obj);
+  if (center) inc=3 else inc=-3;
+  obj$data=sapply(obj$data,function(data) cntr1(data,inc),simplify=FALSE);
+  clc(obj,list(report.on=inc_day(obj$start.on,inc),center=center));
+}
+cntr1=function(data,inc) {
   data$date=data$date+inc;
   data;
 }
 ## add 'extra' counts to DOH objects to adjust for incomplete data near end
 ## fun computed by 'extrafun' (via 'init_extra') function in extra.R
-extra=
-  function(obj,fun=NULL) {
-    if (obj$datasrc!='doh')
-      stop("'extra' transform only makes sense for 'doh' objects, not ",obj$datasrc," objects");
-    places=colnames(obj$data$all)[-1];
-    ages=names(obj$data);
-    ## R needs extra parens in is.null((fun=...)) to set 'fun' this way
-    if (is.null(fun)&&is.null((fun=param(list=paste(sep='.','extra',obj$what))))) {
-      fun=init_extra(what=obj$what);
-    }
-    vdate=as_date(obj$version);
+extra=function(obj,...) UseMethod('extra')
+extra.cvdat=function(obj,fun=NULL)
+  stop("'extra' transform only makes sense for 'doh' objects, not ",obj$datasrc," objects")
+extra.cvdoh=function(obj,fun=NULL) {
+  places=places(obj);
+  ages=ages(obj);
+  ## R needs extra parens in is.null((fun=...)) to set 'fun' this way
+  if (is.null(fun)&&is.null((fun=param(list=paste(sep='.','extra',obj$what))))) {
+    fun=init_extra(what=obj$what);
+  }
+  vdate=vdate(obj);
     data=sapply(ages,function(age) extra1(fun,obj$data[[age]],places,age,vdate),
                 simplify=FALSE);
     clc(obj,list(data=data,extra.fun=fun,extra=TRUE));
   }
 extra1=function(fun,data,places,age,vdate) {
- data=do.call(rbind,lapply(1:nrow(data),function(i) {
+  data=do.call(rbind,lapply(1:nrow(data),function(i) {
     date=data[i,'date'];
     data=data[i,-1];
     props=fun(date,places,age,vdate=vdate);
