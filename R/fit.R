@@ -56,9 +56,12 @@ fitfun=function(x,y,method=cq(aspline,ispline,sspline,spline,loess,linear,approx
     if (ncol(x)==1) nna=!(nax[,1]|nay) else nna=!(nax|nay);
     fun=sapply(seq_len(ncol(y)),function(j) {
       nna=nna[,j];
-      x=if(ncol(x)==1) x[nna,1] else x[nna,j];
-      y=y[nna,j];
-      fitfun1(x,y,fun_,args,clamp);
+      if (length(which(nna))==0) function(xout) rep(NA,length(xout))
+      else {
+        x=if(ncol(x)==1) x[nna,1] else x[nna,j];
+        y=y[nna,j];
+        fitfun1(x,y,fun_,args,clamp);
+      }
     });
     names(fun)=colnames(y);
     if (simplify&length(fun)==1) fun=fun[[1]];
