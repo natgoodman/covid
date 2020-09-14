@@ -17,7 +17,7 @@
 ## attributes of interest
 ##   data source
 ##   what - cases or deaths
-##   raw or fit (aka interpolated or smoothed)
+##   fit (aka interpolated or smoothed)
 ##   extra - late time points extrapolated
 ##   time unit - weekly or daily
 ##   cumulative vs incremental
@@ -40,8 +40,13 @@ datasrc_label=Vectorize(function(datasrc)
   switch(datasrc,doh='DOH',ihme='IHME',jhu='JHU',nyt='NYTimes',trk='CovidTrack',yyg='C19Pro',
          datasrc),
   USE.NAMES=FALSE)
-fit_label=Vectorize(function(fit)
-  if (is.na(fit)) 'raw' else fit)
+fit_label=Vectorize(function(fit,fmt=cq(title,legend,ylab)) {
+  fmt=match.arg(fmt);
+  switch(fmt,
+         title=if(fit==FALSE) NA else fit,
+         legend=if(fit==FALSE) 'raw' else fit,
+         ylab=NA)},
+  vectorize.args='fit');
 extra_label=Vectorize(function(extra,fmt=cq(title,legend,ylab)) {
   fmt=match.arg(fmt);
   switch(fmt,
@@ -74,7 +79,7 @@ name_label=function(name,val,fmt=cq(title,legend,ylab),SEP='&') {
          datasrc=datasrc_label(val),
          unit=time_label(val),
          cumulative=cuminc_label(val,fmt),
-         fit=fit_label(val),
+         fit=fit_label(val,fmt=fmt),
          extra=extra_label(val,fmt=fmt),
          age=age_label(val,fmt=fmt),
          val);
@@ -86,7 +91,7 @@ paste_title=function(attr,labels,SEP='&') {
   if (all(is.na(labels))) NULL
   else {
     labels=unique(labels);
-    if (attr=='fit') labels=labels[labels!='raw'];
+    ## if (attr=='fit') labels=labels[labels!='raw'];
     term=paste(collapse=SEP,
           switch(attr,
                  unit=ucfirst(labels),
