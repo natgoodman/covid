@@ -46,9 +46,10 @@ init=function(
 
   ## cached data
   pop=NULL,                      # population metadata. set in meta.R
-  extra.cases=NULL,              # extrafun for cases. set in transform/extra
-  extra.deaths=NULL,             # extrafun for deaths. set in transform/extra
-  extra.admits=NULL,             # extrafun for admits. set in transform/extra
+  extra.cases=NULL,              # extrafun for cases. set in transform/extra via init_extra
+  extra.deaths=NULL,             # extrafun for deaths. set in transform/extra via init_extra
+  extra.admits=NULL,             # extrafun for admits. set in transform/extra via init_extra
+  pal.info=NULL,                 # color palette info. set in pal/init_pal
 
   ## import params for specific data sources
   ihme.maxdate='latest',         # max date is latest version
