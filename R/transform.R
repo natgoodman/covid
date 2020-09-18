@@ -250,7 +250,8 @@ extra1=function(fun,data,places,age,vdate) {
     date=data[i,'date'];
     data=data[i,-1];
     props=fun(date,places,age,vdate=vdate);
-    data=data.frame(date=date,round(data/props));
+    ## use cbind, not data.frame - latter replaces spaces with dots in names like 'Walla Walla'
+    data=cbind(date=date,round(data/props));
   }));
   data;
 }
