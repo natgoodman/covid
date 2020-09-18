@@ -458,20 +458,21 @@ repc=function(x,...) {
   x;
 }
 ## fill matrix to desired number of rows or columns
-fillr=function(x,length.out,fill=NA) {
+## allow lower and uppr case param names for compatibility with my code and R
+fillr=function(x,length.out,fill=NA,LENGTH.OUT=length.out,FILL=fill) {
   if (is.null(dim(x))) x=matrix(x,nrow=1);
-  if (nrow(x)<length.out) {
-    fill=matrix(fill,nrow=length.out-nrow(x),ncol=ncol(x));
-    colnames(fill)=colnames(x);
-    x=rbind(x,fill);
+  if (nrow(x)<LENGTH.OUT) {
+    FILL=matrix(FILL,nrow=LENGTH.OUT-nrow(x),ncol=ncol(x));
+    colnames(FILL)=colnames(x);
+    x=rbind(x,FILL);
   }
   x;
 }
-fillc=function(x,length.out,fill=NA) {
+fillc=function(x,length.out,fill=NA,LENGTH.OUT=length.out,FILL=fill) {
   if (is.null(dim(x))) x=matrix(x,ncol=1);
-  if (ncol(x)<length.out) {
-    fill=matrix(fill,nrow=nrow(x),ncol=length.out-ncol(x));
-    x=cbind(x,fill);
+  if (ncol(x)<LENGTH.OUT) {
+    FILL=matrix(FILL,nrow=nrow(x),ncol=LENGTH.OUT-ncol(x));
+    x=cbind(x,FILL);
   }
   x;
 }
