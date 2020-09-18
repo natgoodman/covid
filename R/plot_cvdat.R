@@ -36,7 +36,7 @@ plot_cvdat=
            type='l',add=FALSE,xlim=NULL,xmin=NULL,xmax=NULL,ylim=NULL,ymin=NULL,ymax=NULL,
            col=NULL,lty=NULL,lwd=NULL,
            col1='black',lty1='solid',lwd1=2,
-           col.pal='Dark2',lty.range=c(1,6),lwd.range=c(1,3),
+           col.pal='d3',lty.range=c(1,6),lwd.range=c(1,3),
            col.blocks=1,lty.blocks=1:2,lwd.blocks=2:3,
            col.legend=col1,lty.legend=lty1,lwd.legend=lwd1,
            pch=20,ylab=NULL,title=NULL,cex.title=NA,
@@ -49,12 +49,24 @@ plot_cvdat=
            blocks.order=cq(obj,place,age,objs,places,ages),
            legend.order=NULL) {
     if (is_cvdat(objs)) objs=list(objs);
-    places.all=Reduce(intersect,lapply(objs,function(obj)
-      if (obj$datasrc!='doh') colnames(obj$data)[-1] else colnames(obj$data$all)[-1]));
-    places=if(is.null(places)) places.all else places.all %&% places;
-    if (length(places)==0) stop("No places. Nothing to plot");
-    if (is.null(ages))
-      ages=if(all('doh'==sapply(objs,function(obj) obj$datasrc))) names(objs[[1]]$data) else 'all';
+    places.all=Reduce(intersect,lapply(objs,function(obj) places(obj)));
+    ages.all=Reduce(intersect,lapply(objs,function(obj) ages(obj)))
+    if (length(places.all)==0) stop("No valid places for these objects. Nothing to plot");
+    if (length(ages.all)==0) stop("No valid ages for these objects. Nothing to plot");
+    if (is.null(places)) places=places.all
+    else {
+      bad=places %-% places.all;
+      if (length(bad)>0)
+        stop("Invalid places: ",paste(collapse=', ',bad),
+             ". Valid places for these objects are: ",paste(collapse=', ',places.all));
+    }
+    if (is.null(ages)) ages=ages.all
+    else {
+      bad=ages %-% ages.all;
+      if (length(bad)>0)
+        stop("Invalid ages: ",paste(collapse=', ',bad),
+             ". Valid ages for these objects are: ",paste(collapse=', ',ages.all));
+    }
     series=data_series(objs,places,ages,attrs);
     if (per.capita) series=series_percap(series);
     ct=ct_attrs(series,attrs);
@@ -198,17 +210,21 @@ auto_xlim=function(series,xlim=NULL,xmin=NULL,xmax=NULL) {
   if (is.null(xlim)) {
     if (!is.null(xmin)&&!is.null(xmax)) xlim=c(xmin,xmax)
     else {
-      xlim=range(do.call(c,lapply(series$series,function(series) range(series$date))));
+      xlim=range(do.call(c,lapply(series$series,function(series) {
+        r=range(series$date); r[is.finite(r)]})));
+      if (is.null(xlim)) stop('All data series are empty. Nothing to plot')
       if (!is.null(xmin)) xlim[1]=xmin;
       if (!is.null(xmax)) xlim[2]=xmax;
     }}
   as_date(xlim);
 }
 auto_ylim=function(series,ylim=NULL,ymin=NULL,ymax=NULL) {
- if (is.null(ylim)) {
+  if (is.null(ylim)) {
     if (!is.null(ymin)&&!is.null(ymax)) ylim=c(ymin,ymax)
     else {
-      ylim=range(do.call(c,lapply(series$series,function(series) range(series$y))));
+      ylim=range(do.call(c,lapply(series$series,function(series) {
+        r=range(series$y); r[is.finite(r)]})));
+      if (is.null(ylim)) stop('All data series are empty. Nothing to plot')
       if (!is.null(ymin)) ylim[1]=ymin;
       if (!is.null(ymax)) ylim[2]=ymax;
     }}
