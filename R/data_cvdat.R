@@ -19,12 +19,24 @@ data_cvdat=
            attrs=cq(unit,cumulative,what,datasrc,version,fit),
            attrs.colnames=attrs) {
     if (is_cvdat(objs)) objs=list(objs);
-    places.all=Reduce(intersect,lapply(objs,function(obj)
-      if (obj$datasrc!='doh') colnames(obj$data)[-1] else colnames(obj$data$all)[-1]));
-    places=if(is.null(places)) places.all else places.all %&% places;
-    if (length(places)==0) stop("No places. Nothing to plot");
-    if (is.null(ages))
-      ages=if(all('doh'==sapply(objs,function(obj) obj$datasrc))) names(objs[[1]]$data) else 'all';
+    places.all=Reduce(intersect,lapply(objs,function(obj) places(obj)));
+    ages.all=Reduce(intersect,lapply(objs,function(obj) ages(obj)))
+    if (length(places.all)==0) stop("No valid places for these objects");
+    if (length(ages.all)==0) stop("No valid ages for these objects");
+    if (is.null(places)) places=places.all
+    else {
+      bad=places %-% places.all;
+      if (length(bad)>0)
+        stop("Invalid places: ",paste(collapse=', ',bad),
+             ". Valid places for these objects are: ",paste(collapse=', ',places.all));
+    }
+    if (is.null(ages)) ages=ages.all
+    else {
+      bad=ages %-% ages.all;
+      if (length(bad)>0)
+        stop("Invalid ages: ",paste(collapse=', ',bad),
+             ". Valid ages for these objects are: ",paste(collapse=', ',ages.all));
+    }
     series=data_series(objs,places,ages,attrs);
     if (per.capita) series=series_percap(series);
     ct=ct_attrs(series,attrs)
