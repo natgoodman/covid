@@ -71,41 +71,7 @@ legend_=
     y=where.next$rect$top-where.next$rect$h;
     c(x,y);
   }
-## make colors from RColorBrewer palettes
-## n - number of colors
-## palettes - RColorBrewer palette names
-## names - names to index colors. if set, overrides n
-## skip - for seqeuential palettes, number of colors to skip  - 1st two usually too light
-## dark.first - for seqeuential palettes, reverse so darker colors first
-col_brew=function(n=0,palettes='Dark2',names=NULL,skip=2,dark.first=TRUE) {
-  if (is.null(palettes)||(missing(n)&&missing(names))) return(NULL);
-  bad=palettes %notin% rownames(brewer.pal.info);
-  if (any(bad)) stop(paste('Invalid palette name(s):',paste(collapse=', ',palettes[bad])));
-  if (is.character(n)) names=n;
-  if (!is.null(names)) n=length(names);
-  n.pal=length(palettes);
-  ns=if(n.pal==1) n else as.integer(table(cut(1:n,n.pal)));
-  ## col=do.call(c,lapply(1:length(palettes),
-  ##                      function(i) col_brew_(palettes[i],ns[i],skip,dark.first)));
-  col=do.call(c,col_brew_(ns,palettes,skip,dark.first));
-  # if too many colors, use 1st n
-  if (n<length(col)) col=head(col,n);
-  setNames(col,names);
-}
-col_brew_=Vectorize(function(n,pal,skip,dark.first) {
-  if (n==0) return(NULL);
-  if (brewer.pal.info[pal,'category']!='seq') m=n else m=n+skip;
-  m=min(m,brewer.pal.info[pal,'maxcolors']);
-  m=max(3,m);                         # all palettes have min 3 colors
-  col=brewer.pal(m,pal);
-  if (brewer.pal.info[pal,'category']=='seq') {
-    if (skip>0) col=tail(col,-skip);
-    if (dark.first) col=rev(col);
-  }
-  ## if want more colors than in palette, colorRampPalette will make more
-  if (n>length(col)) col=colorRampPalette(col)(n);
-  col;
-},vectorize.args=cq(n,pal),SIMPLIFY=FALSE,USE.NAMES=FALSE);
+## col_brew moved to pal.R
 
 ## empty plot - just title & axes
 plotempty=
