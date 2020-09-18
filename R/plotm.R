@@ -39,7 +39,7 @@
 plotm=
   function(x,y,title='',cex.title='auto',type='l',add=FALSE,
            col=NULL,lty=NULL,lwd=NULL,xlab='date',ylab='y',xlim=NULL,ylim=NULL,
-           col.pal='Dark2',lty.range=c(1,6),lwd.range=c(1,3),
+           col.pal='d3',lty.range=c(1,6),lwd.range=c(1,3),
            vline=NULL,hline=NULL,vhlty='dashed',vhcol='grey50',
            vhlwd=1,vlab=TRUE,hlab=TRUE,vhdigits=2,
            ## NG 20-01-02: redo 'smooth' logic again to set smooth.args default
