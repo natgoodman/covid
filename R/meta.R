@@ -166,13 +166,17 @@ places_wa=function(pop=param(pop)) {
   places.away=grep('_',places.all,value=T);
   places.all %-% places.away;
 }
+ages_all=function(pop=param(pop)) {
+  if (is.null(pop)) pop=load_popbyage();
+  rownames(pop);
+}
 ## convert data frame of absolute counts into per capita counts
 ## express as counts per million. TODO: paramerize scale factor
 ## works for multiple age groups for one place or one age group for multiple places
 per_capita=function(data,pop,places='state',ages='all') {
   if (length(places)>1&&length(ages)>1)
     stop("Only one of 'places' or 'ages' can have multiple values");
-  pop=if (is.null(pop)) read_pop(places,ages) else filter(pop,places,ages);
+  pop=if(is.null(pop)) read_pop(places,ages) else filter(pop,places,ages);
   if (length(ages)>1) pop=data.frame(t(pop[,places,drop=F]),check.names=FALSE);    
   pop=repr(pop,nrow(data));
   data.frame(date=data$date,round(1e6*data[,-1]/pop),check.names=FALSE);
