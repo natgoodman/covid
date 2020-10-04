@@ -26,7 +26,7 @@ paste_nv=function(name,value,sep='=') {
 ## IGNORE tells whether to ignore NULL and non-existant names
 nvq=function(...,SEP=' ',IGNORE=F) {
   dots=match.call(expand.dots=FALSE)$...
-   if (length(dots) &&
+  if (length(dots) &&
      !all(vapply(dots,function(x) is.symbol(x) || is.character(x),NA,USE.NAMES=FALSE))) 
      stop("... must contain names or character strings");
   ## CAUTION: for some reason, doesn't work to use 'parent.frame(n=1)' inside sapply
@@ -364,6 +364,8 @@ is_ulist=function(x)
 is_2d=function(x) (!is.null(dim(x)))&&(length(dim(x))==2)
 ## test blank field
 is_blank=function(x) (x=='')|is.null(x)|is.na(x)
+## test 'simple' value - eg, name or string
+is_simple=function(x) is.symbol(x)|is.character(x)
 ## test if x is subset of y. from stackoverflow.com/questions/26831041. thx!
 is_subset=function(x,y) all(x %in% y)
 is_superset=function(x,y) all(y %in% x)
