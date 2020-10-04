@@ -59,6 +59,7 @@ init=function(
   extra.wmax=6,                  # max weeks for computing models
   extra.nvmin=extra.wmax,        # min versions covering data used in models
   extra.exmin=0.25,              # min extra value. smaller values expand counts too much
+  age.label=list(),              # labels for custom ages. each entry is vector of labels for fmts
  
   ## program control
   verbose=F,                     # print progress messages
