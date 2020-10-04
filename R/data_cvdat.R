@@ -28,14 +28,14 @@ data_cvdat=
       bad=places %-% places.all;
       if (length(bad)>0)
         stop("Invalid places: ",paste(collapse=', ',bad),
-             ". Valid places for these objects are: ",paste(collapse=', ',places.all));
+             ".\nValid places for these objects are: ",paste(collapse=', ',places.all));
     }
     if (is.null(ages)) ages=ages.all
     else {
       bad=ages %-% ages.all;
       if (length(bad)>0)
         stop("Invalid ages: ",paste(collapse=', ',bad),
-             ". Valid ages for these objects are: ",paste(collapse=', ',ages.all));
+             ".\nValid ages for these objects are: ",paste(collapse=', ',ages.all));
     }
     series=data_series(objs,places,ages,attrs);
     if (per.capita) series=series_percap(series);
