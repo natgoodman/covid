@@ -10,10 +10,6 @@
 ##   it installs a mess of other packages; dunno which ones failed
 ## So I grabbed the source and bodily extracted palettes from piratepal_function.R
 ##
-## The code here constructs lm models that serve as correction factors
-## and packages the models in a function ('extrafun')
-## 'extra' transform in tranform.R uses 'extrafun' to correct the data.
-##
 ## This software is open source, distributed under the MIT License. See LICENSE
 ## file at https://github.com/natgoodman/NewPro/FDR/LICENSE 
 ##
