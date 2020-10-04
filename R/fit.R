@@ -8,7 +8,7 @@
 ## Copyright (C) 2020 Nat Goodman.
 ## 
 ## Data fitting (aka interpolation) functions
-## Note top-level 'fit' function in transform.R
+## Top-level 'fit' function in transform.R calls 'fitfun' to do the fitting
 ##
 ## This software is open source, distributed under the MIT License. See LICENSE
 ## file at https://github.com/natgoodman/NewPro/FDR/LICENSE 
