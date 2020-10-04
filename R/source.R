@@ -21,9 +21,8 @@
 ## SOURCE=c('R/util.R','R/datman.R','R/doc.R','R/init.R','R/stats.R');
 ## SOURCE=c('R/util.R','R/init.R','R/doc_hiddn.R');
 source('R/util.R');                     # source util first to get 'cq'
-SOURCE=cq(cvdat,data_cvdat,extra,fit,import,import_doh,init,label,pal,
-          meta,plot_cvdat,plotm,series,transform,dat,doc,
-          util,util_dat,util_file,util_plot);
+SOURCE=cq(cvdat,dat,data_cvdat,doc,edit,extra,fit,import,import_doh,init,label,pal,pal_yarrr,
+          meta,plot_cvdat,plotm,series,transform,util,util_dat,util_file,util_plot);
 SOURCE=sapply(SOURCE,function(src) paste0('R/',src,'.R'));
 
 ## ---- source the files ----
