@@ -56,23 +56,65 @@ extra_label=Vectorize(function(extra,fmt=cq(title,legend,ylab)) {
   vectorize.args='extra');
 age_label=Vectorize(function(age,fmt=cq(title,legend,ylab)) {
   fmt=match.arg(fmt);
-  label=switch(age,all='all ages','80_'='80+',sub('_','-',age));
-  if (age!='all') {
-    suffix=if(fmt=='title') 'year olds'
-           else if (fmt=='legend') 
-             paste0('year olds (',
-                    switch(age,
-                           '0_19'='children and teens',
-                           '20_39'='young adults',
-                           '40_59'='middle aged adults',
-                           '60_79'='young seniors',
-                           '80_'='old seniors'),
-                    ')')
-    else 'yrs';
-    label=paste(label,suffix)
+  if (age %in% ages_all()) {
+    ## standard age
+    label=switch(age,all='all ages','80_'='80+',sub('_','-',age));
+    if (age!='all') {
+      suffix=if(fmt=='title') 'year olds'
+             else if (fmt=='legend') 
+               paste0('year olds (',
+                      switch(age,
+                             '0_19'='children and teens',
+                             '20_39'='young adults',
+                             '40_59'='middle aged adults',
+                             '60_79'='young seniors',
+                             '80_'='old seniors'),
+                      ')')
+             else 'yrs';
+      label=paste(label,suffix);
+    }
+    label;
+  } else {
+    ## custom age
+    age.label=param(age.label)[[age]];
+    label=if(is.null(age.label)) age
+          else if (length(age.label)==1) age.label else age.label[fmt];
+    label;
   }
   label},
   vectorize.args='age');
+age_label=function(age,fmt=cq(title,legend,ylab)) {
+  fmt=match.arg(fmt);
+  ages.all=ages_all();
+  age.label=param(age.label);
+  sapply(age,function(age) 
+    if (age %in% ages.all) {
+      ## standard age
+      label=switch(age,all='all ages','80_'='80+',sub('_','-',age));
+      if (age!='all') {
+        suffix=if(fmt=='title') 'year olds'
+               else if (fmt=='legend') 
+                 paste0('year olds (',
+                        switch(age,
+                               '0_19'='children and teens',
+                               '20_39'='young adults',
+                               '40_59'='middle aged adults',
+                               '60_79'='young seniors',
+                               '80_'='old seniors'),
+                        ')')
+               else 'yrs';
+        label=paste(label,suffix)
+      }
+      label;
+    } else {
+      ## custom age
+      age.label=age.label[[age]];
+      label=if(is.null(age.label)) age
+            else if (length(age.label)==1) age.label else age.label[fmt];
+      if (is.na(label)) label=age;
+      setNames(label,NULL);
+    });
+}
 name_label=function(name,val,fmt=cq(title,legend,ylab),SEP='&') {
   if (is.null(val)) val=NA;
   switch(name,
