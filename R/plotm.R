@@ -178,7 +178,7 @@ plotm_obj=
     if (is.null(title)) title=title_obj(tl$title,plot.pct,per.capita);
     if (is.na(cex.title)) cex.title=cex_title(title);
     ## data=obj$data;
-    data=data_obj(obj,places,ages,plot.pct,per.capita)
+    data=data_obj(obj,places,ages,plot.pct,per.capita,pop=obj$pop)
     x=data[,1];
     places=places %&% colnames(data)[-1];
     y=data[,places,drop=FALSE];
