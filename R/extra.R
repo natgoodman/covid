@@ -10,7 +10,7 @@
 ##
 ## The code here constructs lm models that serve as correction factors
 ## and packages the models in a function ('extrafun')
-## 'extra' transform in tranform.R uses 'extrafun' to correct the data.
+## Note top-level 'extra' function in tranform.R calls 'extrafun' to correct the data.
 ##
 ## This software is open source, distributed under the MIT License. See LICENSE
 ## file at https://github.com/natgoodman/NewPro/FDR/LICENSE 
@@ -70,6 +70,7 @@ extrafun_split=function(objs,cases,dates,ws,ex.min,formula.type) {
     w.model=as.numeric(unique(data[,'w']));
     w.min=min(w.model);
     w.max=max(w.model);
+
     fun=function(date,w) {
       ## if w too big, return 1
       if (w>w.max) return(1);
