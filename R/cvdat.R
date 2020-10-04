@@ -52,7 +52,7 @@ counts.cvdoh=function(obj,age='all') {
   if (is.null(age)) age='all';
   ages=names(obj$data);
   if (age %notin% ages)
-    stop("'age' ",age," not found in object. Valid ages are ",paste(collapse=', ',ages));
+    stop("'age' ",age," not found in object.\nValid ages are ",paste(collapse=', ',ages));
   data=obj$data[[age]];
   counts=data[,-1,drop=FALSE];
   rownames(counts)=data$date;
