@@ -167,8 +167,8 @@ wkly1=function(data,cumulative,start.on) {
   else {
     data=subset(data,subset=(date>=min(weeks)&date<=(max(weeks+6))));
     byweek=split(data,cut(data$date,length(weeks),labels=weeks));
-    data=data.frame(date=weeks,do.call(rbind,lapply(byweek,function(data)
-      colSums(data[,-1,drop=FALSE]))));
+    data=cbind(date=weeks,as.data.frame(do.call(rbind,lapply(byweek,function(data)
+      colSums(data[,-1,drop=FALSE])))));
   }
   rownames(data)=NULL;
   data;
@@ -237,24 +237,95 @@ extra.cvdoh=function(obj,fun=NULL) {
   places=places(obj);
   ages=ages(obj);
   ## R needs extra parens in is.null((fun=...)) to set 'fun' this way
-  if (is.null(fun)&&is.null((fun=param(list=paste(sep='.','extra',obj$what))))) {
-    fun=init_extra(what=obj$what);
+  fun.name=paste(sep='.','extra',obj$what);
+  if (is.null(fun)&&is.null((fun=param(list=fun.name)))) {
+    init_extra(what=obj$what);
+    fun=param(list=fun.name);
   }
   vdate=vdate(obj);
-    data=sapply(ages,function(age) extra1(fun,obj$data[[age]],places,age,vdate),
-                simplify=FALSE);
-    clc(obj,list(data=data,extra.fun=fun,extra=TRUE));
-  }
+  data=sapply(ages,function(age) extra1(fun,obj$data[[age]],places,age,vdate),
+              simplify=FALSE);
+  clc(obj,list(data=data,extra.fun=fun,extra=TRUE));
+}
 extra1=function(fun,data,places,age,vdate) {
   data=do.call(rbind,lapply(1:nrow(data),function(i) {
-    date=data[i,'date'];
-    data=data[i,-1];
+    date=data[i,1];
+    counts=data[i,-1];
     props=fun(date,places,age,vdate=vdate);
-    ## use cbind, not data.frame - latter replaces spaces with dots in names like 'Walla Walla'
-    data=cbind(date=date,round(data/props));
+    ## have to use cbind, not data.frame, so R won't convert spaces
+    data=cbind(date=date,round(counts/props));
   }));
   data;
 }
+## edit object data
+## there are separate functions for editing places, ages, and dates
+## (presently just places)
+## TODO: add KEEP, RM (or DROP), SUM, NEGATE args that avoid NSE
+edit=function(obj,...) UseMethod('edit')
+edit.cvdat=function(obj,...,
+                    KEEP=NULL,RM=NULL,SUM=list(),NEG=list(),SUB=list(),DROP=RM,NEGATE=NEG,
+                    EMPTY.OK=FALSE) {
+  dots=match.call(expand.dots=FALSE)$...;
+  ## parse dots and combine with explicit args. set EXPR, DATE, KEEP, DROP variables here
+  edit_args(dots,KEEP=KEEP,DROP=DROP,SUM=SUM,NEGATE=NEGATE,SUB=SUB);
+  ## split args by target (places, ages, date)
+  args.targ=edit_split(EXPR,KEEP,DROP,places(obj),ages(obj));
+  parent=parent.frame(n=1);
+  if (!is.null(args.targ$places)) obj=do.call(edit_places_,c(list(obj),args.targ$places));
+  if (length(args.targ$ages)!=0) obj=do.call(edit_ages_,c(list(obj),args.targ$ages));
+  if (!is.null(DATE)) {
+    ## adapted from Advanced R by Wickham http://adv-r.had.co.nz/Computing-on-the-language.html
+    dates=dates(obj);
+    r=eval(DATE,data.frame(date=dates),parent);
+    obj=edit_dates_(obj,r)
+  }
+  if ((length(ages(obj))==0)&&!EMPTY.OK)
+    stop('No ages left after edit and EMPTY.OK is FALSE');
+  if ((length(places(obj))==0)&&!EMPTY.OK)
+    stop('No places left after edit and EMPTY.OK is FALSE');
+  if ((length(dates(obj))==0)&&!EMPTY.OK)
+    stop('No dates left after edit and EMPTY.OK is FALSE');
+  obj;
+}
+## edit_places
+edit_places_=function(obj,...) UseMethod('edit_places_')
+edit_places_.cvdat=function(obj,EXPR=list(),KEEP=NULL,DROP=NULL) {
+  EXPR=edit_fixneg(EXPR,'state',places(obj));
+  data=edit_places1(obj$data,EXPR,KEEP,DROP);
+  pop=edit_popp(obj$pop,EXPR,KEEP,DROP);
+  clc(obj,list(data=data,pop=pop,edit.places=TRUE));
+}
+edit_places_.cvdoh=function(obj,EXPR=list(),KEEP=NULL,DROP=NULL) {
+  EXPR=edit_fixneg(EXPR,'state',places(obj));
+  ages=ages(obj);
+  data=sapply(ages,function(age) edit_places1(obj$data[[age]],EXPR,KEEP,DROP),
+              simplify=FALSE);
+  pop=edit_popp(obj$pop,EXPR,KEEP,DROP);
+  clc(obj,list(data=data,pop=pop,edit.places=TRUE));
+}
+## edit_ages
+edit_ages_=function(obj,...) UseMethod('edit_ages_')
+edit_ages_.cvdat=function(obj,EXPR=list(),KEEP=NULL,DROP=NULL) {
+  stop("Editing ages only makes sense for 'doh' objects, not ",obj$datasrc," objects");
+}
+edit_ages_.cvdoh=function(obj,EXPR=list(),KEEP=NULL,DROP=NULL) {
+  EXPR=edit_fixneg(EXPR,'all',ages(obj));
+  data=edit_ages1(obj$data,EXPR,KEEP,DROP);
+  pop=edit_popa(obj$pop,EXPR,KEEP,DROP);
+  clc(obj,list(data=data,pop=pop,edit.ages=TRUE));
+}
+## edit_dates
+edit_dates_=function(obj,...) UseMethod('edit_dates_')
+edit_dates_.cvdat=function(obj,r) {
+  data=obj$data[r,];
+  clc(obj,list(data=data,edit.dates=TRUE));
+}
+edit_dates_.cvdoh=function(obj,r) {
+  ages=ages(obj);
+  data=sapply(ages,function(age) obj$data[[age]][r,],simplify=FALSE);
+  clc(obj,list(data=data,edit.dates=TRUE));
+}
+
 ## lagged correlation
 ## TODO: not really a transformation but no place else to put it. move to better place
 lag=function(obj1,obj2,name='state',lag.max=28,plot=FALSE) {
