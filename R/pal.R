@@ -76,6 +76,7 @@ col_brew1=
                ggsci=pal_ggsci(m,pal,subpal),
                viridis=pal_viridis(m,pal),
                wesanderson=pal_wesanderson(m,pal),
+               yarrr=pal_yarrr(m,pal),
                base=pal_base(m,pal),
                stop('Bad news: unknown palette pkg=',pkg,'. Should have been caught in init_pal'));
     if (skip.beg>0) col=tail(col,-skip.beg);
@@ -197,6 +198,8 @@ pal_ggsci=function(n,pal,subpal) {
 pal_viridis=function(n,pal) viridis(n,option=pal)
 ## need as.vector to turn off 'clever' print which plots pal...
 pal_wesanderson=function(n,pal) as.vector(wes_palette(pal,n,));
+## yarrr uses palette definitions from yarrr R/piratepal_function.R
+pal_yarrr=function(n,pal) unlist(yarrr.info[[pal]])
 pal_base=function(n,pal) {
   ## remove '.colors' suffix if present
   pal=sub('.colors','',pal);
@@ -211,7 +214,7 @@ pal_base=function(n,pal) {
 
 ## init pal.info param
 ## columns pkg,pal,subpal,type,mincols,maxcols,skip,rev
-init_pal=function(pkgs=cq(RColorBrewer,ggsci,viridis,wesanderson,base)) {
+init_pal=function(pkgs=cq(RColorBrewer,ggsci,viridis,wesanderson,yarrr,base)) {
   pkgs=match.arg(pkgs,several.ok=TRUE);
   ## super-easy way to init empty data frame from //stackoverflow.com/questions/10689055. Thx!
   pal.info=rbind(data.frame(),do.call(rbind,lapply(pkgs,function(pkg)
@@ -221,6 +224,7 @@ init_pal=function(pkgs=cq(RColorBrewer,ggsci,viridis,wesanderson,base)) {
                  ggsci=initpal_ggsci(),
                  viridis=initpal_viridis(),
                  wesanderson=initpal_wesanderson(),
+                 yarrr=initpal_yarrr(),
                  base=initpal_base(),
                  stop('Bad news: unknown palette pkg=',pkg,'. Should have been caught earlier')),
           stringsAsFactors=FALSE))));
@@ -262,6 +266,14 @@ initpal_wesanderson=function() {
                maxcols=length(wes[[pal]]),stringsAsFactors=FALSE)));
   pal.info;
 }
+initpal_yarrr=function() {
+  yarrr=yarrr.info;
+  pal.info=do.call(rbind,lapply(names(yarrr),function(pal)
+    data.frame(pal=pal,subpal=NA,type='cat',mincols=1,
+               maxcols=length(yarrr[[pal]]),stringsAsFactors=FALSE)));
+  pal.info;
+}
+
 ## for base allow palette names w/ and w/o '.colors' 
 initpal_base=function() {
   pal.info=do.call(rbind,lapply(cq(rainbow,heat,terrain,topo),function(pal)
