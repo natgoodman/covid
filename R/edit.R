@@ -233,8 +233,9 @@ flatten_expr=function(expr) {
 }
 expr_vars=function(expr) {
   flat=flatten_expr(expr);
-  vars=flat[sapply(flat,class)%in%cq(name,character)];
-  as.character(vars);
+  ## R handles symbols differently than most other things; single symbol NOT vector. sigh..
+  if (is.symbol(flat)) as.character(flat)
+  else as.character(flat[sapply(flat,class)%in%cq(name,character)]);
 }
 expr_targs=function(expr,places=places_all(),ages=ages_all()) {
   vars=expr_vars(expr);
