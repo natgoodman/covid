@@ -57,7 +57,7 @@ raw=function(what=cq(cases,admits,deaths),datasrc=param(datasrc),version='latest
   if (!is.null(version)&&version=='latest') version=latest_version(datasrc,what);
   data=load_data(whatv=what,datasrc=datasrc,version=version);
   newobj=if(datasrc!='doh') cvdat else cvdoh;
-  obj=newobj(data=data,datasrc=datasrc,what=what,version=version,fit=FALSE,extra=FALSE);
+  obj=newobj(data=data,datasrc=datasrc,what=what,version=version,fit=FALSE,extra=FALSE,edit=FALSE);
   clc(obj,switch(datasrc,
                   doh=list(unit=7,start.on='Sunday',center=FALSE,cumulative=FALSE),
                   ihme=list(unit=1,cumulative=FALSE),
@@ -231,15 +231,19 @@ cntr1=function(data,inc) {
 ## add 'extra' counts to DOH objects to adjust for incomplete data near end
 ## fun computed by 'extrafun' (via 'init_extra') function in extra.R
 extra=function(obj,...) UseMethod('extra')
-extra.cvdat=function(obj,fun=NULL)
+extra.cvdat=function(obj,fun=NULL,objs=NULL,edit.compatible=param(edit.compatible))
   stop("'extra' transform only makes sense for 'doh' objects, not ",obj$datasrc," objects")
-extra.cvdoh=function(obj,fun=NULL) {
+extra.cvdoh=function(obj,fun=NULL,objs=NULL,edit.compatible=param(edit.compatible)) {
   places=places(obj);
   ages=ages(obj);
   ## R needs extra parens in is.null((fun=...)) to set 'fun' this way
   fun.name=paste(sep='.','extra',obj$what);
   if (is.null(fun)&&is.null((fun=param(list=fun.name)))) {
-    init_extra(what=obj$what);
+    if (!is.null(objs)) {
+      if (is_cvdat(objs)) objs=list(objs);
+      objs=c(list(obj),objs);
+    }
+    init_extra(what=obj$what,objs=objs,edit.compatible=edit.compatible);
     fun=param(list=fun.name);
   }
   vdate=vdate(obj);
@@ -286,6 +290,7 @@ edit.cvdat=function(obj,...,
   if ((length(dates(obj))==0)&&!EMPTY.OK)
     stop('No dates left after edit and EMPTY.OK is FALSE');
   obj;
+  clc(obj,list(edit=TRUE));
 }
 ## edit_places
 edit_places_=function(obj,...) UseMethod('edit_places_')
