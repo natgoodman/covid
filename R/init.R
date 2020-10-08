@@ -60,7 +60,8 @@ init=function(
   extra.nvmin=extra.wmax,        # min versions covering data used in models
   extra.exmin=0.25,              # min extra value. smaller values expand counts too much
   age.label=list(),              # labels for custom ages. each entry is vector of labels for fmts
- 
+  edit.compatible=TRUE,          # require edited objects to be compatible
+  
   ## program control
   verbose=F,                     # print progress messages
   debug=FALSE,                   # call debug code
