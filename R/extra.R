@@ -17,7 +17,7 @@
 ##
 ###################################################################################
 extrafun=
-  function(what='cases',objs=NULL,
+  function(what='cases',objs=NULL,edit.compatible=param(edit.compatible),
            w.max=param(extra.wmax),nv.min=param(extra.nvmin),ex.min=param(extra.exmin),
            formula.type=cq('*',':',crossing,interaction),model.type=cq(split,joint),
            dates=NULL,places=NULL,ages=NULL) {
@@ -28,6 +28,12 @@ extrafun=
       objs=lapply(versions,function(version) raw(what,'doh',version));
     } else {
       if (is_cvdat(objs)) objs=list(objs);
+      ## check whether edited objects are compatible
+      if (edit.compatible) {
+        ok=cmp_pops(objs);
+        if (!ok) stop("Objects are incompatible (edited in conflicting ways). ",
+                      "Sorry I can't be more specific");
+      }
       versions=sort(sapply(objs,function(obj) obj$version))
     }
     vdates=as_date(versions);
@@ -191,13 +197,14 @@ extrafun_names=function(cases) {
 }
 ## initialize cached extrafuns
 init_extra=
-  function(what=cq(cases,deaths,admits),
+  function(what=cq(cases,deaths,admits),objs=NULL,edit.compatible=param(edit.compatible),
            w.max=param(extra.wmax),nv.min=param(extra.nvmin),
            formula.type=cq('*',':',crossing,interaction),model.type=cq(split,joint),
            dates=NULL,places=NULL,ages=NULL) {
     what=match.arg(what,several.ok=TRUE);
     sapply(what,function(what) {
-      fun=extrafun(what=what,w.max=w.max,nv.min=nv.min,
+      fun=extrafun(what=what,objs=objs,edit.compatible=edit.compatible,
+                   w.max=w.max,nv.min=nv.min,
                    formula.type=formula.type,model.type=model.type,
                    dates=dates,places=places,ages=ages);
       ## assign to param.
