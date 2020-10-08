@@ -13,7 +13,8 @@
 ##
 ###################################################################################
 data_series=
-  function(objs,places='state',ages=NULL,attrs=cq(unit,cumulative,what,datasrc,version,fit)) {
+  function(objs,places='state',ages=NULL,edit.compatible=param(edit.compatible),
+           attrs=cq(unit,cumulative,what,datasrc,version,fit,extra,edit)) {
     if (is_cvdat(objs)) objs=list(objs);
     if (is.null(places)) stop("'places' cannot be NULL: nothing to select!");
     if (identical(ages,'all')) ages=NULL;
@@ -23,7 +24,13 @@ data_series=
       if (length(bad)>0) 
         stop("Only doh objects have ages, not ",paste(collapse=', ',bad)," objects");
     }
-     ## get data frame values from objs
+    ## check whether edited objects are compatible
+    if (edit.compatible) {
+      ok=cmp_pops(objs,places,ages);
+      if (!ok) stop("Objects are incompatible (edited in conflicting ways). ",
+                    "Sorry I can't be more specific");
+    }
+    ## get data frame values from objs
     xattr=objs_attr(objs,attrs,label=FALSE);
     xattr=cbind(obj=seq_along(objs),xattr);  # tack 'obj' to front of xattr
     xattr=expand_df(xattr,place=places,age=ages);
@@ -38,7 +45,7 @@ data_series=
     });
     list(objs=objs,xattr=xattr,series=series)
   }
-ct_attrs=function(series,attrs=cq(unit,cumulative,what,datasrc,version,fit)) {
+ct_attrs=function(series,attrs=cq(unit,cumulative,what,datasrc,version,fit,extra,edit)) {
   xattr=series$xattr;
   attrs=c(cq(series,obj),attrs,cq(place,age));
   attrs=attrs %&% colnames(xattr);
@@ -48,15 +55,17 @@ ct_attrs=function(series,attrs=cq(unit,cumulative,what,datasrc,version,fit)) {
   mv.attrs=attrs[count>1];
   list(xattr=xattr,sv.attrs=sv.attrs,mv.attrs=mv.attrs);
 }
-series_percap=function(series,pop=param(pop)) {
+series_percap=function(series,pop0=param(pop)) {
   xattr=series$xattr;
   objs=series$objs;
-  if (is.null(pop)) pop=load_popbyage();
+  if (is.null(pop0)) pop0=load_popbyage();
   ## if ('age' %notin% colnames(xattr)) xattr$age='all';
   if ('age' %notin% colnames(xattr)) age='all';
   data=series$series;
   series=withrows(xattr,row,{
     data=data[[series]];
+    pop=objs[[obj]]$pop;
+    if (is.null(pop)) pop=pop0;
     pop=pop[age,place];
     data.frame(date=data$date,y=round(1e6*data$y/pop));
   });
@@ -73,7 +82,7 @@ series_percap=function(series,pop=param(pop)) {
 ## BUG: crashes if input contains multiple objects with same attributes.
 series_blocks=
   function(series,ct=NULL,blocks.order=cq(obj,place,age,objs,places,ages),
-           attrs=cq(unit,cumulative,what,datasrc,version,fit,extra)) {
+           attrs=cq(unit,cumulative,what,datasrc,version,fit,extra,edit)) {
     if (is.null(ct)) ct=ct_attrs(series,attrs);
     blocks.order=match.arg(blocks.order,several.ok=TRUE);
     blocks.order=unique(sub('s$','',blocks.order));
