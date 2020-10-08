@@ -54,6 +54,13 @@ extra_label=Vectorize(function(extra,fmt=cq(title,legend,ylab)) {
          legend=if(extra) 'extra' else 'original',
          ylab=NA)},
   vectorize.args='extra');
+edit_label=Vectorize(function(edit,fmt=cq(title,legend,ylab)) {
+  fmt=match.arg(fmt);
+  switch(fmt,
+         title=NA,
+         legend=if(edit) 'edited' else 'unedited',
+         ylab=NA)},
+  vectorize.args='edit');
 age_label=Vectorize(function(age,fmt=cq(title,legend,ylab)) {
   fmt=match.arg(fmt);
   if (age %in% ages_all()) {
@@ -123,6 +130,7 @@ name_label=function(name,val,fmt=cq(title,legend,ylab),SEP='&') {
          cumulative=cuminc_label(val,fmt),
          fit=fit_label(val,fmt=fmt),
          extra=extra_label(val,fmt=fmt),
+         edit=edit_label(val,fmt=fmt),
          age=age_label(val,fmt=fmt),
          val);
 }
@@ -139,6 +147,7 @@ paste_title=function(attr,labels,SEP='&') {
                  unit=ucfirst(labels),
                  cumulative=ucfirst(labels),
                  what=ucfirst(labels),
+                 edit=NULL,
                  labels));
     prefix=switch(attr,
                   datasrc='from',
