@@ -396,7 +396,7 @@ as_date=function(x) {
     }});
   as.Date(dates,origin='1970-01-01');
 }
-## convert date to version strngs we use, eg, 20-05-13
+## convert date to version strings we use, eg, 20-05-13
 to_version=function(date) strftime(date,format='%y-%m-%d')
 ## day-of-week manipulation we use
 Weekdays=cq(Sunday,Monday,Tuesday,Wednesday,Thursday,Friday,Saturday);
