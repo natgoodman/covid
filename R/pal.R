@@ -181,7 +181,6 @@ skip_pal=function(n.pal,skip,skip.beg,skip.mid,skip.end) {
 }
 
 pal_rcbrewer=RColorBrewer::brewer.pal;
-## for now, only works with default subpal
 pal_ggsci=function(n,pal,subpal) {
   if (is.na(subpal)) subpal=1;
   ## code below copied verbatim from ggsci pal_nejm - other pal functions identical
@@ -197,7 +196,7 @@ pal_ggsci=function(n,pal,subpal) {
 }
 pal_viridis=function(n,pal) viridis(n,option=pal)
 ## need as.vector to turn off 'clever' print which plots pal...
-pal_wesanderson=function(n,pal) as.vector(wes_palette(pal,n,));
+pal_wesanderson=function(n,pal) as.vector(wes_palette(pal,n));
 ## yarrr uses palette definitions from yarrr R/piratepal_function.R
 pal_yarrr=function(n,pal) unlist(yarrr.info[[pal]])
 pal_base=function(n,pal) {
