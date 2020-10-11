@@ -6,14 +6,12 @@
 ##
 ## Copyright (C) 2019 Nat Goodman.
 ## 
-## Plot utility functions
+## Wrappers for matplot. inspired by misig/plotm and related
 ##
 ## This software is open source, distributed under the MIT License. See LICENSE
 ## file at https://github.com/natgoodman/NewPro/FDR/LICENSE 
 ##
 #################################################################################
-## wrappers for matplot. inspired by misig/plotm and related
-
 ## plot multiple lines vs dates - my adaptation of matplot - adapted from misig/plotm
 ## x is vector or 2-dimensional matrix-like object of dates with same number of columns as y
 ## y is vector or 2-dimensional matrix-like object
