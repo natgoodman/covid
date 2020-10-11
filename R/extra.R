@@ -17,7 +17,7 @@
 ##
 ###################################################################################
 extrafun=
-  function(what='cases',objs=NULL,edit.compatible=param(edit.compatible),
+  function(what='cases',objs=NULL,incompatible.ok=param(incompatible.ok),
            w.max=param(extra.wmax),nv.min=param(extra.nvmin),ex.min=param(extra.exmin),
            formula.type=cq('*',':',crossing,interaction),model.type=cq(split,joint),
            dates=NULL,places=NULL,ages=NULL) {
@@ -29,8 +29,8 @@ extrafun=
     } else {
       if (is_cvdat(objs)) objs=list(objs);
       ## check whether edited objects are compatible
-      if (edit.compatible) {
-        ok=cmp_pops(objs);
+      if (incompatible.ok) {
+        ok=cmp_pops(objs,incompatible.ok=incompatible.ok);
         if (!ok) stop("Objects are incompatible (edited in conflicting ways). ",
                       "Sorry I can't be more specific");
       }
@@ -67,10 +67,11 @@ extrafun_split=function(objs,cases,dates,ws,ex.min,formula.type) {
     data=reshape(wide,varying=list(1+ws),dir='long',idvar='date',v.names='y',timevar='w');
     data$w=as.factor(data$w)
     data=data[is.finite(data$y),]       # remove NA, NaN, Inf
-    if (nrow(data)==0) return(NA);
-    ## dumb R requires that terms in formula not be singelton. sigh...
+    if (nrow(data)<=1) return(NA);
+    ## dumb R requires that terms in formula not be singleton. sigh...
     terms=do.call(c,lapply(cq(date,w),
                            function(var) if (length(unique(data[,var]))>1) var else NULL));
+    if (is.null(terms)) return(NA);
     fmla=paste0('y~',paste(collapse=formula.type,terms));
     model=lm(as.formula(fmla),data=data);
     w.model=as.numeric(unique(data[,'w']));
@@ -197,13 +198,13 @@ extrafun_names=function(cases) {
 }
 ## initialize cached extrafuns
 init_extra=
-  function(what=cq(cases,deaths,admits),objs=NULL,edit.compatible=param(edit.compatible),
+  function(what=cq(cases,deaths,admits),objs=NULL,incompatible.ok=param(incompatible.ok),
            w.max=param(extra.wmax),nv.min=param(extra.nvmin),
            formula.type=cq('*',':',crossing,interaction),model.type=cq(split,joint),
            dates=NULL,places=NULL,ages=NULL) {
     what=match.arg(what,several.ok=TRUE);
     sapply(what,function(what) {
-      fun=extrafun(what=what,objs=objs,edit.compatible=edit.compatible,
+      fun=extrafun(what=what,objs=objs,incompatible.ok=incompatible.ok,
                    w.max=w.max,nv.min=nv.min,
                    formula.type=formula.type,model.type=model.type,
                    dates=dates,places=places,ages=ages);
