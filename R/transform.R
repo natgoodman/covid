@@ -231,9 +231,9 @@ cntr1=function(data,inc) {
 ## add 'extra' counts to DOH objects to adjust for incomplete data near end
 ## fun computed by 'extrafun' (via 'init_extra') function in extra.R
 extra=function(obj,...) UseMethod('extra')
-extra.cvdat=function(obj,fun=NULL,objs=NULL,edit.compatible=param(edit.compatible))
+extra.cvdat=function(obj,fun=NULL,objs=NULL,incompatible.ok=param(incompatible.ok))
   stop("'extra' transform only makes sense for 'doh' objects, not ",obj$datasrc," objects")
-extra.cvdoh=function(obj,fun=NULL,objs=NULL,edit.compatible=param(edit.compatible)) {
+extra.cvdoh=function(obj,fun=NULL,objs=NULL,incompatible.ok=param(incompatible.ok)) {
   places=places(obj);
   ages=ages(obj);
   ## R needs extra parens in is.null((fun=...)) to set 'fun' this way
@@ -243,7 +243,7 @@ extra.cvdoh=function(obj,fun=NULL,objs=NULL,edit.compatible=param(edit.compatibl
       if (is_cvdat(objs)) objs=list(objs);
       objs=c(list(obj),objs);
     }
-    init_extra(what=obj$what,objs=objs,edit.compatible=edit.compatible);
+    init_extra(what=obj$what,objs=objs,incompatible.ok=incompatible.ok);
     fun=param(list=fun.name);
   }
   vdate=vdate(obj);

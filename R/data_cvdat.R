@@ -15,7 +15,7 @@
 ## ---- Make data.frame from cvdat objects ----
 ## like plot_cvdat but generates data frome
 data_cvdat=
-  function(objs,places='state',ages=NULL,per.capita=FALSE,edit.compatible=param(edit.compatible),
+  function(objs,places='state',ages=NULL,per.capita=FALSE,incompatible.ok=param(incompatible.ok),
            attrs=cq(unit,cumulative,what,datasrc,version,fit,extra,edit),
            attrs.colnames=attrs) {
     if (is_cvdat(objs)) objs=list(objs);
@@ -37,7 +37,7 @@ data_cvdat=
         stop("Invalid ages: ",paste(collapse=', ',bad),
              ".\nValid ages for these objects are: ",paste(collapse=', ',ages.all));
     }
-    series=data_series(objs,places,ages,edit.compatible,attrs);
+    series=data_series(objs,places,ages,incompatible.ok,attrs);
     if (per.capita) series=series_percap(series);
     ct=ct_attrs(series,attrs)
     ## construct colnames. apply to series so merge won't complain about duplicate colnames

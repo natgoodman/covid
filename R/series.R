@@ -13,7 +13,7 @@
 ##
 ###################################################################################
 data_series=
-  function(objs,places='state',ages=NULL,edit.compatible=param(edit.compatible),
+  function(objs,places='state',ages=NULL,incompatible.ok=param(incompatible.ok),
            attrs=cq(unit,cumulative,what,datasrc,version,fit,extra,edit)) {
     if (is_cvdat(objs)) objs=list(objs);
     if (is.null(places)) stop("'places' cannot be NULL: nothing to select!");
@@ -25,11 +25,7 @@ data_series=
         stop("Only doh objects have ages, not ",paste(collapse=', ',bad)," objects");
     }
     ## check whether edited objects are compatible
-    if (edit.compatible) {
-      ok=cmp_pops(objs,places,ages);
-      if (!ok) stop("Objects are incompatible (edited in conflicting ways). ",
-                    "Sorry I can't be more specific");
-    }
+    cmp_pops(objs,places,ages,incompatible.ok);
     ## get data frame values from objs
     xattr=objs_attr(objs,attrs,label=FALSE);
     xattr=cbind(obj=seq_along(objs),xattr);  # tack 'obj' to front of xattr

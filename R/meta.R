@@ -173,30 +173,32 @@ ages_all=function(pop=param(pop)) {
 ## compare pops from multiple, possibly edited, objects
 ## returns whether pops all equal
 ## CAUTION: make sure places, ages valid for all objects!
-cmp_pops=function(objs,places=NULL,ages=NULL,pop=param(pop)) {
+cmp_pops=function(objs,places=NULL,ages=NULL,pop=param(pop),
+                  incompatible.ok=param(incompatible.ok)) {
   if (length(objs)<=1) return(TRUE);    # trivial case - just one object
   pops=lapply(objs,function(obj) obj$pop);
   orig=sapply(pops,is.null);
-  if (all(orig)) equal=TRUE            # all objects 'original', so perforce equal
-  else {
-    ## some objects edited. have to do merge & compare these vs original pop and each other
-    pops=pops[!orig];
-    if (any(orig)) {
-      if (is.null(pop)) pop=load_popbyage();
-      pops=c(list(pop),pops); # include original pop in list to be merged
-    }
-    ## tack 'age' onto each pop, filter, and order by age (for testing equality later)
-    pops=lapply(pops,function(pop) {
-      pop=filter_pop(pop,places,ages);
-      pop=cbind(age=rownames(pop),pop);
-      pop[order(pop$age),];
-    });
-    ## pick one pop to compare others against
-    pop0=pops[[1]];
-    pops=tail(pops,n=-1);
-    equal=all(sapply(pops,function(pop) identical(pop0,pop)));
+  if (all(orig)) return(TRUE);          # all objects 'original', so perforce equal
+  ## some objects edited. have to do merge & compare these vs original pop and each other
+  pops=pops[!orig];
+  if (any(orig)) {
+    if (is.null(pop)) pop=load_popbyage();
+    pops=c(list(pop),pops); # include original pop in list to be merged
   }
-  equal;
+  ## tack 'age' onto each pop, filter, and order by age (for testing equality later)
+  pops=lapply(pops,function(pop) {
+    pop=filter_pop(pop,places,ages);
+    pop=cbind(age=rownames(pop),pop);
+    pop[order(pop$age),];
+  });
+  ## pick one pop to compare others against
+  pop0=pops[[1]];
+  pops=tail(pops,n=-1);
+  ok=all(sapply(pops,function(pop) identical(pop0,pop)));
+  if (!incompatible.ok&&!ok) 
+    stop("Objects are incompatible (edited in conflicting ways). ",
+         "Sorry I can't be more specific");
+  ok;
 }
 
 ## convert data frame of absolute counts into per capita counts
