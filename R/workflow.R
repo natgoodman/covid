@@ -13,32 +13,58 @@
 ##
 #################################################################################
 ## ---- Download and import big 3 data sources ----
-do_dlim3=function(datasrc=cq(doh,jhu,nyt),version=NULL,monday.only=TRUE,
+do_dlim3=function(datasrc=cq(doh,jhu,nyt),version=NULL,monday.only=TRUE,cmp.prev=monday.only,
                    url=param(download3.url)) {
   datasrc=match.arg(datasrc,several.ok=TRUE);
   if (is.null(version)) version=dl3_version(monday.only=monday.only);
   if (param(verbose)) print(paste('+++ running download3: version',version));
-  download_all(datasrc,version,url=url);
-  import_all(datasrc,version);
-  pjto_all(datasrc,version);
+  ok=system('pjtest')==0;
+  if (!ok) stop('Reverse tunnel not running; stopping before download');
+  download3(datasrc,version,url=url);
+  if (cmp.prev) datasrc=cmp_prev(datasrc,version);
+  BREAKPOINT('do_dlim3 after download and cmp: ',nvq(version));
+  import3(datasrc,version);
+  pjto3(datasrc,version);
   version;
 }
-## poorly named - only handles big 3, not 'all' - named for consistency with 'import_all'
-download_all=function(datasrc,version,url) {
+download3=function(datasrc,version,url) {
+  filename=dl3_filenames(datasrc,version);
   sapply(datasrc,function(datasrc) {
     if (param(verbose)) print(paste('+++ downloading',datasrc));
-    dir=indir(datasrc);
+    BREAKPOINT('download3: ',nvq(datasrc));
     switch(datasrc,
-           doh=download.file(url$doh,filename(dir,version,suffix='xlsx')),
+           doh=download.file(url$doh,filename$doh),
            jhu={
-             download.file(url$jhu.cases,filename(dir,base='cases',tail=version,suffix='csv'));
-             download.file(url$jhu.deaths,filename(dir,base='deaths',tail=version,suffix='csv'))
+             download.file(url$jhu.cases,filename$jhu[1]);
+             download.file(url$jhu.deaths,filename$jhu[2])
            },
-           nyt=download.file(url$nyt,filename(dir,version,suffix='csv')));
+           nyt=download.file(url$nyt,filename$nyt));
   });
 }
-## poorly named - only handles big 3, not 'all' - named for consistency with 'import_all'
-pjto_all=function(datasrc,version) {
+import3=function(datasrc,version) {
+  sapply(datasrc,function(datasrc) {
+    if (param(verbose)) print(paste('+++ importing',datasrc));
+    import(datasrc,version);
+  });
+}
+cmp_prev=function(datasrc,version) {
+  prev=to_version(as_date(version)-7) ;
+  filename=dl3_filenames(datasrc,version);
+  prevname=dl3_filenames(datasrc,prev);
+  ok=!sapply(datasrc,function(datasrc) {
+    switch(datasrc,
+           doh=cmp_files(filename$doh,prevname$doh),
+           jhu=cmp_files(filename$jhu[1],prevname$jhu[1])&
+             cmp_files(filename$jhu[2],prevname$jhu[2]),
+           nyt=cmp_files(filename$nyt,prevname$nyt));
+  });
+  sapply(datasrc[!ok],function(datasrc) 
+    print(paste0('+++ skiping ',datasrc,': current version ',version,' same as previous ',prev)));
+  datasrc=datasrc[ok];
+}
+cmp_files=function(file1,file2) system(paste('cmp',file1,file2),ignore.stdout=T)==0;
+
+pjto3=function(datasrc,version) {
   sapply(datasrc,function(datasrc) {
     dir=indir(datasrc);
     cmd=paste('pjto',
@@ -59,11 +85,21 @@ pjto_all=function(datasrc,version) {
     system(cmd);
   });
 }
-
-dl3_version=function(today=Sys.Date(),monday.only=TRUE) {
+dl3_version=function(today=Sys.Date(),delta=0,monday.only=TRUE) {
+  today=today+delta;
   if ((weekdays(today)!='Monday')&&monday.only) 
     stop("Have to run 'download3' workflow on Mondays so 'jhu' and 'nyt' versions will match 'doh' version");
   to_version(today-1);
+}
+dl3_filenames=function(datasrc,version) {
+  sapply(datasrc,function(datasrc) {
+    dir=indir(datasrc);
+    switch(datasrc,
+           doh=filename(dir,version,suffix='xlsx'),
+           jhu=c(filename(dir,base='cases',tail=version,suffix='csv'),
+                 filename(dir,base='deaths',tail=version,suffix='csv')),
+           nyt=filename(dir,version,suffix='csv'));
+    },simplify=FALSE);
 }
 
 ## ---- Make standard objects ----
