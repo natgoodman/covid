@@ -20,35 +20,6 @@
 ##   time unit - weekly or daily
 ##   cumulative vs incremental
 
-## run standard transform pipeline
-transform=function(what=cq(cases,deaths),datasrc=param(datasrc),version='latest') {
-  objs=list();
-  cases=expand.grid(what=what,datasrc=datasrc,version=version,stringsAsFactors=FALSE);
-  objs=withrows(cases,case,{
-    ## casename=paste(sep='.',what,datasrc);
-    if (param(verbose)) print(paste('>>> transforming',nvq(what,datasrc,version)));
-    within(list(), {
-      raw=raw(what,datasrc,version);
-      cum=cumulative(raw);
-      cum2=cum2(raw);
-      inc=incremental(raw);
-      weekly=weekly(raw);
-      daily=daily(raw);
-      wklycum=weekly(cum);
-      dlycum=daily(cum);
-      wklyinc=weekly(inc);
-      dlyinc=daily(inc);
-      fitwklycum=fit(weekly(cum));
-      fitdlycum=fit(daily(cum));
-      fitwklyinc=fit(weekly(inc));
-      fitdlyinc=fit(daily(inc));
-    });
-  })
-  names(objs)=unlist(withrows(cases,case,
-                              paste(collapse='.',c(what,datasrc,if(version!='latest') version))));
-  invisible(objs);
-}
-
 ## read raw imported data and return as object
 raw=function(what=cq(cases,admits,deaths),datasrc=param(datasrc),version='latest') {
   what=match.arg(what);
@@ -57,7 +28,8 @@ raw=function(what=cq(cases,admits,deaths),datasrc=param(datasrc),version='latest
   if (!is.null(version)&&version=='latest') version=latest_version(datasrc,what);
   data=load_data(whatv=what,datasrc=datasrc,version=version);
   newobj=if(datasrc!='doh') cvdat else cvdoh;
-  obj=newobj(data=data,datasrc=datasrc,what=what,version=version,fit=FALSE,extra=FALSE,edit=FALSE);
+  obj=newobj(data=data,datasrc=datasrc,what=what,version=version,
+             fit=FALSE,roll=FALSE,extra=FALSE,edit=FALSE);
   clc(obj,switch(datasrc,
                   doh=list(unit=7,start.on='Sunday',center=FALSE,cumulative=FALSE),
                   ihme=list(unit=1,cumulative=FALSE),
@@ -90,7 +62,30 @@ fit.cvdoh=function(obj,method='sspline',args=list(),fit.clamp=0,fit.unit=1) {
   names(data)=ages;
   clc(obj,list(data=data,fit=method,fit.fun=fun,fit.args=args));
 }
-
+## use rolling mean to smooth object data
+## right alignment only. fills bottom with partial means
+roll=function(obj,...) UseMethod('roll')
+roll.cvdat=function(obj,width=NULL) {
+  if (is.null(width)) width=if(is_weekly(obj)) 3 else 7;
+  obj$data=roll1(obj$data,width);
+  clc(obj,list(roll=paste(width,if(is_weekly(obj)) 'weeks' else 'days')));
+}
+roll.cvdoh=function(obj,width=NULL) {
+  if (is.null(width)) width=if(is_weekly(obj)) 3 else 7;
+  obj$data=sapply(obj$data,function(data) roll1(data,width),simplify=FALSE);
+  clc(obj,list(roll=paste(width,if(is_weekly(obj)) 'weeks' else 'days')));
+}
+roll1=function(data,width) {
+  dates=data[,1];
+  counts=data[,-1];
+  len=nrow(counts);
+  w1=width-1;
+  counts=round(apply(counts,2,function(x) 
+    c(sapply(1:w1,function(i) mean(x[1:i])),sapply(1:(len-w1),function(i) mean(x[i:(i+w1)])))));
+  counts=as.data.frame(counts)
+  data=cbind(date=dates,counts);
+  data;
+}
 ## convert object data to cumulative. nop if already cumulative
 cumulative=function(obj,...) UseMethod('cumulative')
 cumulative.cvdat=function(obj,week.end=FALSE) {
@@ -236,15 +231,12 @@ extra.cvdat=function(obj,fun=NULL,objs=NULL,incompatible.ok=param(incompatible.o
 extra.cvdoh=function(obj,fun=NULL,objs=NULL,incompatible.ok=param(incompatible.ok)) {
   places=places(obj);
   ages=ages(obj);
-  ## R needs extra parens in is.null((fun=...)) to set 'fun' this way
-  fun.name=paste(sep='.','extra',obj$what);
-  if (is.null(fun)&&is.null((fun=param(list=fun.name)))) {
+  if (is.null(fun)) {
     if (!is.null(objs)) {
       if (is_cvdat(objs)) objs=list(objs);
       objs=c(list(obj),objs);
     }
-    init_extra(what=obj$what,objs=objs,incompatible.ok=incompatible.ok);
-    fun=param(list=fun.name);
+    fun=extrafun(what=obj$what,objs=objs,incompatible.ok=incompatible.ok);
   }
   vdate=vdate(obj);
   data=sapply(ages,function(age) extra1(fun,obj$data[[age]],places,age,vdate),
