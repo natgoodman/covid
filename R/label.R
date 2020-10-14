@@ -18,7 +18,9 @@
 ##   data source
 ##   what - cases or deaths
 ##   fit (aka interpolated or smoothed)
+##   roll (smoothed using rolling mean)
 ##   extra - late time points extrapolated
+##   edit - object data edited
 ##   time unit - weekly or daily
 ##   cumulative vs incremental
 time_label=Vectorize(function(unit=cq(1,7,daily,weekly)) {
@@ -47,6 +49,13 @@ fit_label=Vectorize(function(fit,fmt=cq(title,legend,ylab)) {
          legend=if(fit==FALSE) 'raw' else fit,
          ylab=NA)},
   vectorize.args='fit');
+roll_label=Vectorize(function(roll,fmt=cq(title,legend,ylab)) {
+  fmt=match.arg(fmt);
+  switch(fmt,
+         title=if(roll==FALSE) NA else roll,
+         legend=if(roll==FALSE) 'none' else roll,
+         ylab=NA)},
+  vectorize.args='roll');
 extra_label=Vectorize(function(extra,fmt=cq(title,legend,ylab)) {
   fmt=match.arg(fmt);
   switch(fmt,
@@ -129,6 +138,7 @@ name_label=function(name,val,fmt=cq(title,legend,ylab),SEP='&') {
          unit=time_label(val),
          cumulative=cuminc_label(val,fmt),
          fit=fit_label(val,fmt=fmt),
+         roll=roll_label(val,fmt=fmt),
          extra=extra_label(val,fmt=fmt),
          edit=edit_label(val,fmt=fmt),
          age=age_label(val,fmt=fmt),
@@ -147,11 +157,13 @@ paste_title=function(attr,labels,SEP='&') {
                  unit=ucfirst(labels),
                  cumulative=ucfirst(labels),
                  what=ucfirst(labels),
+                 roll=paste0(labels,')'),
                  edit=NULL,
                  labels));
     prefix=switch(attr,
                   datasrc='from',
                   fit='fitted to',
+                  roll='(rolling mean',
                   place='for',
                   age='for',
                   NULL);
@@ -171,7 +183,8 @@ ltitle_label=function(attr) {
          unit='Interval',
          cumulative='Cum/Inc',
          datasrc='Source',
-         ## what, version, fit, extra, place, age
+         roll='Rolling Mean',
+         ## what, version, fit, extra, edit, place, age
          ucfirst(attr));
 }
                  
@@ -183,13 +196,16 @@ mon_day=function(date,day) {
 }
 
 ## produce data frame of obj typically single-valued params
-obj_attr=function(obj,attrs=cq(datasrc,what,unit,cumulative,version,fit,extra),label=TRUE) {
+obj_attr=function(obj,attrs=cq(datasrc,what,unit,cumulative,version,fit,roll,extra,edit),
+                  label=TRUE) {
   vals=with(obj,mget(attrs,ifnotfound=list(NULL)));
   if (label) vals=sapply(attrs,function(attr) name_label(attr,vals[[attr]]),simplify=FALSE);
   xattr=as.data.frame(vals,stringsAsFactors=FALSE);
   rownames(xattr)=NULL;
   xattr;
 }
-objs_attr=function(objs,attrs=cq(datasrc,what,unit,cumulative,version,fit),label=TRUE)
+objs_attr=function(objs,attrs=cq(datasrc,what,unit,cumulative,version,fit,roll,extra,edit),
+                   label=TRUE) 
   do.call(rbind,lapply(objs,function(obj) obj_attr(obj,attrs,label)));
+
 
