@@ -99,6 +99,9 @@ fix_doh_cases=function(data,what,version) {
                  "does not have expected missing weeks after: 2020-01-12"));
     data=doh_insert(data,1,2);
   }
+  ## fix extra week (for some counties) in 20-10-11
+  if (version=='20-10-11') data=fix_extra_week(data,what,version);
+  ## done
   data;
 }
 ## fix bad dates in admits
@@ -116,6 +119,9 @@ fix_doh_admits=function(data,what,version) {
   bad=diff(data$date)!=7;
   if (any(bad))
     stop(paste("doh",what,"version",version,"has",sum(bad),"unexpected missing weeks"));
+  ## fix extra week (for some counties) in 20-10-11
+  if (version=='20-10-11') data=fix_extra_week(data,what,version);
+  ## done
   data;
 }
 fix_doh_deaths=function(data,what,version) {
@@ -167,6 +173,11 @@ check_doh=function(data,what,version) {
   if (any(bad))
     stop(paste("Bad news: doh",what,"version",version,'has missing weeks even after correction:',
                paste(collapse=', ',head(dates,n=-1)[bad])));
+  ## check extra week
+  vdate=as_date(version);
+  bad=(data$date==vdate);
+  if (any(bad)) stop(paste("doh",what,"version",version,'has extra weeks even after correction:',
+                           paste(collapse=', ',head(dates,n=-1)[bad])));
   data;
 }
 ## add missing weeks in DOH input file. data all 0's
@@ -176,4 +187,11 @@ doh_insert=function(data,before,after) {
   new=do.call(rbind,lapply(missing,function(date) data.frame(date,repc(0,nplace))))
   colnames(new)=colnames(data);
   data=rbind(data[1:before,],new,data[after:nrow(data),]);
+}
+fix_extra_week=function(data,what,version) {
+  vdate=as_date(version);
+  bad=(data$date==vdate);
+  if (sum(bad)!=1) stop(paste("doh",what,"version",version,
+                              "does not have expected extra week:",vdate));
+  data[!bad,];
 }
