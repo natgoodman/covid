@@ -22,7 +22,6 @@ do_dlim3=function(datasrc=cq(doh,jhu,nyt),version=NULL,monday.only=TRUE,cmp.prev
   if (!ok) stop('Reverse tunnel not running; stopping before download');
   download3(datasrc,version,url=url);
   if (cmp.prev) datasrc=cmp_prev(datasrc,version);
-  BREAKPOINT('do_dlim3 after download and cmp: ',nvq(version));
   import3(datasrc,version);
   pjto3(datasrc,version);
   version;
@@ -31,7 +30,6 @@ download3=function(datasrc,version,url) {
   filename=dl3_filenames(datasrc,version);
   sapply(datasrc,function(datasrc) {
     if (param(verbose)) print(paste('+++ downloading',datasrc));
-    BREAKPOINT('download3: ',nvq(datasrc));
     switch(datasrc,
            doh=download.file(url$doh,filename$doh),
            jhu={
@@ -108,16 +106,45 @@ do_objs=function(what=cq(cases,admits,deaths),datasrc=cq(doh,jhu,nyt),version='l
   cases=expand.grid(what=what,datasrc=datasrc,stringsAsFactors=FALSE);
   ## only 'doh' has 'admits'. prune others
   cases=cases[(cases$what!='admits'|cases$datasrc=='doh'),]
+  ## cum is names of sorted cumulative cases. handcrafted 20-10-14 from jhu.cases.raw
+  cum=c('King','Yakima','Pierce','Spokane','Snohomish','Benton','Franklin','Clark','Grant','Chelan','Whitman','Whatcom','Kitsap','Thurston','Douglas','Skagit','Okanogan','Walla Walla','Adams','Cowlitz','Lewis','Kittitas','Grays Harbor','Mason','Island','Clallam','Stevens','Klickitat','Asotin','Pacific','Pend Oreille','Jefferson','Skamania','Lincoln','Ferry','San Juan','Columbia','Garfield','Wahkiakum');
   withrows(cases,case,{
     ## all cases need raw
     obj=raw(what,datasrc,version);
     assign(paste(sep='.',datasrc,what,'raw'),obj,globalenv());
-    ## 'standard' final objects differ by datasrc
+    ## 'standard' objects differ by datasrc
     obj=if(datasrc=='doh') extra(obj) else weekly(incremental(obj))
+    ## edit to include, eg, SKP, before assigning to global
+    obj=edit(obj,SUM=list(SKP=cq(Snohomish,King,Pierce),Top5=head(cum,n=5),Top10=head(cum,n=10)),
+             NEG=list(notKing='King',notSKP='SKP',notTop5='Top5',notTop10='Top10'));
     assign(paste(sep='.',datasrc,what),obj,globalenv());
+    ## rolling mean
+    obj=roll(obj);
+    assign(paste(sep='.',datasrc,what,'roll'),obj,globalenv());
   });
   cases;  
 }
+
+## ---- Standard plots ----
+## mostly a placeholder. expect it to change
+do_plots=function(objs=NULL) {
+  ok=system('pjtest')==0;
+  if (!ok) stop('Reverse tunnel not running; stopping before doing plots');
+  if (is.null(objs)) objs=list(doh.cases,jhu.cases,nyt.cases);
+  ## all sources 'state'
+  plon('all.state');
+  plot_cvdat(objs,places=cq(state),ages='all',per.capita=TRUE);
+  ploff();
+  ## doh several places
+  plon('doh.places');
+  plot_cvdat(doh.cases,places=cq(state,King,SKP,Top5,Top10),ages='all',per.capita=TRUE);
+  ploff();
+  ## doh several ages
+  plon('doh.ages');
+  plot_cvdat(doh.cases,places=cq(state),ages=NULL,per.capita=TRUE);
+  ploff();
+}
+
 
 ## ---- Test transforms ----
 ## CAUTION: not up-to-date !!
