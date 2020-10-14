@@ -14,7 +14,7 @@
 ###################################################################################
 data_series=
   function(objs,places='state',ages=NULL,incompatible.ok=param(incompatible.ok),
-           attrs=cq(unit,cumulative,what,datasrc,version,fit,extra,edit)) {
+           attrs=cq(unit,cumulative,what,datasrc,version,fit,roll,extra,edit)) {
     if (is_cvdat(objs)) objs=list(objs);
     if (is.null(places)) stop("'places' cannot be NULL: nothing to select!");
     if (identical(ages,'all')) ages=NULL;
@@ -41,7 +41,7 @@ data_series=
     });
     list(objs=objs,xattr=xattr,series=series)
   }
-ct_attrs=function(series,attrs=cq(unit,cumulative,what,datasrc,version,fit,extra,edit)) {
+ct_attrs=function(series,attrs=cq(unit,cumulative,what,datasrc,version,fit,roll,extra,edit)) {
   xattr=series$xattr;
   attrs=c(cq(series,obj),attrs,cq(place,age));
   attrs=attrs %&% colnames(xattr);
@@ -63,6 +63,7 @@ series_percap=function(series,pop0=param(pop)) {
     pop=objs[[obj]]$pop;
     if (is.null(pop)) pop=pop0;
     pop=pop[age,place];
+    if (is.null(pop)) pop=NA;
     data.frame(date=data$date,y=round(1e6*data$y/pop));
   });
   list(objs=objs,xattr=xattr,series=series);
@@ -78,7 +79,7 @@ series_percap=function(series,pop0=param(pop)) {
 ## BUG: crashes if input contains multiple objects with same attributes.
 series_blocks=
   function(series,ct=NULL,blocks.order=cq(obj,place,age,objs,places,ages),
-           attrs=cq(unit,cumulative,what,datasrc,version,fit,extra,edit)) {
+           attrs=cq(unit,cumulative,what,datasrc,version,fit,roll,extra,edit)) {
     if (is.null(ct)) ct=ct_attrs(series,attrs);
     blocks.order=match.arg(blocks.order,several.ok=TRUE);
     blocks.order=unique(sub('s$','',blocks.order));
