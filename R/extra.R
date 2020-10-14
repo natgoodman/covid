@@ -17,10 +17,11 @@
 ##
 ###################################################################################
 extrafun=
-  function(what='cases',objs=NULL,incompatible.ok=param(incompatible.ok),
+  function(what=cq(cases,deaths,admits),objs=NULL,incompatible.ok=param(incompatible.ok),
            w.max=param(extra.wmax),nv.min=param(extra.nvmin),ex.min=param(extra.exmin),
            formula.type=cq('*',':',crossing,interaction),model.type=cq(split,joint),
            dates=NULL,places=NULL,ages=NULL) {
+    what=match.arg(what);
     if (is.null(objs)) {
       ## read objects
       versions.all=list_versions('doh',what);
@@ -59,7 +60,6 @@ extrafun=
     if (model.type=='split') extrafun_split(objs,cases,dates,ws,ex.min,formula.type)
     else extrafun_joint(objs,cases,dates,ws,ex.min,formula.type);
   }
-
 extrafun_split=function(objs,cases,dates,ws,ex.min,formula.type) {
   funs=withrows(cases,case,{
     props=extra_props(objs=objs,dates=dates,ws=ws,place=place,age=age)
@@ -196,21 +196,3 @@ extrafun_names=function(cases) {
   else nms=Reduce(function(x,y) paste(sep=';',x,cases[[y]]),mvargs[-1],init=cases[[mvargs[1]]]);
   nms;
 }
-## initialize cached extrafuns
-init_extra=
-  function(what=cq(cases,deaths,admits),objs=NULL,incompatible.ok=param(incompatible.ok),
-           w.max=param(extra.wmax),nv.min=param(extra.nvmin),
-           formula.type=cq('*',':',crossing,interaction),model.type=cq(split,joint),
-           dates=NULL,places=NULL,ages=NULL) {
-    what=match.arg(what,several.ok=TRUE);
-    sapply(what,function(what) {
-      fun=extrafun(what=what,objs=objs,incompatible.ok=incompatible.ok,
-                   w.max=w.max,nv.min=nv.min,
-                   formula.type=formula.type,model.type=model.type,
-                   dates=dates,places=places,ages=ages);
-      ## assign to param.
-      ## do it this way until 'list' arg of 'param' function can handle params with new values 
-      assign(paste(sep='.','extra',what),fun,envir=param.env);
-    });
-    what;
-  }
