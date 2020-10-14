@@ -45,7 +45,7 @@ plot_cvdat=
            legend=TRUE,where.legend='topleft',cex.legend=0.8,
            vline=NULL,hline=NULL,vhlty='dashed',vhcol='grey50',
            vhlwd=1,vlab=TRUE,hlab=TRUE,vhdigits=2,
-           attrs=cq(unit,cumulative,what,datasrc,version,fit,extra,edit),
+           attrs=cq(unit,cumulative,what,datasrc,version,fit,roll,extra,edit),
            attrs.ylab=cq(unit,cumulative,what),
            attrs.legend=attrs,
            blocks.order=cq(obj,place,age,objs,places,ages),
@@ -122,7 +122,7 @@ plot_cvdat=
   }
 
 auto_title=
-  function(series,ct=NULL,attrs=cq(unit,cumulative,what,datasrc,version,fit,extra),
+  function(series,ct=NULL,attrs=cq(unit,cumulative,what,datasrc,version,fit,roll,extra),
            per.capita=FALSE,SEP='&') {
     if (is.null(ct)) ct=ct_attrs(series,attrs);
     ## attrs=ct$sv.attrs[ct$sv.attrs!='obj'];    # don't want 'obj' in title
@@ -143,7 +143,7 @@ auto_lprop=
            col.pal='Dark2',lty.range=c(1,6),lwd.range=c(1,3),
            col.blocks=1,lty.blocks=1:2,lwd.blocks=2:3,
            blocks.order=cq(obj,place,age,objs,places,ages),
-           attrs=cq(unit,cumulative,what,datasrc,version,fit,extra)) {
+           attrs=cq(unit,cumulative,what,datasrc,version,fit,roll,extra)) {
     if (is.null(blocks)) {
     if (is.null(ct)) ct=ct_attrs(series,attrs);
     blocks=series_blocks(series,ct,blocks.order);
@@ -255,7 +255,7 @@ auto_ylab=function(series,attrs=cq(unit,cumulative,what),per.capita=FALSE,SEP='&
 auto_legend=
   function(series=NULL,blocks=NULL,ct=NULL,lprop,legend.order=NULL,
            blocks.order=cq(obj,place,age,objs,places,ages),
-           attrs=cq(unit,cumulative,what,datasrc,version,fit,extra),
+           attrs=cq(unit,cumulative,what,datasrc,version,fit,roll,extra),
            col='black',lty='solid',lwd=2,SEP=', ') {
     if (is.null(blocks)) {
       if (is.null(ct)) ct=ct_attrs(series,attrs);

@@ -16,7 +16,7 @@
 ## like plot_cvdat but generates data frome
 data_cvdat=
   function(objs,places='state',ages=NULL,per.capita=FALSE,incompatible.ok=param(incompatible.ok),
-           attrs=cq(unit,cumulative,what,datasrc,version,fit,extra,edit),
+           attrs=cq(unit,cumulative,what,datasrc,version,fit,roll,extra,edit),
            attrs.colnames=attrs) {
     if (is_cvdat(objs)) objs=list(objs);
     places.all=Reduce(intersect,lapply(objs,function(obj) places(obj)));
