@@ -167,6 +167,12 @@ param=function(...,list=character()) {
     retval;
   }
 }
+## TODO:  'list' arg of 'param' function should handle params with new values
+## sample code
+## assign to param.
+## do it this way until 'list' arg of 'param' function can handle params with new values 
+## assign(paste(sep='.','extra',what),fun,envir=param.env);
+
 ## copy local variables to global - to simplify init
 ## NG 19-01-11: used in repwr, not in effit
 assign_global=function() {
@@ -397,7 +403,7 @@ as_date=function(x) {
   as.Date(dates,origin='1970-01-01');
 }
 ## convert date to version strings we use, eg, 20-05-13
-to_version=function(date) strftime(date,format='%y-%m-%d')
+as_version=function(date) strftime(date,format='%y-%m-%d')
 ## day-of-week manipulation we use
 Weekdays=cq(Sunday,Monday,Tuesday,Wednesday,Thursday,Friday,Saturday);
 dayofweek=Vectorize(function(day) which(Weekdays==day))
