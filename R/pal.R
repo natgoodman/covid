@@ -91,7 +91,7 @@ col_brew1=
     ## if want more colors than in palette, colorRampPalette will make more if allowed
     if (n>length(col)) {
       if (ramp.ok) col=colorRampPalette(col)(n)
-      else stop("Want more colors than palette provides (including skipped colors) and 'ramp.ok' is FALSE: ",nvq(n,m,maxcols));
+      else stop("Want more colors than palette provides (including skipped colors) and 'ramp.ok' is FALSE: ",nv(n,m,maxcols));
     }
     col;
   }
@@ -114,11 +114,11 @@ pal_find=function(palettes,pal.info=param(pal.info)) {
       if (!is.na(pkg)) pal.info=pal.info[pal.info$pkg==pkg,];
       if (!is.na(pal)) pal.info=pal.info[pal.info$pal==pal,];
       if (!is.na(subpal)) pal.info=pal.info[pal.info$subpal==subpal,];
-      if (nrow(pal.info)==0) stop('palette ',nvq(pkg,pal,subpal,SEP=', '),' not found');
+      if (nrow(pal.info)==0) stop('palette ',nv(pkg,pal,subpal,SEP=', '),' not found');
       if (nrow(pal.info)>1) {
         ## multiple rows. but are they all subpals of same pal?
         if (nrow(unique(pal.info[,cq(pkg,pal),drop=FALSE]))==1) pal.info=pal.info[1,,drop=FALSE]
-        else stop('Multiple palettes found for ',nvq(pkg,pal,subpal,SEP=', '));
+        else stop('Multiple palettes found for ',nv(pkg,pal,subpal,SEP=', '));
       }
       pal.info;
     })}));

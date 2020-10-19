@@ -36,7 +36,7 @@ data_series=
       data=obj$data;
       if (obj$datasrc=='doh') data=if(is.null(ages)) data$all else data[[age]];
       if (place %notin% colnames(data)[-1])
-        stop(nvq(place)," not valid for ",obj$datasrc," objects");
+        stop(nv(place)," not valid for ",obj$datasrc," objects");
       series=data.frame(date=data$date,y=data[[place]])
     });
     list(objs=objs,xattr=xattr,series=series)

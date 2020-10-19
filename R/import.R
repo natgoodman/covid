@@ -27,7 +27,7 @@ import=function(datasrc,version='latest',file=NULL) {
       version=sort(list_versions(datasrc,dir=indir),decreasing=TRUE)[1];
     files=list.files(indir(datasrc),pattern=version,full.names=TRUE);
     if (length(files)==0)
-      stop(paste('No files found for',nvq(datasrc,version,file,SEP=', ')));
+      stop(paste('No files found for',nv(datasrc,version,file,SEP=', ')));
     files=sort(files);
   }
   sapply(files,function(file) do.call(import.fun,as.list(c(file=file))));

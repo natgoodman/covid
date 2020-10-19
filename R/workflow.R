@@ -159,7 +159,7 @@ do_test=function(what=cq(cases,deaths),datasrc=cq(doh,jhu,nyt),version='latest')
   cases=expand.grid(what=what,datasrc=datasrc,version=version,stringsAsFactors=FALSE);
   objs=withrows(cases,case,{
     ## casename=paste(sep='.',what,datasrc);
-    if (param(verbose)) print(paste('>>> transforming',nvq(what,datasrc,version)));
+    if (param(verbose)) print(paste('>>> transforming',nv(what,datasrc,version)));
     within(list(), {
       raw=raw(what,datasrc,version);
       cum=cumulative(raw);
