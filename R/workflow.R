@@ -102,13 +102,14 @@ dl3_filenames=function(datasrc,version) {
 
 ## ---- Make standard objects ----
 ## make objects I tend to use circa Oct 2010
-do_objs=function(what=cq(cases,admits,deaths),datasrc=cq(doh,jhu,nyt),version='latest') {
+do_objs3=function(what=cq(cases,admits,deaths),datasrc=cq(doh,jhu,nyt),version='latest') {
   cases=expand.grid(what=what,datasrc=datasrc,stringsAsFactors=FALSE);
   ## only 'doh' has 'admits'. prune others
   cases=cases[(cases$what!='admits'|cases$datasrc=='doh'),]
   ## cum is names of sorted cumulative cases. handcrafted 20-10-14 from jhu.cases.raw
   cum=c('King','Yakima','Pierce','Spokane','Snohomish','Benton','Franklin','Clark','Grant','Chelan','Whitman','Whatcom','Kitsap','Thurston','Douglas','Skagit','Okanogan','Walla Walla','Adams','Cowlitz','Lewis','Kittitas','Grays Harbor','Mason','Island','Clallam','Stevens','Klickitat','Asotin','Pacific','Pend Oreille','Jefferson','Skamania','Lincoln','Ferry','San Juan','Columbia','Garfield','Wahkiakum');
   withrows(cases,case,{
+    if (param(verbose)) print(paste('+++ making',datasrc,what));
     ## all cases need raw
     obj=raw(what,datasrc,version);
     assign(paste(sep='.',datasrc,what,'raw'),obj,globalenv());
@@ -133,15 +134,20 @@ do_plots=function(objs=NULL) {
   if (is.null(objs)) objs=list(doh.cases,jhu.cases,nyt.cases);
   ## all sources 'state'
   plon('all.state');
-  plot_cvdat(objs,places=cq(state),ages='all',per.capita=TRUE);
+  plot_cvdat(objs,places=cq(state),ages='all',per.capita=TRUE,lty='solid');
+  ploff();
+  ## all sources 'King'
+  plon('all.King');
+  plot_cvdat(objs,places=cq(King),ages='all',per.capita=TRUE,lty='solid');
   ploff();
   ## doh several places
   plon('doh.places');
-  plot_cvdat(doh.cases,places=cq(state,King,SKP,Top5,Top10),ages='all',per.capita=TRUE);
+  plot_cvdat(doh.cases,places=cq(state,King,SKP,Top5,Top10),ages='all',per.capita=TRUE,
+             lty='solid');
   ploff();
   ## doh several ages
   plon('doh.ages');
-  plot_cvdat(doh.cases,places=cq(state),ages=NULL,per.capita=TRUE);
+  plot_cvdat(doh.cases,places=cq(state),ages=NULL,per.capita=TRUE,lty='solid');
   ploff();
 }
 
