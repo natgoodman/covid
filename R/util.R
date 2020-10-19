@@ -15,7 +15,71 @@
 #################################################################################
 ## ---- Utility Functions ----
 ## generate name=value
+
+## Generalize nvq in light of what I learned from edit
+## subsumes paste_nv, nvq, nvq_file
+## IGNORE can be logical or value to use for non-existant names and other errors
+## PRETTY is function mapping name,value pairs to pretty values
+## NV is escape hatch using standard evaluation
+##   list of names or name,value pairs
+## if NV and ... both present, NV entries come after dots entries
+nv=function(...,SEP=' ',EQUAL='=',PRETTY=FALSE,IGNORE=FALSE,NV=list()) {
+    dots=match.call(expand.dots=FALSE)$...;
+    if (is.null(dots)) return('');
+    err.ok=if(is_logical(IGNORE)) IGNORE else TRUE;
+    err.skip=is_logical(IGNORE);
+    err.val=if(is_logical(IGNORE)) NA else IGNORE;
+    names=names(dots);
+    if (is.null(names)) names=rep('',length(dots));
+    ## un-named dots are simple name=value 
+    unnamed=(nchar(names)==0);
+    if (!all(sapply(dots[unnamed],function(x) is_simple(x))))
+      stop("unnamed elements of ... must be names or character strings");
+    dots[unnamed]=sapply(dots[unnamed],as.name);
+    ## use each dot as it's own name, eg, 'x' becomes 'x=x'
+    names[unnamed]=sapply(dots[unnamed],as.character)
+    parent=parent.frame(n=1);
+    bad=NULL;
+    values=sapply(seq_along(dots),function(i)
+      tryCatch(eval(dots[[i]],parent), error=function(c) 
+        if (err.ok) {bad<<-c(bad,i); err.val}
+        else {
+          c$message=paste0("Unable to evaluate '",deparse(dots[[i]]),"': ",c$message);
+          c$call='nv';
+          stop(c);
+        }
+        ));
+    ## tack on names. values from NV
+    ## names=c(names,sapply(NV,function(nv) if (length(nv)==1) '' else nv[1]));
+    names=c(names,sapply(NV,function(nv) nv[1]));
+    values=c(values,sapply(seq_along(NV),function(i) {
+      nv=NV[[i]];
+      if (length(nv)!=1) nv[-1]
+      else {
+        name=nv;
+        tryCatch(get(name,parent),error=function(c) 
+          if (err.ok) {bad<<-c(bad,i+length(dots)); err.val}
+          else {
+            c$message=paste0("Unable to evaluate '",name,"': ",c$message);
+            c$call='nv';
+            stop(c);
+          })
+      }}));
+    if (!is.null(bad)&err.skip) {
+      names=names[-bad];
+      values=values[-bad];
+    }
+    values=sapply(seq_along(values),function(i) {
+      name=names[i];
+      value=unlist(values[i]);
+      if (is.function(PRETTY)) value=sapply(value,function(value) pretty(name,value));
+      if (length(value)>1) paste0('c(',paste(collapse=',',value),')') else value;
+    });
+    ## if (is.function(PRETTY)) values=PRETTY(names,values)
+    paste(collapse=SEP,paste(sep=EQUAL,names,values));
+}
 paste_nv=function(name,value,sep='=') {
+  warning("'paste_nv' deprecated. Use 'nv' instead");
   name=as.character(pryr::subs(name));
   if (missing(value))
     if (exists(name,envir=parent.frame(n=1))) value=get(name,envir=parent.frame(n=1))
@@ -25,6 +89,7 @@ paste_nv=function(name,value,sep='=') {
 ## generate list of name=value using values from parent environment. code adapted from base::rm
 ## IGNORE tells whether to ignore NULL and non-existant names
 nvq=function(...,SEP=' ',IGNORE=F) {
+  warning("'nvq' deprecated. Use 'nv' instead");
   dots=match.call(expand.dots=FALSE)$...
   if (length(dots) &&
      !all(vapply(dots,function(x) is.symbol(x) || is.character(x),NA,USE.NAMES=FALSE))) 
@@ -47,6 +112,7 @@ nvq=function(...,SEP=' ',IGNORE=F) {
 ## NG 19-09-25: extend nvq for filenames. also to allow nested calls
 ## TODO: merge nvq, nvq_file
 nvq_file=function(...,SEP=',',DOTS,PARENT=1,PRETTY=T,IGNORE=F) {
+  warning("'nvq_file' deprecated. Use 'nv' instead");
   if (missing(DOTS)) DOTS=match.call(expand.dots=FALSE)$...
   else if (missing(PARENT)) PARENT=2;
   if (length(DOTS) &&
