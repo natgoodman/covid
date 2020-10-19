@@ -372,9 +372,32 @@ is_2d=function(x) (!is.null(dim(x)))&&(length(dim(x))==2)
 is_blank=function(x) (x=='')|is.null(x)|is.na(x)
 ## test 'simple' value - eg, name or string
 is_simple=function(x) is.symbol(x)|is.character(x)
-## test if x is subset of y. from stackoverflow.com/questions/26831041. thx!
+## test if x is "real" logical, not NA
+is_logical=function(x) is.logical(x)&&!is.na(x)
+## set predicates.
+##   subset from stackoverflow.com/questions/26831041. thx!
+##   psubset (proper subset) adapted from sets package
+##   equal included ro stylistic consistency
 is_subset=function(x,y) all(x %in% y)
 is_superset=function(x,y) all(y %in% x)
+is_psubset=function(x,y) is_subset(x,y)&(length(x)!=length(y))
+is_psuperset=function(x,y) is_superset(x,y)&(length(x)!=length(y))
+is_equalset=function(x,y) setequal(x,y)
+## operator versions of above
+"%<=%"=function(x,y) is_subset(x,y)
+"%>=%"=function(x,y) is_superset(x,y)
+"%<%"=function(x,y) is_psubset(x,y)
+"%>%"=function(x,y) is_psuperset(x,y)
+"%==%"=function(x,y) is_equalset(x,y)
+## set operators
+## intersect, difference, union
+"%&%"=function(x,y) intersect(x,y)
+"%-%"=function(x,y) setdiff(x,y)
+"%+%"=function(x,y) union(x,y)
+## symmetric difference. other implementations in stackoverflow.com/questions/19797954
+symdiff=function(x,y) (x %-% y) %+% (y %-% x)
+"%--%"=function(x,y) symdiff(x,y)
+  
 ## test if x is an object of given class
 is_class=function(x,class) class %in% class(x)
 ## test if x is Date
@@ -556,10 +579,6 @@ strip=function(val,LENGTH.OUT=NA,FILL=NA) {
   val;
 };
 
-## intersect operator
-"%&%"=function(x,y) intersect(x,y)
-## setdiff operator
-"%-%"=function(x,y) setdiff(x,y)
 ## not in - based on example in RefMan - more intutive than !%in%
 "%notin%"=function(x,table) match(x,table,nomatch=0)==0
 ## between, near - to subset sim results. closed on bottom, open on top
