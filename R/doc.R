@@ -62,7 +62,7 @@ dofig=
       ## plot.to.file only doesn't work if figfun returns multiple figures
       ##   trash multi-figure capability. we don't use it now
       if (!(plot.to.file||plot.to.screen)) {
-        msg=paste(sep=' ',paste_nv(figscreen),'and',paste_nv(save.fig));
+        msg=paste(sep=' ',nv(figscreen),'and',nv(save.fig));
         if (is.na(save.fig)) msg=paste(sep=' ',msg,'and figure file',file,'exists');
         msg=paste(sep=' ',msg,'which means there is no where to plot the figure');
         stop(msg);
@@ -263,7 +263,7 @@ figdev_start=function(figdev.name=NULL,sect=NULL,nrow=2,ncol=2,...) {
   ## plot.to.file only doesn't work if figfun returns multiple figures
   ##   trash multi-figure capability. we don't use it now
   if (!(plot.to.file||plot.to.screen)) {
-    msg=paste(sep=' ',paste_nv(figscreen),'and',paste_nv(save.fig));
+    msg=paste(sep=' ',nv(figscreen),'and',nv(save.fig));
     if (is.na(save.fig)) msg=paste(sep=' ',msg,'and figure file',file,'exists');
     msg=paste(sep=' ',msg,'which means there is no where to plot the figure');
     stop(msg);
