@@ -25,7 +25,7 @@
 ## if NV and ... both present, NV entries come after dots entries
 nv=function(...,SEP=' ',EQUAL='=',PRETTY=FALSE,IGNORE=FALSE,NV=list()) {
     dots=match.call(expand.dots=FALSE)$...;
-    if (is.null(dots)) return('');
+    if (is.null(dots)&&length(NV)==0) return('');
     err.ok=if(is_logical(IGNORE)) IGNORE else TRUE;
     err.skip=is_logical(IGNORE);
     err.val=if(is_logical(IGNORE)) NA else IGNORE;
@@ -38,10 +38,10 @@ nv=function(...,SEP=' ',EQUAL='=',PRETTY=FALSE,IGNORE=FALSE,NV=list()) {
     dots[unnamed]=sapply(dots[unnamed],as.name);
     ## use each dot as it's own name, eg, 'x' becomes 'x=x'
     names[unnamed]=sapply(dots[unnamed],as.character)
-    parent=parent.frame(n=1);
+    parent.env=parent.frame(n=1);
     bad=NULL;
     values=sapply(seq_along(dots),function(i)
-      tryCatch(eval(dots[[i]],parent), error=function(c) 
+      tryCatch(eval(dots[[i]],parent.env), error=function(c) 
         if (err.ok) {bad<<-c(bad,i); err.val}
         else {
           c$message=paste0("Unable to evaluate '",deparse(dots[[i]]),"': ",c$message);
@@ -57,7 +57,7 @@ nv=function(...,SEP=' ',EQUAL='=',PRETTY=FALSE,IGNORE=FALSE,NV=list()) {
       if (length(nv)!=1) nv[-1]
       else {
         name=nv;
-        tryCatch(get(name,parent),error=function(c) 
+        tryCatch(get(name,parent.env),error=function(c) 
           if (err.ok) {bad<<-c(bad,i+length(dots)); err.val}
           else {
             c$message=paste0("Unable to evaluate '",name,"': ",c$message);
@@ -161,8 +161,16 @@ lcfirst=function(x) {
   substr(x,1,1)=tolower(substr(x,1,1));
   x;
 }
-## NG 19-01-31: CAUTION. doesn’t really work.
-## NG 19-06-27: I think above CAUTION is wrong, at least partially
+
+## NG 20-10-19: rename and rewrite the 'parent' functions
+##   'parent' now does one level dynamic lookup
+##   'parpar' is 'parent' if exists else 'param'
+##   'parall' does full dynamic lookup
+## allow multi-argument versions, like 'param' that set values in caller
+## let 'parent' set values in parent
+
+## NG 19-06-27: commented out 'parent' is screwy
+## NG 20-10-20: uncommented and renamed 'parentX' so I can test it
 ##   what it does is get value from parent frame. if not present,
 ##   searches from parent - this will be static
 ##   ----------
@@ -173,14 +181,32 @@ lcfirst=function(x) {
 ## get value of variable from parent or set to default
 ## call with quoted or unquoted variable name
 ## if default missing, throws error if variable not found
-parent=function(what,default) {
+parentX=function(what,default) {
   what=as.character(pryr::subs(what));
   if (exists(what,envir=parent.frame(n=2))) return(get(what,envir=parent.frame(n=2)));
   if (!missing(default)) return(default);
-  stop(paste(sep='',"object '",what,"' not found"));
+  stop(paste(sep='',"object '",what,"' not found in parent or lexical scope"));
 }
-## NG 19-06-27: I think this version does full dynamic lookup
-parent_=function(what,default) {
+## NG 20-10-20: this version does one level dynamic lookup
+parent=function(what,default) {
+  what=as.character(pryr::subs(what));
+  if (exists(what,envir=parent.frame(n=2),inherits=FALSE))
+    return(get(what,envir=parent.frame(n=2),inherits=FALSE));
+  if (!missing(default)) return(default);
+  stop(paste(sep='',"object '",what,"' not found in parent"));
+}
+## NG 20-10-20: this version does one level dynamic lookup then tries param then gets default
+parpar=function(what,default) {
+  what=as.character(pryr::subs(what));
+  if (exists(what,envir=parent.frame(n=2),inherits=FALSE))
+    return(get(what,envir=parent.frame(n=2),inherits=FALSE));
+  if (exists(what,envir=param.env)) return(get(what,envir=param.env));
+  if (!missing(default)) return(default);
+  stop(paste(sep='',"object '",what,"' not found in parent or params"));
+}
+## NG 19-06-27, 20-10-19: this version does full dynamic lookup
+## TODO: rename & extend per comments above
+parall=function(what,default) {
   what=as.character(pryr::subs(what));
   n=2;
   repeat {
@@ -192,7 +218,7 @@ parent_=function(what,default) {
   }
   ## if fall out of loop, 'what' not found
   if (!missing(default)) return(default);
-  stop(paste0("object '",what,"' not found"));
+  stop(paste0("object '",what,"' not found in parent or any ancestor"));
 }
 
 ## get value of variable from param environment and assign to same named variable in parent
@@ -437,7 +463,7 @@ is_2d=function(x) (!is.null(dim(x)))&&(length(dim(x))==2)
 ## test blank field
 is_blank=function(x) (x=='')|is.null(x)|is.na(x)
 ## test 'simple' value - eg, name or string
-is_simple=function(x) is.symbol(x)|is.character(x)
+is_simple=function(x) is.symbol(x)||(is.character(x)&&length(x)<=1)
 ## test if x is "real" logical, not NA
 is_logical=function(x) is.logical(x)&&!is.na(x)
 ## set predicates.
