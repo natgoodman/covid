@@ -78,81 +78,7 @@ nv=function(...,SEP=' ',EQUAL='=',PRETTY=FALSE,IGNORE=FALSE,NV=list()) {
     ## if (is.function(PRETTY)) values=PRETTY(names,values)
     paste(collapse=SEP,paste(sep=EQUAL,names,values));
 }
-paste_nv=function(name,value,sep='=') {
-  warning("'paste_nv' deprecated. Use 'nv' instead");
-  name=as.character(pryr::subs(name));
-  if (missing(value))
-    if (exists(name,envir=parent.frame(n=1))) value=get(name,envir=parent.frame(n=1))
-    else stop(paste('no value for',name,'in function call or parent environment'));
-  paste(sep=sep,name,value); 
-}
-## generate list of name=value using values from parent environment. code adapted from base::rm
-## IGNORE tells whether to ignore NULL and non-existant names
-nvq=function(...,SEP=' ',IGNORE=F) {
-  warning("'nvq' deprecated. Use 'nv' instead");
-  dots=match.call(expand.dots=FALSE)$...
-  if (length(dots) &&
-     !all(vapply(dots,function(x) is.symbol(x) || is.character(x),NA,USE.NAMES=FALSE))) 
-     stop("... must contain names or character strings");
-  ## CAUTION: for some reason, doesn't work to use 'parent.frame(n=1)' inside sapply
-  env=parent.frame(n=1);
-  names=vapply(dots,as.character,"");
-  values=sapply(names,function(name) {
-    if (exists(name,envir=env)) get(name,envir=env)
-    else if (!IGNORE) stop(paste('no value for',name,'in parent environment'));
-  });
-  ## values=sapply(names,function(name)
-  ##   if (exists(name,envir=parent.frame(n=2))) get(name,envir=parent.frame(n=2))
-  ##   else stop(paste('no value for',name,'in parent environment')));
-  paste(collapse=SEP,unlist(mapply(function(name,value) {
-    if (is.null(value)) value='NULL'
-    else if (is.na(value)) value='NA'
-    if (!is.null(value)|!IGNORE) paste(sep='=',name,value) else NULL},names,values)));
-}
-## NG 19-09-25: extend nvq for filenames. also to allow nested calls
-## TODO: merge nvq, nvq_file
-nvq_file=function(...,SEP=',',DOTS,PARENT=1,PRETTY=T,IGNORE=F) {
-  warning("'nvq_file' deprecated. Use 'nv' instead");
-  if (missing(DOTS)) DOTS=match.call(expand.dots=FALSE)$...
-  else if (missing(PARENT)) PARENT=2;
-  if (length(DOTS) &&
-     !all(vapply(DOTS,function(x) is.symbol(x) || is.character(x),NA,USE.NAMES=FALSE))) 
-     stop("... must contain names or character strings");
-  env=parent.frame(n=PARENT);
-  names=vapply(DOTS,as.character,"");
-  if (IGNORE) names=names[sapply(names,function(name) exists(name,envir=env))];
-  values=sapply(names,function(name) {
-    if (exists(name,envir=env)) {
-      value=get(name,envir=env);
-      if (PRETTY) value=pretty(name,value);
-      value;
-    }
-    else if (!IGNORE) stop(paste('no value for',name,'in parent environment'));
-  });
-  paste(collapse=SEP,unlist(mapply(function(name,value)
-    if (!is.null(value)|!IGNORE) paste(sep='=',name,value) else NULL,names,values)));
-}
-## tack id onto filebase if not NULL or NA
-paste_id=function(base,id=NULL,sep='.') {
-  ## test id this way to avoid running is.na when id=NULL 
-  if (is.null(id)) return(base);
-  if (is.na(id)) return(base);
-  paste(sep=sep,base,id);
-}  
-## pretty print typical values of i, n, d, sd & m
-pretty=function(name,value) {
-  fun=switch(name,i=i_pretty,n=n_pretty,d=d_pretty,sd=sd_pretty,m=m_pretty,as.character);
-  fun(value);
-}
-i_pretty=function(i) sprintf("%03i",i)
-n_pretty=function(n) as.character(n);
-d_pretty=function(d) sprintf('%3.2f',d);
-sd_pretty=function(sd) sprintf('%3.2f',sd);
-m_pretty=function(m) {
-  exponent=floor(log10(m));
-  significand=m/10^exponent;
-  paste0(significand,'e',exponent);
-}
+
 ucfirst=function(x) {
   substr(x,1,1)=toupper(substr(x,1,1));
   x;
@@ -161,66 +87,6 @@ lcfirst=function(x) {
   substr(x,1,1)=tolower(substr(x,1,1));
   x;
 }
-
-## NG 20-10-19: rename and rewrite the 'parent' functions
-##   'parent' now does one level dynamic lookup
-##   'parpar' is 'parent' if exists else 'param'
-##   'parall' does full dynamic lookup
-## allow multi-argument versions, like 'param' that set values in caller
-## let 'parent' set values in parent
-
-## NG 19-06-27: commented out 'parent' is screwy
-## NG 20-10-20: uncommented and renamed 'parentX' so I can test it
-##   what it does is get value from parent frame. if not present,
-##   searches from parent - this will be static
-##   ----------
-##   supposed to search dynamic environment tree but does static instead
-##   seemed to work “back in the day” because params were global and static predecessor
-##   of most functions is the global environment
-##   ---------- 
-## get value of variable from parent or set to default
-## call with quoted or unquoted variable name
-## if default missing, throws error if variable not found
-parentX=function(what,default) {
-  what=as.character(pryr::subs(what));
-  if (exists(what,envir=parent.frame(n=2))) return(get(what,envir=parent.frame(n=2)));
-  if (!missing(default)) return(default);
-  stop(paste(sep='',"object '",what,"' not found in parent or lexical scope"));
-}
-## NG 20-10-20: this version does one level dynamic lookup
-parent=function(what,default) {
-  what=as.character(pryr::subs(what));
-  if (exists(what,envir=parent.frame(n=2),inherits=FALSE))
-    return(get(what,envir=parent.frame(n=2),inherits=FALSE));
-  if (!missing(default)) return(default);
-  stop(paste(sep='',"object '",what,"' not found in parent"));
-}
-## NG 20-10-20: this version does one level dynamic lookup then tries param then gets default
-parpar=function(what,default) {
-  what=as.character(pryr::subs(what));
-  if (exists(what,envir=parent.frame(n=2),inherits=FALSE))
-    return(get(what,envir=parent.frame(n=2),inherits=FALSE));
-  if (exists(what,envir=param.env)) return(get(what,envir=param.env));
-  if (!missing(default)) return(default);
-  stop(paste(sep='',"object '",what,"' not found in parent or params"));
-}
-## NG 19-06-27, 20-10-19: this version does full dynamic lookup
-## TODO: rename & extend per comments above
-parall=function(what,default) {
-  what=as.character(pryr::subs(what));
-  n=2;
-  repeat {
-    env=parent.frame(n=n);
-    if (n>100) stop(paste0('call stack too deep: n=',n));
-    if (exists(what,envir=env,inherit=F)) return(get(what,envir=env));
-    if (identical(env, globalenv())) break;
-    n=n+1;
-  }
-  ## if fall out of loop, 'what' not found
-  if (!missing(default)) return(default);
-  stop(paste0("object '",what,"' not found in parent or any ancestor"));
-}
-
 ## get value of variable from param environment and assign to same named variable in parent
 ## call with quoted or unquoted variable names
 ## adapted from base::rm
@@ -265,12 +131,6 @@ param=function(...,list=character()) {
 ## do it this way until 'list' arg of 'param' function can handle params with new values 
 ## assign(paste(sep='.','extra',what),fun,envir=param.env);
 
-## copy local variables to global - to simplify init
-## NG 19-01-11: used in repwr, not in effit
-assign_global=function() {
-  env=parent.frame(n=1);
-  sapply(ls(envir=env),function(what) assign(what,get(what,envir=env),envir=.GlobalEnv));
-}
 ## copy local variables to new or existing param environment - to simplify init
 init_param=function() {
   param.env=new.env(parent=emptyenv());
@@ -278,18 +138,6 @@ init_param=function() {
   sapply(ls(envir=parent.env),
          function(what) assign(what,get(what,envir=parent.env),envir=param.env));
   assign('param.env',param.env,envir=.GlobalEnv);
-}
-assign_param=function() {
-  parent.env=parent.frame(n=1);
-  sapply(ls(envir=parent.env),
-        function(what) assign(what,get(what,envir=parent.env),envir=param.env));
-}
-## copy variable to parent
-## NG 19-01-11: not used in effit. used once upon a time in dofig to update fignum
-assign_parent=function(what,value) {
-  what=as.character(pryr::subs(what));
-  if (missing(value)) value=get(what,envir=parent.frame(n=1));
-  assign(what,value,envir=parent.frame(n=2));
 }
 ## NG 18-10-24: wrap function - propogate locals and ... then call function
 ##   funfun are additional functions called by fun with ... args
@@ -330,33 +178,11 @@ cq=function(...) {
    stop("... must contain atomic data like names or character strings");
  return(vapply(dots,as.character,""));
 }
-## upper case first letter of word. like Perl's ucfirst
-## from https://stackoverflow.com/questions/18509527/first-letter-to-upper-case/18509816
-ucfirst=function(word) paste0(toupper(substr(word,1,1)),substr(word,2,nchar(word)));
-  
+
 ## with case
 ## like 'with' but works on vectors. I use it inside apply(cases,1,function(case)...)
 ## note that plain 'with' works fine when applied to cases as a whole
 ## withcase=function(case,...) with(data.frame(t(case)),...)
-## NG 19-06-27: this version doens't work and isn't used any more...
-## withcase=function(case,...) {
-##   case=data.frame(t(case),stringsAsFactors=FALSE);
-##   assign('case',case,envir=parent.frame(n=1)); # so case will be data frame in called code
-##   with(case,...);
-## }  
-## NG 19-06-27: this version might work...
-## NG 19-07-15: BUG: clobbers 'case' vars in parent framr. sigh...
-withrows=function(cases,case,expr) {
-  var=as.character(pryr::subs(case));
-  expr=pryr::subs(expr);
-  env=parent.frame(n=1);
-  lapply(1:nrow(cases),function(i) {
-    case=cases[i,];
-    ## assign case so it'll be data frame in called code
-    assign(var,case,envir=env);         # so case will be visible in called code
-    list2env(case,envir=env);           # assign vars from case
-    eval(expr,envir=env);               # do it!
-  })}
 ## NG 19-07-15: this version might work... famous last words :)
 withrows=function(cases,case,expr) {
   var=as.character(pryr::subs(case));
