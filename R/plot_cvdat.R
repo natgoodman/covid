@@ -39,7 +39,7 @@ plot_cvdat=
            col=NULL,lty=NULL,lwd=NULL,
            col1='black',lty1='solid',lwd1=2,
            col.pal='d3',lty.range=c(1,6),lwd.range=c(1,3),
-           col.blocks=1,lty.blocks=1:2,lwd.blocks=2:3,
+           col.blocks=1,lty.blocks=2,lwd.blocks=2:3,
            col.legend=col1,lty.legend=lty1,lwd.legend=lwd1,
            pch=20,ylab=NULL,title=NULL,cex.title=NA,
            legend=TRUE,where.legend='topleft',cex.legend=0.8,
@@ -157,7 +157,7 @@ auto_lprop=
 auto_col=function(blocks,i,nseries,col,pal,col1) {
   if (!is.null(col)) return(list(col=rep(col,length=nseries)));
   nblocks=length(blocks);
-  if (nblocks<min(i)) return(list(col=col1,col.block=NULL));
+  if (nblocks<min(i)) return(list(col=rep(col1,length=nseries),col.block=NULL));
   i=min(i);
   name=names(blocks)[i];
   blocks=blocks[[i]]$blocks;
@@ -171,7 +171,7 @@ auto_col=function(blocks,i,nseries,col,pal,col1) {
 auto_lty=function(blocks,i,nseries,lty,lty.range,lty1) {
   if (!is.null(lty)) return(list(lty=rep(lty,length=nseries)));
   nblocks=length(blocks);
-  if (nblocks<min(i)) return(list(lty=lty1,lty.block=NULL));
+  if (nblocks<min(i)) return(list(lty=rep(lty1,length=nseries),lty.block=NULL));
   if (max(lty.range)>6) stop("'lty.range' must be <= 6, not ",max(lty.range),
                              ": extended lty not yet implemented. Sorry");
   i=if(nblocks>=max(i)) max(i) else nblocks;
