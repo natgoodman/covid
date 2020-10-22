@@ -79,14 +79,6 @@ nv=function(...,SEP=' ',EQUAL='=',PRETTY=FALSE,IGNORE=FALSE,NV=list()) {
     paste(collapse=SEP,paste(sep=EQUAL,names,values));
 }
 
-ucfirst=function(x) {
-  substr(x,1,1)=toupper(substr(x,1,1));
-  x;
-}
-lcfirst=function(x) {
-  substr(x,1,1)=tolower(substr(x,1,1));
-  x;
-}
 ## get value of variable from param environment and assign to same named variable in parent
 ## call with quoted or unquoted variable names
 ## adapted from base::rm
@@ -351,6 +343,15 @@ dayofweek=Vectorize(function(day) which(Weekdays==day))
 match_day=function(day) match.arg(ucfirst(day),Weekdays)
 inc_day=function(day,i=0) Weekdays[((dayofweek(day)+i-1)%%7)+1]               
 
+## upper/lower case fist character. like the Perl functions
+ucfirst=function(x) {
+  substr(x,1,1)=toupper(substr(x,1,1));
+  x;
+}
+lcfirst=function(x) {
+  substr(x,1,1)=tolower(substr(x,1,1));
+  x;
+}
 ## round up or down to nearest multiple of u. from https://grokbase.com/t/r/r-help/125c2v4e14/
 round_up=function(x,u) ceiling(x/u)*u;
 round_dn=function(x,u) floor(x/u)*u;
@@ -424,52 +425,6 @@ fillc=function(x,length.out,fill=NA,LENGTH.OUT=length.out,FILL=fill) {
     x=cbind(x,FILL);
   }
   x;
-}
-## repeat variables in parent
-##   typically used to extend function arguments or object elements to same length
-## LENGTH.OUT, TIMES, or EACH analogous to R's rep (but uppercase to avoid conflict with ...)
-##   LENGTH.OUT can be 'max', 'min', or number. default: 'max'
-## FILL used to fill args that are too small
-## as with rep, EACH done first, then if both LENGTH.OUT & TIMES specified, LENGTH.OUT wins
-## TODO: if called with no args, extends all of parents args. cf parent_dots,... 
-repv=function(...,LENGTH.OUT=NA,EACH=1,TIMES=1,ENV,NAMES=character(),FILL=NULL) {
-  dots=match.call(expand.dots=FALSE)$...;
-  names=c(as.character(dots),NAMES);
-  if (missing(ENV)) ENV=parent.frame(n=1);
-  vals=mget(names,envir=ENV);
-  ## do in pieces starting with EACH
-  if (EACH>1)
-    vals=lapply(vals,function(val)
-      if(is.data.frame(val)) repr(val,each=EACH) else rep(val,each=EACH));
-  ## next, LENGTH or TIMES
-  if (is.na(LENGTH.OUT)&&TIMES>1) 
-    vals=lapply(vals,function(val)
-      if(is.data.frame(val)) repr(val,times=TIMES) else rep(val,times=TIMES))
-  else {
-    ## calculate desired length
-    if (is.na(LENGTH.OUT)) LENGTH.OUT='max';
-    if (!is.numeric(LENGTH.OUT)) {
-      if (LENGTH.OUT %notin% cq(max,min)) 
-        stop(paste("Invalid LENGTH.OUT: must be numeric, 'max', or 'min', not",LENGTH.OUT));
-      lengths=sapply(vals,function(val) if (is.data.frame(val)) nrow(val) else length(val));
-      LENGTH.OUT=if (LENGTH.OUT=='max') max(lengths) else min(lengths);
-    }
-    ## do it!
-    vals=lapply(vals,function(val)
-      if (is.null(FILL)) {
-        ## usual case. repeat to desired length
-        if (is.data.frame(val)) repr(val,length.out=LENGTH.OUT)
-        else rep(val,length.out=LENGTH.OUT);
-      }
-      else fill(val,LENGTH.OUT,FILL));
-  }
-  ## assign to same-named variables in parent
-  lapply(seq_along(vals),function(i) {
-    val=vals[[i]];
-    name=names[i];
-    assign(name,val,envir=ENV);
-  })
-  LENGTH.OUT;
 }
 fill=function(val,LENGTH.OUT,FILL=NA) {
   if (is.data.frame(val)) {
