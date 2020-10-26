@@ -12,22 +12,25 @@
 ## file at https://github.com/natgoodman/NewPro/FDR/LICENSE 
 ##
 #################################################################################
-## ---- Download and import big 3 data sources ----
-do_dlim3=function(datasrc=cq(doh,jhu,nyt),version=NULL,monday.only=TRUE,cmp.prev=monday.only,
-                   url=param(download3.url)) {
+## ---- Download and import big 3 data sources plu trk ----
+do_dlim=function(datasrc=cq(doh,jhu,nyt,trk),version=NULL,monday.only=TRUE,cmp.prev=monday.only,
+                   url=param(download.url)) {
   datasrc=match.arg(datasrc,several.ok=TRUE);
-  if (is.null(version)) version=dl3_version(monday.only=monday.only);
-  if (param(verbose)) print(paste('+++ running download3: version',version));
+  if (is.null(version)) version=dl_version(monday.only=monday.only);
+  if (param(verbose)) print(paste('+++ running download: version',version));
   ok=system('pjtest')==0;
   if (!ok) stop('Reverse tunnel not running; stopping before download');
-  download3(datasrc,version,url=url);
+  download(datasrc,version,url=url);
   if (cmp.prev) datasrc=cmp_prev(datasrc,version);
-  import3(datasrc,version);
-  pjto3(datasrc,version);
+  sapply(datasrc,function(datasrc) {
+    if (param(verbose)) print(paste('+++ importing',datasrc));
+    import(datasrc,version);
+  });
+  pjto(datasrc,version);
   version;
 }
-download3=function(datasrc,version,url) {
-  filename=dl3_filenames(datasrc,version);
+download=function(datasrc,version,url) {
+  filename=dl_filenames(datasrc,version);
   sapply(datasrc,function(datasrc) {
     if (param(verbose)) print(paste('+++ downloading',datasrc));
     switch(datasrc,
@@ -36,33 +39,33 @@ download3=function(datasrc,version,url) {
              download.file(url$jhu.cases,filename$jhu[1]);
              download.file(url$jhu.deaths,filename$jhu[2])
            },
-           nyt=download.file(url$nyt,filename$nyt));
-  });
-}
-import3=function(datasrc,version) {
-  sapply(datasrc,function(datasrc) {
-    if (param(verbose)) print(paste('+++ importing',datasrc));
-    import(datasrc,version);
+           nyt=download.file(url$nyt,filename$nyt),
+           trk=download.file(url$trk,filename$trk));
   });
 }
 cmp_prev=function(datasrc,version) {
   prev=as_version(as_date(version)-7) ;
-  filename=dl3_filenames(datasrc,version);
-  prevname=dl3_filenames(datasrc,prev);
+  filename=dl_filenames(datasrc,version);
+  prevname=dl_filenames(datasrc,prev);
   ok=!sapply(datasrc,function(datasrc) {
     switch(datasrc,
            doh=cmp_files(filename$doh,prevname$doh),
            jhu=cmp_files(filename$jhu[1],prevname$jhu[1])&
              cmp_files(filename$jhu[2],prevname$jhu[2]),
-           nyt=cmp_files(filename$nyt,prevname$nyt));
+           nyt=cmp_files(filename$nyt,prevname$nyt),
+           trk=cmp_files(filename$trk,prevname$trk));
   });
   sapply(datasrc[!ok],function(datasrc) 
     print(paste0('+++ skiping ',datasrc,': current version ',version,' same as previous ',prev)));
   datasrc=datasrc[ok];
 }
-cmp_files=function(file1,file2) system(paste('cmp',file1,file2),ignore.stdout=T)==0;
+cmp_files=function(file1,file2) {
+  if (file.exists(file1)&&file.exists(file2))
+    system(paste('cmp',file1,file2),ignore.stdout=T)==0
+  else FALSE;
+}
 
-pjto3=function(datasrc,version) {
+pjto=function(datasrc,version) {
   sapply(datasrc,function(datasrc) {
     dir=indir(datasrc);
     cmd=paste('pjto',
@@ -71,11 +74,12 @@ pjto3=function(datasrc,version) {
                      jhu=paste(collapse=' ',
                                filename(dir,base='cases',tail=version,suffix='csv'),
                                filename(dir,base='deaths',tail=version,suffix='csv')),
-                     nyt=filename(dir,version,suffix='csv')));
+                     nyt=filename(dir,version,suffix='csv'),
+                     trk=filename(dir,version,suffix='csv')));
     if (param(verbose)) print(paste('+++',cmd));
     system(cmd);
     dir=datadir(datasrc);
-    bases=switch(datasrc,doh=cq(cases,admits,deaths),cq(cases,deaths));
+    bases=if(datasrc%in%cq(doh,trk)) cq(cases,admits,deaths) else cq(cases,deaths);
     cases=expand.grid(base=bases,suffix=cq(txt,RData),stringsAsFactors=FALSE);
     files=unlist(withrows(cases,case,filename(dir,base=base,tail=version,suffix=suffix)));
     cmd=paste('pjto',paste(collapse=' ',files));
@@ -83,29 +87,30 @@ pjto3=function(datasrc,version) {
     system(cmd);
   });
 }
-dl3_version=function(today=Sys.Date(),delta=0,monday.only=TRUE) {
+dl_version=function(today=Sys.Date(),delta=0,monday.only=TRUE) {
   today=today+delta;
   if ((weekdays(today)!='Monday')&&monday.only) 
-    stop("Have to run 'download3' workflow on Mondays so 'jhu' and 'nyt' versions will match 'doh' version");
+    stop("Have to run 'download' workflow on Mondays so non-'doh' and 'doh' versions will match");
   as_version(today-1);
 }
-dl3_filenames=function(datasrc,version) {
+dl_filenames=function(datasrc,version) {
   sapply(datasrc,function(datasrc) {
     dir=indir(datasrc);
     switch(datasrc,
            doh=filename(dir,version,suffix='xlsx'),
            jhu=c(filename(dir,base='cases',tail=version,suffix='csv'),
                  filename(dir,base='deaths',tail=version,suffix='csv')),
-           nyt=filename(dir,version,suffix='csv'));
+           nyt=filename(dir,version,suffix='csv'),
+           trk=filename(dir,version,suffix='csv'));
     },simplify=FALSE);
 }
 
 ## ---- Make standard objects ----
 ## make objects I tend to use circa Oct 2010
-do_objs3=function(what=cq(cases,admits,deaths),datasrc=cq(doh,jhu,nyt),version='latest') {
+do_objs=function(what=cq(cases,admits,deaths),datasrc=cq(doh,jhu,nyt,trk),version='latest') {
   cases=expand.grid(what=what,datasrc=datasrc,stringsAsFactors=FALSE);
   ## only 'doh' has 'admits'. prune others
-  cases=cases[(cases$what!='admits'|cases$datasrc=='doh'),]
+  cases=cases[(cases$what!='admits'|cases$datasrc%in%cq(doh,trk)),]
   ## cum is names of sorted cumulative cases. handcrafted 20-10-14 from jhu.cases.raw
   cum=c('King','Yakima','Pierce','Spokane','Snohomish','Benton','Franklin','Clark','Grant','Chelan','Whitman','Whatcom','Kitsap','Thurston','Douglas','Skagit','Okanogan','Walla Walla','Adams','Cowlitz','Lewis','Kittitas','Grays Harbor','Mason','Island','Clallam','Stevens','Klickitat','Asotin','Pacific','Pend Oreille','Jefferson','Skamania','Lincoln','Ferry','San Juan','Columbia','Garfield','Wahkiakum');
   withrows(cases,case,{
@@ -114,10 +119,15 @@ do_objs3=function(what=cq(cases,admits,deaths),datasrc=cq(doh,jhu,nyt),version='
     obj=raw(what,datasrc,version);
     assign(paste(sep='.',datasrc,what,'raw'),obj,globalenv());
     ## 'standard' objects differ by datasrc
-    obj=if(datasrc=='doh') extra(obj) else weekly(incremental(obj))
-    ## edit to include, eg, SKP, before assigning to global
-    obj=edit(obj,SUM=list(SKP=cq(Snohomish,King,Pierce),Top5=head(cum,n=5),Top10=head(cum,n=10)),
-             NEG=list(notKing='King',notSKP='SKP',notTop5='Top5',notTop10='Top10'));
+    obj=switch(datasrc,
+               doh=extra(obj),
+               jhu=weekly(incremental(obj)),
+               nyt=weekly(incremental(obj)),
+               trk=weekly(obj));
+    ## edit all but trk to include, eg, SKP, before assigning to global
+    if (datasrc!='trk')
+      obj=edit(obj,SUM=list(SKP=cq(Snohomish,King,Pierce),Top5=head(cum,n=5),Top10=head(cum,n=10)),
+               NEG=list(notKing='King',notSKP='SKP',notTop5='Top5',notTop10='Top10'));
     assign(paste(sep='.',datasrc,what),obj,globalenv());
     ## rolling mean
     obj=roll(obj);
@@ -128,17 +138,20 @@ do_objs3=function(what=cq(cases,admits,deaths),datasrc=cq(doh,jhu,nyt),version='
 
 ## ---- Standard plots ----
 ## mostly a placeholder. expect it to change
-do_plots=function(objs=NULL) {
+do_plots=function(objs=NULL,objs.roll=NULL) {
   ok=system('pjtest')==0;
   if (!ok) stop('Reverse tunnel not running; stopping before doing plots');
-  if (is.null(objs)) objs=list(doh.cases,jhu.cases,nyt.cases);
-  ## all sources 'state'
+  if (is.null(objs)) objs=list(doh.cases,jhu.cases,nyt.cases,trk.cases);
+  if (is.null(objs.roll))
+    objs.roll=list(doh.cases.roll,jhu.cases.roll,nyt.cases.roll,trk.cases.roll);
+ ## all sources 'state'
   plon('all.state');
-  plot_cvdat(objs,places=cq(state),ages='all',per.capita=TRUE,lty='solid');
+  plot_cvdat(objs,places=cq(state),ages='all',per.capita=TRUE);
   ploff();
-  ## all sources 'King'
+  ## all sources (except trk) 'King'
+  objs.notrk=objs[sapply(objs,function(obj) datasrc(obj)!='trk')]
   plon('all.King');
-  plot_cvdat(objs,places=cq(King),ages='all',per.capita=TRUE,lty='solid');
+  plot_cvdat(objs.notrk,places=cq(King),ages='all',per.capita=TRUE);
   ploff();
   ## doh several places
   plon('doh.places');
@@ -147,8 +160,18 @@ do_plots=function(objs=NULL) {
   ploff();
   ## doh several ages
   plon('doh.ages');
-  plot_cvdat(doh.cases,places=cq(state),ages=NULL,per.capita=TRUE,lty='solid');
+  plot_cvdat(doh.cases,places=cq(state),ages=NULL,per.capita=TRUE);
   ploff();
+  ## all sources 'state', regular and roll
+  n=length(objs.roll);
+  plon('all.regroll');
+  plot_cvdat(c(objs,objs.roll),places=cq(state),ages='all',per.capita=TRUE,
+             lty=c(rep('solid',n),rep('dotted',n)),col=rep(col_brew(n,'d3')));
+  ploff()
+  ## all sources 'state' roll
+  plon('all.roll');
+  plot_cvdat(objs.roll,places=cq(state),ages='all',per.capita=TRUE);
+  ploff()
 }
 
 
