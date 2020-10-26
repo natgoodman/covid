@@ -60,12 +60,13 @@ init=function(
   incompatible.ok=FALSE,         # require edited objects to be compatible
 
   ## workflow params
-  ## URLs for big 3 downloads
-  download3.url=list(
+  ## URLs for automatic downloads
+  download.url=list(
     doh='https://www.doh.wa.gov/Portals/1/Documents/1600/coronavirus/data-tables/PUBLIC_CDC_Event_Date_SARS.xlsx',    
     jhu.cases='https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv',
     jhu.deaths='https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_US.csv',
-    nyt='https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv'),
+    nyt='https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv',
+    trk='https://covidtracking.com/data/download/washington-history.csv'),
 
   ## program control
   verbose=F,                     # print progress messages
