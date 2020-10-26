@@ -29,6 +29,7 @@
 ## cex.title is what R calls cex.main. if 'auto' or NULL, use auto-scaling
 ## legend, where.legend tell whether and where to draw legend
 ## title.legend,labels.legend,cex.legend are title, text labels, and cex for legend
+## xgrid is spacing of x grid lines - keyword or nummber of days
 ## vline,hline are vectors of x or y positions for extra vertical or horizontal lines
 ## vhlty, vhcol, vhlwd are lty, col, lwd for these extra lines
 ## vlab, hlab contol writing vline, hline values along axes
@@ -43,6 +44,7 @@ plot_cvdat=
            col.legend=col1,lty.legend=lty1,lwd.legend=lwd1,
            pch=20,ylab=NULL,title=NULL,cex.title=NA,
            legend=TRUE,where.legend='topleft',cex.legend=0.8,
+           xgrid=cq(biweekly,weekly,semimonthly,monthly),
            vline=NULL,hline=NULL,vhlty='dashed',vhcol='grey50',
            vhlwd=1,vlab=TRUE,hlab=TRUE,vhdigits=2,
            attrs=cq(unit,cumulative,what,datasrc,version,fit,roll,extra,edit),
@@ -99,11 +101,22 @@ plot_cvdat=
       else if (type=='p') points(x=data[[i]]$date,y=data[[i]]$y,col=col[i],lty=lty[i],lwd=lwd[i]));
     if (!add) {
       ## draw grid
-      grid(nx=NA,ny=NULL) # draw y grid lines. we'll draw x ourselves at first day of month
+      grid(nx=NA,ny=NULL) # draw y grid lines. we'll draw x ourselves at desired spacing
       days=seq(xlim[1],xlim[2],1);
       mon.01=mon_day(days,1);
       mon.15=mon_day(days,15);
-      abline(v=c(mon.01,mon.15),col="lightgray",lty="dotted");
+      if (is.numeric(xgrid)) xgrid=seq(xlim[1],xlim[2],xgrid)
+        else {
+          xgrid=match.arg(xgrid);
+          xgrid=switch(xgrid,weekly=seq(xlim[1],xlim[2],7),
+                       biweekly=seq(xlim[1],xlim[2],14),
+                       semimonthly=c(mon.01,mon.15),
+                       monthly=mon.01,
+                       stop('Bad news: unknown xgrid=',xgrid,'. Should have been caught earlier'));
+        }
+      abline(v=xgrid,col="lightgray",lty="dotted");
+      ## abline(v=biweek,col="lightgray",lty="dotted");
+      ## abline(v=c(mon.01,mon.15),col="lightgray",lty="dotted");
       ## axis line below adapted from stackoverflow.com/questions/4843969. Thx!
       axis(1,mon.01,format(mon.01,"%b-%d"),cex.axis=0.8);
       ## plot extra lines & values if desired. nop if vline, hline NULL
