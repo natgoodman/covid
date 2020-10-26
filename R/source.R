@@ -23,7 +23,7 @@
 source('../util/R/source.R');          # source util first to get 'cq'
 SOURCE=cq(cvdat,dat,data_cvdat,doc,edit,extra,fit,import,import_doh,init,label,pal,pal_yarrr,
           meta,plot_cvdat,plotm,series,transform,workflow);
-UTIL=cq(util,dat,file,plot);
+UTIL=cq(cqcl,dat,date,dev,file,fillrep,nv,param,plot,set,util,withrows);
 SOURCE=c(sapply(SOURCE,function(src) paste0('R/',src,'.R')),
          sapply(UTIL,function(src) paste0('../util/R/',src,'.R')));
 
