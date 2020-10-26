@@ -185,10 +185,7 @@ import_yyg=function(file,maxdate=param(yyg.maxdate)) {
       data=data[,cq(date,state)];
     }
     data$state=ifelse(is.na(data$state),0,data$state);
-    minrow=min(which(data$state!=0));
-    ## delete early 0 rows
-    if (minrow>1) data=tail(data,-(minrow-1));
-     ## for sanity, make sure dates are a day apart
+    ## for sanity, make sure dates are a day apart
     date.diff=diff(dates);
     bad=which(date.diff!=1);
     if (length(bad)>0) stop(paste("These dates in yyg",what,"version",version,
@@ -203,7 +200,7 @@ import_trk=function(file) {
   version=baseonly(file,keep.dir=FALSE);
   data=read.csv(file,stringsAsFactors=FALSE);
   data=subset(data,subset=(state=='WA'));
-  colwant=cq(date,deathIncrease,positiveIncrease);
+  colwant=cq(date,positiveIncrease,hospitalizedIncrease,deathIncrease);
   ## for sanity, make sure columns are what we expect
   if (!is_subset(colwant,colnames(data)))
     stop(paste("trk version",version,"format changed. Missing these columns:",
@@ -211,15 +208,13 @@ import_trk=function(file) {
   ## trk dates all numeric - R reads as integer. file in descending order
   data$date=as_date(as.character(data$date));
   data=data[order(data$date),colwant];
-  colnames(data)=cq(date,deaths,cases);
-  sapply(cq(cases,deaths),function(what) {
-    if (what=='cases') data=data[,cq(date,cases)] else data=data[,cq(date,deaths)];
+  colnames(data)=cq(date,cases,admits,deaths);
+  sapply(cq(cases,admits,deaths),function(what) {
+    data=data[,c('date',what)];
     colnames(data)=cq(date,state);
     data$state=ifelse(is.na(data$state),0,data$state);
-    minrow=min(which(data$state!=0));
-    ## delete early 0 rows
-    if (minrow>1) data=tail(data,-(minrow-1));
-     ## for sanity, make sure dates are a day apart
+    ## for sanity, make sure dates are a day apart
+    dates=data$date;
     date.diff=diff(dates);
     bad=which(date.diff!=1);
     if (length(bad)>0) stop(paste("These dates in trk",what,"version",version,
@@ -256,11 +251,11 @@ import_ihme=function(file,maxdate=param(ihme.maxdate)) {
     if (what=='cases') data=data[,cq(date,cases)] else data=data[,cq(date,deaths)];
     colnames(data)=cq(date,state);
     data$state=ifelse(is.na(data$state),0,data$state);
-    ## delete early and late 0 rows
-    minrow=min(which(data$state!=0));
-    if (minrow>1) data=tail(data,-(minrow-1));
-    maxrow=max(which(data$state!=0));
-    if (maxrow>1) data=head(data,maxrow);
+    ## ## delete early and late 0 rows
+    ## minrow=min(which(data$state!=0));
+    ## if (minrow>1) data=tail(data,-(minrow-1));
+    ## maxrow=max(which(data$state!=0));
+    ## if (maxrow>1) data=head(data,maxrow);
     ## for sanity, make sure dates are a day apart
     date.diff=diff(dates);
     bad=which(date.diff!=1);
