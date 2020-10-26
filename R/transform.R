@@ -24,7 +24,8 @@
 raw=function(what=cq(cases,admits,deaths),datasrc=param(datasrc),version='latest') {
   what=match.arg(what);
   datasrc=match.arg(datasrc);
-  if (what=='admits'&&datasrc!='doh') stop("Only have admits data for doh, not",datasrc);
+  if (what=='admits'&&datasrc %notin% cq(doh,trk))
+    stop("Only have admits data for doh and trk, not ",datasrc);
   if (!is.null(version)&&version=='latest') version=latest_version(datasrc,what);
   data=load_data(whatv=what,datasrc=datasrc,version=version);
   newobj=if(datasrc!='doh') cvdat else cvdoh;
@@ -77,7 +78,7 @@ roll.cvdoh=function(obj,width=NULL) {
 }
 roll1=function(data,width) {
   dates=data[,1];
-  counts=data[,-1];
+  counts=data[,-1,drop=FALSE];
   len=nrow(counts);
   w1=width-1;
   counts=round(apply(counts,2,function(x) 
