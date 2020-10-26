@@ -181,10 +181,7 @@ cmp_pops=function(objs,places=NULL,ages=NULL,pop=param(pop),
   if (all(orig)) return(TRUE);          # all objects 'original', so perforce equal
   ## some objects edited. have to do merge & compare these vs original pop and each other
   pops=pops[!orig];
-  if (any(orig)) {
-    if (is.null(pop)) pop=load_popbyage();
-    pops=c(list(pop),pops); # include original pop in list to be merged
-  }
+  if (any(orig)) pops=c(list(load_popbyage()),pops); # include original pop in list to be merged
   ## tack 'age' onto each pop, filter, and order by age (for testing equality later)
   pops=lapply(pops,function(pop) {
     pop=filter_pop(pop,places,ages);
