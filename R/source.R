@@ -18,42 +18,9 @@
 ## file at https://github.com/natgoodman/NewPro/FDR/LICENSE 
 ##
 #################################################################################
-## SOURCE=c('R/util.R','R/datman.R','R/doc.R','R/init.R','R/stats.R');
-## SOURCE=c('R/util.R','R/init.R','R/doc_hiddn.R');
-source('../util/R/source.R');          # source util first to get 'cq'
+source('../util/R/source.R');        # source first to get 'cq' and 'source_all' functions
 SOURCE=cq(cvdat,dat,data_cvdat,doc,edit,extra,fit,import,import_doh,init,label,pal,pal_yarrr,
           meta,plot_cvdat,plotm,series,transform,workflow);
 UTIL=cq(cqcl,dat,date,dev,file,fillrep,nv,param,plot,set,util,withrows);
-SOURCE=c(sapply(SOURCE,function(src) paste0('R/',src,'.R')),
-         sapply(UTIL,function(src) paste0('../util/R/',src,'.R')));
+source_all(SOURCE,UTIL);
 
-## these functions now defined in util/R/source.R
-## ## ---- source the files ----
-## ## source default files. assume README doc until init runs
-## source_files=function(files=SOURCE) {
-##   sapply(files,source);
-##   invisible();
-## }
-## ## ## source doc-specific files
-## ## source_doc=function(doc=param(doc)) {
-## ##   docr=paste(sep='.',doc,'R');
-## ##   source_ifexists(paste(sep='_','R/dat',docr));
-## ##   source_ifexists(paste(sep='_','R/doc',docr));
-## ##   source_ifexists(paste(sep='_','R/docfun',docr));
-## ##   source_ifexists(paste(sep='_','R/plot',docr));
-## ##   source_ifexists(paste(sep='_','R/stats',docr));
-## ## }
-## ## source optional files
-## source_ifexists=function(file) if (file.exists(file)) source(file);
-                         
-## ## source all files
-## ## NG 19-09-10: can't call param(doc) in empty workspace - param.env doens't exist
-## ## source_all=function(files=SOURCE,doc=param(doc)) {
-## source_all=function(files=SOURCE) {
-##   source_files(files);
-##   ## source dat_XXX, doc_XXX files so top level functions defined
-##   ## NOTE: these top level functions call init which re-sources doc-specific files
-##   ## source_files(list.files('R',pattern='^(doc_|dat_).*.R',full.names=T));
-##   ## if (exists('param.env')) source_doc();
-## }
-source_all();
