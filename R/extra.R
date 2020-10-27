@@ -17,7 +17,8 @@
 ##
 ###################################################################################
 extrafun=
-  function(what=cq(cases,deaths,admits),objs=NULL,incompatible.ok=param(incompatible.ok),
+  function(what=cq(cases,deaths,admits),objs=NULL,versions=NULL,
+           incompatible.ok=param(incompatible.ok),
            w.max=param(extra.wmax),nv.min=param(extra.nvmin),ex.min=param(extra.exmin),
            formula.type=cq('*',':',crossing,interaction),model.type=cq(split,joint),
            dates=NULL,places=NULL,ages=NULL) {
