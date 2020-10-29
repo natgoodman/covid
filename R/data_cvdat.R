@@ -42,7 +42,9 @@ data_cvdat=
     ct=ct_attrs(series,attrs)
     ## construct colnames. apply to series so merge won't complain about duplicate colnames
     nattr=series$xattr[,ct$mv.attrs%-%cq(series,obj),drop=FALSE];
-    names=apply(nattr,1,function(row) paste(collapse=';',row));
+    ## names=apply(nattr,1,function(row) paste(collapse=';',row));
+    ## adapt code from plot_cvdat - produces nicer colnames
+    names=unlist(withrows(nattr,row,paste_legend(row,SEP=';')))
     y=mapply(function(data,name) {colnames(data)[2]=name; data},series$series,names,SIMPLIFY=F);
     ## gather all dates for joining, then do it!
     dates=sort(unique(do.call(c,lapply(series$series,function(series) series$date))));
