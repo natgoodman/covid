@@ -135,7 +135,7 @@ inc1=function(data) {
 }
 ## convert object data to weekly and optionally center
 weekly=function(obj,...) UseMethod('weekly')
-weekly.cvdat=function(obj,start.on='Sunday',center=TRUE) {
+weekly.cvdat=function(obj,start.on='Sunday',center=FALSE) {
   if (!is_weekly(obj)) {
     start.on=match_day(start.on);
     obj$data=wkly1(obj$data,obj$cumulative,start.on);
@@ -144,7 +144,7 @@ weekly.cvdat=function(obj,start.on='Sunday',center=TRUE) {
   if (center) obj=center(obj)
   obj;
 }
-weekly.cvdoh=function(obj,start.on='Sunday',center=TRUE) {
+weekly.cvdoh=function(obj,start.on='Sunday',center=FALSE) {
   if (!is_weekly(obj)) {
     start.on=match_day(start.on);
     obj$data=sapply(obj$data,function(data) wkly1(data,obj$cumulative,start.on),simplify=FALSE);
