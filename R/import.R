@@ -50,18 +50,18 @@ import_jhu=function(file) {
   what=parts[1];
   version=parts[2];
   data=read.csv(file,stringsAsFactors=FALSE);
-  data=subset(data,subset=(Province_State=='Washington'));
-  colwant=grep('Admin2|^X\\d',colnames(data));
-  data=data[,colwant];
-  ## first column is counties. rest are dates
+  data_wa=subset(data,subset=(Province_State=='Washington'));
+  data_other=data_jhu_other(data);
+  colwant=grep('Admin2|^X\\d',colnames(data),value=TRUE);
+  data=rbind(data_wa[,colwant],data_other[,colwant]);
+  ## first column is place. rest are dates
   counties=data[,1];
   dates=as.Date(tail(colnames(data),n=-1),format='X%m.%d.%y')
-  ## invert data columns (leave out counties, so everything's numeric)
+  ## invert data columns (leave out place, so everything's numeric)
   data=as.data.frame(t(data[,-1]));
   colnames(data)=counties;
   rownames(data)=NULL;
-  total=rowSums(data);
-  data$state=total;
+  data$state=rowSums(data[,places_wa()%-%'state']);
   data=cbind(date=dates,data);
   ## for sanity, make sure dates are a day apart
   dates=data$date;
@@ -69,26 +69,21 @@ import_jhu=function(file) {
   bad=which(date.diff!=1);
   if (length(bad)>0) stop(paste("These dates in jhu",what,"version",version,
                                 "are not sequential:",paste(collapse=', ',dates[bad])));
-  ## for sanity, make sure we have all counties
+  ## for sanity, make sure we have all places
   places=colnames(data)[-1];
-  bad=places_wa() %-% places;
+  bad=places_all() %-% places;
   if (length(bad)>0)
-    stop(paste('jhu version',version,'missing counties:',paste(collapse=', ',bad)));
- ## quick hack to tack on Ann Arbor and Omaha
-  data=cbind(data,import_jhu_other(file));
+    stop(paste('jhu version',version,'missing places:',paste(collapse=', ',bad)));
+  ## quick hack to tack on Ann Arbor and Omaha
+  ## data=cbind(data,import_jhu_other(file));
   save_data(what,'jhu',version,data=data);
 }
-## quick hack to support import of Ann Arbor and Omaha
-import_jhu_other=function(file) {
-  data=read.csv(file,stringsAsFactors=FALSE);
-  data.annarbor=subset(data,subset=(Province_State=='Michigan'&Admin2=='Washtenaw'))
-  data.omaha=subset(data,subset=(Province_State=='Nebraska'&Admin2=='Douglas'))
-  data=rbind(data.annarbor,data.omaha)
-  ## here, only want data columns. invert 'em. note everything's numeric
-  colwant=grep('^X\\d',colnames(data));
-  data=as.data.frame(t(data[,colwant]));
-  colnames(data)=cq('Washtenaw_MI','Douglas_NE');
-  data;
+## import non-Washington places
+data_jhu_other=function(data,places.other=param(places.other)) {
+  places.other$state=state_id2name(places.other$state)
+  data_other=merge(data,places.other,by.x=cq(Province_State,Admin2),by.y=cq(state,county));
+  data_other$Admin2=data_other$place;
+  data_other;
 }
 
 ## ---- Import NY Times input file ----
@@ -96,8 +91,10 @@ import_nyt=function(file) {
   if (param(verbose)) print(paste('>>> importing',file));
   version=baseonly(file,keep.dir=FALSE);
   data=read.csv(file,stringsAsFactors=FALSE);
-  data=subset(data,subset=(state=='Washington'));
-  ## formt is dead simple: date,county,state,fips,cases,deaths
+  ## format is dead simple: date,county,state,fips,cases,deaths
+  data_wa=subset(data,subset=(state=='Washington'));
+  data_other=data_nyt_other(data);
+  data=rbind(data_wa,data_other);
   ## want everything except 'fips'
   colwant=cq(date,county,cases,deaths);
   ## for sanity, make sure columns are what we expect
@@ -118,8 +115,7 @@ import_nyt=function(file) {
     data=as.data.frame(do.call(cbind,lapply(bycounty,function(data) data[,what])));
     ## line below not necessary. lapply above sets names
     ## colnames(data)=names(bycounty);
-    total=rowSums(data);
-    data$state=total;
+    data$state=rowSums(data[,places_wa()%-%'state']);
     ## use cbind, not data.frame - latter replaces spaces with dots in names like 'Walla Walla'
     data=cbind(date=as.Date(dates$date),data);
     ## expect Garfield to be missing in versions <= 20-07-05
@@ -131,10 +127,10 @@ import_nyt=function(file) {
         data$Garfield=0;
         places=c(places,'Garfield');
       }
-    ## for sanity, make sure we have all counties
-    bad=places_wa() %-% places;
+    ## for sanity, make sure we have all places
+    bad=places_all() %-% places;
     if (length(bad)>0)
-      stop(paste('nyt version',version,'missing counties:',paste(collapse=', ',bad)));
+      stop(paste('nyt version',version,'missing places:',paste(collapse=', ',bad)));
     ## for sanity, make sure dates are a day apart
     dates=data$date;
     date.diff=diff(dates);
@@ -144,6 +140,15 @@ import_nyt=function(file) {
     save_data(what,'nyt',version,data=data);
   });
 }
+## import non-Washington places
+data_nyt_other=function(data,places.other=param(places.other)) {
+  places.other$state=state_id2name(places.other$state)
+  data_other=merge(data,places.other);
+  data_other$county=data_other$place;
+  data_other[,colnames(data)];
+}
+
+
 ## ---- Import C19Pro (aka yyg) input file ----
 ## no counties
 ## actual and predicted deaths. predicted infections NOT cases
