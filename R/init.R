@@ -37,15 +37,32 @@ init=function(
   figdir=filename('figure',run.id),         # figures
   tbldir=filename('table',run.id),          # tables
   tmpdir=filename(datadir,'tmp'),           # tmp dir if needed
-  acsplacedir=filename(indir,'censusreporter','place'),
-  ## fixed censusreporter files
-  acs5yr=filename(indir,'censusreporter','acs2018_5yr_B01001_05000US53041.csv'),
-  acsmeta=filename(indir,'censusreporter','metadata.json'),
-  popbyage=filename(metadir,'popbyage'),     # pop by age file
-  # outdir=c(datadir,figdir,tbldir,tmpdir),  # top level output dirs
-
+  inmetadir=filename(indir,'meta'),
+  placedir=filename(inmetadir,'place'),
+  ## metadata input URLs and files
+  ## acs5yr=filename(inmetadir,'acs2018_5yr_B01001_05000US53041.csv'),
+  acsmeta=filename(inmetadir,'metadata.json'),
+  geo.infile=filename(inmetadir,'geoid.txt'),         # geoids for all US counties (Census Bureau)
+  stateid.infile=filename(inmetadir,'stateid.txt'),   # map state names to IDs(World Pop Review)
+  ## computed metadata files
+  pop.file=filename(metadir,'pop'),         # pop by place, age
+  geo.file=filename(metadir,'geo'),         # geoids and place names
+  stateid.file=filename(metadir,'stateid'), # map state names to IDs
+  ## descriptors for non-WA places of interest
+  ## entries are place, state, county. converted to data frame in code below
+  places.other=
+    list(c('Ann Arbor','MI','Washtenaw'),
+         c('DC','DC','District of Columbia'),
+         c('Boston','MA','Suffolk'),
+         c('San Diego','CA','San Diego'),
+         c('Omaha','NE','Douglas'),
+         c('Austin','TX','Travis')),
+  ages.all=c("all","0_19","20_39","40_59","60_79","80_"),
+  ## outdir=c(datadir,figdir,tbldir,tmpdir),  # top level output dirs
   ## cached data
-  pop=NULL,                      # population metadata. set in meta.R
+  pop=NULL,                      # pop by place, age. set by load_pop, read_pop
+  geo=NULL,                      # geoids and place names. set by load_geo, read_geo
+  stateid=NULL,                  # map state names to IDs. set by load_stateid, read_stateid
   pal.info=NULL,                 # color palette info. set in pal/init_pal
 
   ## import params for specific data sources
@@ -129,6 +146,11 @@ init=function(
   ## create output directories. nop if already exist
   sapply(outdirs,function(dir) dir.create(dir,recursive=TRUE,showWarnings=FALSE));
   ## init_doc();
+  ## convert places.other list into data frame
+  places.other=do.call(
+    rbind,lapply(places.other,function(row) 
+      data.frame(place=row[1],state=row[2],county=row[3],stringsAsFactors=FALSE)));
+  param(places.other=places.other);
   invisible();
 }
 
