@@ -12,7 +12,7 @@
 ## file at https://github.com/natgoodman/NewPro/FDR/LICENSE 
 ##
 #################################################################################
-## ---- Download and import big 3 data sources plu trk ----
+## ---- Download and import big 3 data sources plus trk ----
 do_dlim=function(datasrc=cq(doh,jhu,nyt,trk),version=NULL,monday.only=TRUE,cmp.prev=monday.only,
                    url=param(download.url)) {
   datasrc=match.arg(datasrc,several.ok=TRUE);
@@ -155,12 +155,24 @@ do_plots=function(objs=NULL,objs.roll=NULL) {
   ploff();
   ## doh several places
   plon('doh.places');
-  plot_cvdat(doh.cases,places=cq(state,King,SKP,Top5,Top10),ages='all',per.capita=TRUE,
-             lty='solid');
+  plot_cvdat(doh.cases,places=cq(state,King,SKP,Top5,Top10),ages='all',per.capita=TRUE);
   ploff();
   ## doh several ages
   plon('doh.ages');
   plot_cvdat(doh.cases,places=cq(state),ages=NULL,per.capita=TRUE);
+  ploff();
+  ## jhu King, kids
+  plon('jhu.kids');
+  plot_cvdat(jhu.cases,places=cq(King,'Ann Arbor',DC),ages=NULL,per.capita=TRUE);
+  ploff();
+  ## jhu King, others
+  plon('jhu.other');
+  plot_cvdat(jhu.cases,places=cq(King,'Ann Arbor',DC,Boston,'San Diego',Austin),
+             ages=NULL,per.capita=TRUE);
+  ploff();
+  ## jhu, nyt other
+  plon('all.other');
+  plot_cvdat(list(jhu.cases,nyt.cases),places=places_other(),ages=NULL,per.capita=TRUE);
   ploff();
   ## all sources 'state', regular and roll
   n=length(objs.roll);
@@ -174,6 +186,14 @@ do_plots=function(objs=NULL,objs.roll=NULL) {
   ploff()
 }
 
+## ---- Download and import metadata ----
+## Need to do this once before running pretty much anything else
+do_meta=function() {
+  import_geo();
+  import_stateid();
+  download_pop();
+  import_pop();
+}
 
 ## ---- Test transforms ----
 ## CAUTION: not up-to-date !!
