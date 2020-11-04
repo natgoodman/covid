@@ -54,7 +54,7 @@ ct_attrs=function(series,attrs=cq(unit,cumulative,what,datasrc,version,fit,roll,
 series_percap=function(series,pop0=param(pop)) {
   xattr=series$xattr;
   objs=series$objs;
-  if (is.null(pop0)) pop0=load_popbyage();
+  if (is.null(pop0)) pop0=load_pop();
   ## if ('age' %notin% colnames(xattr)) xattr$age='all';
   if ('age' %notin% colnames(xattr)) age='all';
   data=series$series;

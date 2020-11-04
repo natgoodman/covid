@@ -23,7 +23,7 @@ edit_places1=function(data,EXPR=list(),KEEP=NULL,DROP=NULL) {
 }
 ## edit places for pop metadata
 edit_popp=function(pop,EXPR=list(),KEEP=NULL,DROP=NULL) {
-  if (is.null(pop)) pop=load_popbyage();
+  if (is.null(pop)) pop=load_pop();
   edit_df1(pop,EXPR,KEEP,DROP,'state');
 }
 ## edit columns for one data.frame of counts (counts from object or all of pop)
@@ -79,7 +79,7 @@ edit_ages1=function(data,EXPR=list(),KEEP=NULL,DROP=NULL) {
 }
 ## edit ages for pop metadata
 edit_popa=function(pop,EXPR=list(),KEEP=NULL,DROP=NULL) {
-  if (is.null(pop)) pop=load_popbyage();
+  if (is.null(pop)) pop=load_pop();
   ## transpose then process as data frame
   tpop=as.data.frame(t(pop));
   tpop=edit_df1(tpop,EXPR,KEEP,DROP,'all','ages');
