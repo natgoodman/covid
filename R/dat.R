@@ -82,39 +82,51 @@ latest_version=function(datasrc,what=NULL,dir=datadir(datasrc))
 indir=function(datasrc) filename(param(indir),datasrc)
 datadir=function(datasrc) filename(param(datadir),datasrc)
 
-########## BELOW HERE NOT PORTED ##########
-
-##### table - saved in tbldir
-save_tbl=function(tbl,file,obj.ok=F) {
-  param(save.tbl,save.txt.tbl);
-  if (is.null(tbl)) stop('Trying to save NULL table. Is table name set correctly?');
-  base=desuffix(file);
-  file=filename(base=base,suffix='RData');
-  if ((is.na(save.tbl)&!file.exists(file))|(!is.na(save.tbl)&save.tbl)) {
-    save(tbl,file=file);
-    if (save.txt.tbl) {
-      file=filename(base=base,suffix='txt');
-      if (length(dim(tbl))==2) write.table(tbl,file=file,sep='\t',quote=F,row.names=F)
-      else if (is.list(tbl)) {
-        sink(file);
-        print(tbl);
-        sink();
-      }
-      else if (is.vector(tbl)) {
-        names=names(tbl);
-        if (!is.null(names)) {
-          tbl=data.frame(name=names,value=as.character(tbl));
-          write.table(tbl,file=file,sep='\t',quote=F,row.names=F);
-        } else writeLines(as.character(tbl),file);
-      }
-      else if (!obj.ok) stop('Trying to save generic object but obj.ok=F.');
-    }}
-  invisible(tbl);
+## ---- Save and Load population metadata ----
+## base includes path. suffix optional
+## pop - population by place, age - for per capita calculations
+save_pop=function(pop,base=param(pop.file),suffix=cq(txt,RData)) {
+  param(save.meta,save.txt.meta);
+  save_(pop,base=base,save=save.meta,save.txt=FALSE,suffix=suffix);
+  if (save.txt.meta) {
+    ## want explicit age column in text file
+    pop=data.frame(age=rownames(pop),pop);
+    file=resuffix(base,old.suffix=suffix,suffix='txt');
+    write.table(pop,file=file,sep='\t',quote=F,row.names=F);
+  }
+}
+load_pop=function(base=param(pop.file)) {
+  pop=load_(base=base);
+  param(pop=pop);
+}
+read_pop=function(base=param(pop.file)) {
+  pop=read_(base=base,row.names='age');
+  param(pop=pop);
+}
+## geo - geoids and place names - eg, for places_wa, places_other functions
+save_geo=function(geo,base=param(geo.file),suffix=cq(txt,RData))
+  save_(geo,base=base,save=param(save.meta),save.txt=param(save.txt.meta),suffix=suffix)
+load_geo=function(base=param(geo.file)) {
+  geo=load_(base=base);
+  param(geo=geo);
+}
+read_geo=function(base=param(geo.file)) {
+  geo=read_(base=base);
+  param(geo=geo);
+}
+## stateid - map state names to IDs (eg, Washington to WA)
+save_stateid=function(stateid,base=param(stateid.file),suffix=cq(txt,RData))
+  save_(stateid,base=base,save=param(save.meta),save.txt=param(save.txt.meta),suffix=suffix)
+load_stateid=function(base=param(stateid.file)) {
+  stateid=load_(base=base);
+  param(stateid=stateid);
+}
+read_stateid=function(base=param(stateid.file)) {
+  stateid=read_(base=base);
+  param(stateid=stateid);
 }
 
-## figure and table functions
-filename_fig=function(figlabel,sect,figname,suffix='png')
-  filename(param(figdir),paste(collapse='_',c('figure',figlabel,sect,figname)),suffix=suffix);
-filename_tbl=function(tbllabel,sect,tblname,suffix='RData')
-  filename(param(tbldir),paste(collapse='_',c('table',tbllabel,sect,tblname)),suffix=suffix);
+
+
+
 
