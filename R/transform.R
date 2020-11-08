@@ -191,8 +191,9 @@ dly1=function(data,cumulative,center) {
     ## add data for first and last dates to anchor the fit
     mindate=if(center) min(data$date)-3 else min(data$date);
     maxdate=if(center) max(data$date)+3 else max(data$date)+6;
-    minrow=data.frame(date=mindate,data[1,-1]);
-    maxrow=data.frame(date=maxdate,data[nrow(data),-1]);
+    ## use cbind, not data.frame, so R won't mange column names with spaces. sigh...
+    minrow=cbind(date=mindate,data[1,-1]);
+    maxrow=cbind(date=maxdate,data[nrow(data),-1]);
     data=rbind(minrow,data,maxrow);
   } else {
     ## stretch data to fill entire date range
