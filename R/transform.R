@@ -131,7 +131,8 @@ incremental.cvdoh=function(obj) {
 }
 inc1=function(data) {
   ## use check.names=FALSE so R won't replace spaces in place names...
-  data.frame(date=data[,1],rbind(data[1,-1],apply(data[,-1],2,diff)),check.names=FALSE)
+  data.frame(date=data[,1],
+             rbind(data[1,-1,drop=FALSE],apply(data[,-1,drop=FALSE],2,diff)),check.names=FALSE)
 }
 ## convert object data to weekly and optionally center
 weekly=function(obj,...) UseMethod('weekly')
