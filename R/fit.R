@@ -163,6 +163,6 @@ loess_=function(x,y,...) {
   function(xout) suppressWarnings(predict(model,data.frame(x=as.numeric(xout))));
 }
 ## linear and step use approxfun with different args
-linear_=step_fun=function(x,y,x.fit,...) {
+linear_=step_=function(x,y,x.fit,...) {
   approxfun(x,y,...);
 }
