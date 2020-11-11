@@ -238,7 +238,11 @@ auto_ylim=function(series,ylim=NULL,ymin=NULL,ymax=NULL) {
     if (!is.null(ymin)&&!is.null(ymax)) ylim=c(ymin,ymax)
     else {
       ylim=range(do.call(c,lapply(series$series,function(series) {
-        r=range(series$y); r[is.finite(r)]})));
+        y=series$y;
+        y=y[!is.na(y)];
+        if (length(y)==0) NULL else range(y);
+      })));
+      ## r=range(series$y); r[is.finite(r)]})));
       if (is.null(ylim)) stop('All data series are empty. Nothing to plot')
       if (!is.null(ymin)) ylim[1]=ymin;
       if (!is.null(ymax)) ylim[2]=ymax;
