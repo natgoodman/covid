@@ -33,6 +33,7 @@ edit_df1=function(data,EXPR=list(),KEEP=NULL,DROP=NULL,total='state',TARGNAME='p
   do.call(cbind,lapply(seq_along(EXPR),function(i) {
     expr=EXPR[[i]];
     name=names[i];
+    BREAKPOINT('edit_df1')
     edit_chkvars(expr_vars(expr),name,colnames(data),TARGNAME);
     out=data.frame(x=eval(expr,data))
     colnames(out)=name;
@@ -218,10 +219,18 @@ edit_arg1=function(arg,argname,ARGNAME,min.size=1) {
   vars;
 }
 edit_chkvars=function(vars,argname,valid,TARGNAME) {
+  ## R may express symbols with back-ticks, eg `name`
+  ## the only way I've found to handle this is to boldily remove the back-ticks. sigh...
+  ## try first with vars as given
   bad=vars%-%valid;
-  if (length(bad)>0)
-    stop("Invalid ",TARGNAME," for ",argname,": ",paste(collapse=', ',bad),
-             ".\nValid ",TARGNAME," are: ",paste(collapse=', ',valid))
+  if (length(bad)>0) {
+    ## now try with back-ticks removed
+    vars=gsub("`","",bad);
+    bad=vars%-%valid;
+    if (length(bad)>0) 
+      stop("Invalid ",TARGNAME," for ",argname,": ",paste(collapse=', ',bad),
+           ".\nValid ",TARGNAME," are: ",paste(collapse=', ',valid));
+  }
 }
 
 ## core logic below from codetools package by Luke Tierney. Thx!
