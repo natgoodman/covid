@@ -33,7 +33,6 @@ edit_df1=function(data,EXPR=list(),KEEP=NULL,DROP=NULL,total='state',TARGNAME='p
   do.call(cbind,lapply(seq_along(EXPR),function(i) {
     expr=EXPR[[i]];
     name=names[i];
-    BREAKPOINT('edit_df1')
     edit_chkvars(expr_vars(expr),name,colnames(data),TARGNAME);
     out=data.frame(x=eval(expr,data))
     colnames(out)=name;
