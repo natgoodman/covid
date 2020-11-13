@@ -232,6 +232,7 @@ extra=function(obj,...) UseMethod('extra')
 extra.cvdat=function(obj,fun=NULL,objs=NULL,incompatible.ok=param(incompatible.ok))
   stop("'extra' transform only makes sense for 'doh' objects, not ",obj$datasrc," objects")
 extra.cvdoh=function(obj,fun=NULL,objs=NULL,incompatible.ok=param(incompatible.ok)) {
+  dates=dates(obj);
   places=places(obj);
   ages=ages(obj);
   if (is.null(fun)) {
@@ -239,7 +240,8 @@ extra.cvdoh=function(obj,fun=NULL,objs=NULL,incompatible.ok=param(incompatible.o
       if (is_cvdat(objs)) objs=list(objs);
       objs=c(list(obj),objs);
     }
-    fun=extrafun(what=obj$what,objs=objs,incompatible.ok=incompatible.ok);
+    fun=extrafun(what=obj$what,objs=objs,incompatible.ok=incompatible.ok,
+                dates=dates,places=places,ages=ages);
   }
   vdate=vdate(obj);
   data=sapply(ages,function(age) extra1(fun,obj$data[[age]],places,age,vdate),
@@ -249,11 +251,13 @@ extra.cvdoh=function(obj,fun=NULL,objs=NULL,incompatible.ok=param(incompatible.o
 extra1=function(fun,data,places,age,vdate) {
   data=do.call(rbind,lapply(1:nrow(data),function(i) {
     date=data[i,1];
-    counts=data[i,-1];
+    counts=data[i,-1,drop=FALSE];
     props=fun(date,places,age,vdate=vdate);
     ## have to use cbind, not data.frame, so R won't convert spaces
     data=cbind(date=date,round(counts/props));
   }));
+  ## replace NAs by 0. from stackoverflow.com/questions/8161836. Thx!
+  data[is.na(data)]=0;
   data;
 }
 ## edit object data
