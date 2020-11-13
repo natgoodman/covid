@@ -52,8 +52,8 @@ extrafun=
     places=if(is.null(places)) places.all else places.all %&% places;
     ages.all=Reduce(intersect,lapply(objs,function(obj) names(obj$data)))
     ages=if(is.null(ages)) ages.all else ages.all %&% ages;
-    dates.all=unique(do.call(c,lapply(objs,function(obj) obj$data$all$date)))
-    dates=if(is.null(dates)) dates.all else dates.all %&% dates;
+    dates.all=unique(do.call(c,lapply(objs,function(obj) obj$data[[1]]$date)))
+    dates=if(is.null(dates)) dates.all else as_date(dates.all %&% dates);
     ## dates wth enough versions are vmin-1*7..vmax-6*7
     enuff=which(dates>=(vmin-7)&dates<=(vmax-nv.min*7));
     dates=dates[enuff];
