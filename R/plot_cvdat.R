@@ -43,7 +43,7 @@ plot_cvdat=
            col.blocks=1,lty.blocks=2,lwd.blocks=2:3,
            col.legend=col1,lty.legend=lty1,lwd.legend=lwd1,
            pch=20,ylab=NULL,title=NULL,cex.title=NA,
-           legend=TRUE,where.legend='topleft',cex.legend=0.8,
+           legend=TRUE,where.legend='topleft',cex.legend=0.8,legends=list(),
            xgrid=cq(biweekly,weekly,semimonthly,monthly),
            vline=NULL,hline=NULL,vhlty='dashed',vhcol='grey50',
            vhlwd=1,vlab=TRUE,hlab=TRUE,vhdigits=2,
@@ -126,7 +126,7 @@ plot_cvdat=
       ## legend is location or T/F or manually created legend list
       if (is.null(legend)||(is.logical(legend)&&legend)||is.character(legend)) {
         if (is.character(legend)) where.legend=legend;
-        legend=auto_legend(blocks=blocks,lprop=lprop,legend.order=legend.order,
+        legend=auto_legend(blocks=blocks,lprop=lprop,legend.order=legend.order,legends=legends,
                            blocks.order=blocks.order,attrs=attrs.legend,
                            col=col.legend,lty=lty.legend,lwd=lwd.legend);
       } else if (is.logical(legend)&&!legend) legend=list();
@@ -270,7 +270,7 @@ auto_ylab=function(series,attrs=cq(unit,cumulative,what),per.capita=FALSE,SEP='&
 ## TODO: use specific object attrs for block, eg, 'datasrc'
 ##       this means there could be left over attributes to be used in a final block
 auto_legend=
-  function(series=NULL,blocks=NULL,ct=NULL,lprop,legend.order=NULL,
+  function(series=NULL,blocks=NULL,ct=NULL,lprop,legend.order=NULL,legends=list(),
            blocks.order=cq(obj,place,age,objs,places,ages),
            attrs=cq(unit,cumulative,what,datasrc,version,fit,roll,extra),
            col='black',lty='solid',lwd=2,SEP=', ') {
@@ -282,18 +282,27 @@ auto_legend=
     if (is.null(lprop$lty.block)) lty=lprop$lty;
     if (is.null(lprop$lwd.block)) lwd=lprop$lwd;
     if (is.null(legend.order)) legend.order=names(blocks);
+    if (length(legends)!=0) {
+      if (!is_list(legends[[1]])) legends=list(legends);
+      names(legends)=legend.order;
+    }
     ## legend=lapply(blocks[legend.order],function(block) {
     legend=lapply(legend.order,function(name) {
       block=blocks[[name]];
       xattr=block$xattr;
       attrs=colnames(xattr);
-      terms=sapply(attrs,function(attr) ltitle_label(attr),simplify=FALSE);
-      title=paste(collapse=SEP,unlist(terms));
-      legend=unlist(withrows(xattr,row,paste_legend(row)));
+      legend=legends[[name]];
+      title=legend$title;
+      if (is.null(title)) {
+        terms=sapply(attrs,function(attr) ltitle_label(attr),simplify=FALSE);
+        title=paste(collapse=SEP,unlist(terms));
+      }
+      labels=legend$labels;
+      if (is.null(labels)) labels=unlist(withrows(xattr,row,paste_legend(row)));
       col=if(identical(lprop$col.name,name)) lprop$col.block else col;
       lty=if(identical(lprop$lty.name,name)) lprop$lty.block else lty;
       lwd=if(identical(lprop$lwd.name,name)) lprop$lwd.block else lwd;
-      list(title=title,legend=legend,xattr=xattr,col=col,lty=lty,lwd=lwd);
+      list(title=title,legend=labels,xattr=xattr,col=col,lty=lty,lwd=lwd);
     });
     names(legend)=legend.order;
     legend[!sapply(legend,is.null)];
