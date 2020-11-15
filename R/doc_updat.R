@@ -1,0 +1,95 @@
+#################################################################################
+##
+## Author:  Nat Goodman
+## Created: 20-11-15
+##          from misig/doc_confi.R created 19-07-16
+##          from misig/confi.R created 19-07-04
+##
+## Copyright (C) 2019 Nat Goodman.
+## 
+## Generate figures and tables for updat (weekly data update) document
+##
+## This software is open source, distributed under the MIT License. See LICENSE
+## file at https://github.com/natgoodman/NewPro/FDR/LICENSE 
+##
+#################################################################################
+## --- Generate Figures and Tables for updat Blog Post ---
+## no sections. only 4 figures
+doc_updat=function(need.objs=FALSE,need.init=TRUE,sect=NULL,...) {
+  if (need.objs) make_updat_objs();
+  if (need.init) init_doc(doc='updat',...);
+  labels.wa=setNames(c('Washington state','Seattle (King County)',
+                       'Snohomish (North of Seattle)','Pierce (South of Seattle)'),
+              cq(state,King,Snohomish,Pierce));
+  ## Figures 1a-b cases
+  figblk_start();
+  dofig('cases_wa',
+        plot_cvdat(
+          doh.cases,places=cq(state,King,Snohomish,Pierce),
+          ages='all',per.capita=TRUE,lwd=2,
+          title=figtitle("Weekly cases per million in Washington locations"),
+          legends=list(labels=labels.wa)));
+  dofig('cases_other',
+        plot_cvdat(
+          jhu.cases,places=cq('Ann Arbor',Boston,'San Diego',DC),
+          ages='all',per.capita=TRUE,lwd=2,
+          title=figtitle("Weekly cases per million in non-Washington locations")));
+  ## Figures 2a-b deaths
+  figblk_start();
+  dofig('deaths_wa',
+        plot_cvdat(
+          doh.deaths,places=cq(state,King,Snohomish,Pierce),
+          ages='all',per.capita=TRUE,lwd=2,
+          title=figtitle("Weekly deaths per million in Washington locations"),
+          legend='top',
+          legends=list(labels=labels.wa)));
+  dofig('deaths_other',
+        plot_cvdat(
+          jhu.deaths,places=cq('Ann Arbor',Boston,'San Diego',DC),
+          ages='all',per.capita=TRUE,lwd=2,
+          title=figtitle("Weekly deaths per million in non-Washington locations")));
+  ## Figures 3a-d cases by age
+  figblk_start();
+  ages=ages_all()[-1];
+  ages=c('0_19','20_39','40_59','60_79','80_');
+  ##  col=rev(col_brew(6,'viridis'))[-1];
+  col=col_brew(5,'d3');
+  sapply(cq(state,King,Snohomish,Pierce),function(place) 
+    dofig(paste(sep='_','cases',place),
+        plot_cvdat(
+          doh.cases,places=place,ages=ages,per.capita=TRUE,lwd=2,col=col,
+          title=figtitle(paste("Weekly cases per million by age in",labels.wa[place])))));
+  ## Figures 4a-d deaths
+  figblk_start();
+  ages=c('0_59','60_79','80_');
+  col=col[c(1,4,5)];
+  sapply(cq(state,King,Snohomish,Pierce),function(place) 
+    dofig(paste(sep='_','deaths',place),
+        plot_cvdat(
+          doh.deaths,places=place,ages=ages,per.capita=TRUE,lwd=2,col=col,
+          title=figtitle(paste("Weekly deaths per million by age in",labels.wa[place])),
+          legend='top')));
+  invisible();
+}
+
+## make objs doc_updat needs. 'global' controls whether set globally or just in parent
+make_updat_objs=
+  function(what=cq(cases,deaths),datasrc=cq(doh,jhu),version='latest') {
+    cases=expand.grid(what=what,datasrc=datasrc,stringsAsFactors=FALSE);
+    ## only 'doh' has 'admits'. prune others
+    cases=cases[(cases$what!='admits'|cases$datasrc%in%cq(doh,trk)),]
+    withrows(cases,case,{
+      if (param(verbose)) print(paste('+++ making',datasrc,what));
+      ## start with raw
+      obj=raw(what,datasrc,version);    # start with raw
+      obj=switch(datasrc,               # transform as needed for src
+                 doh={obj=extra(obj); edit(obj,'0_59'='0_19'+'20_39'+'40_59')},
+                 jhu=weekly(incremental(obj)),
+                 nyt=weekly(incremental(obj)),
+                 trk=weekly(obj));
+      obj=roll(obj);                    # rolling mean
+      assign(paste(sep='.',datasrc,what),obj,globalenv()); # assign to global
+    });
+    cases;
+  }
+
