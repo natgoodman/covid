@@ -72,7 +72,7 @@ list_versions=function(datasrc,what=NULL,dir=datadir(datasrc),version=NULL) {
   if (latest) version=NULL;
   pattern=paste(collapse='.',c(what,version));
   files=list.files(dir,pattern=pattern,full.names=FALSE);
-  versions=unique(regmatches(files,regexpr('\\d\\d-\\d\\d-\\d\\d',files)));
+  versions=sort(unique(regmatches(files,regexpr('\\d\\d-\\d\\d-\\d\\d',files))));
   if (latest) tail(versions,n=1) else sort(versions);
 }
 latest_version=function(datasrc,what=NULL,dir=datadir(datasrc))
