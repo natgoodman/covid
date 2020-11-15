@@ -1,7 +1,8 @@
 #################################################################################
 ##
 ## Author:  Nat Goodman
-## Created: 19-01-10
+## Created: 20-11-14
+##          from misig/doc.R created 19-01-10
 ##          from repwr/doc_resig.R created 18-06-19
 ##
 ## Copyright (C) 2019 Nat Goodman.
@@ -28,12 +29,12 @@ dodoc=
   function(sect=NULL,need.init=F,xperiment=F,...) {
     if (!xperiment) {
       ## normal doc
-      if (need.init) wrap_fun(init,...);
-      wrap_fun(init_doc,...);
+      if (need.init) wrapfun(init,...);
+      wrapfun(init_doc,...);
     } else {
       ## experimenal sandbox
-      if (need.init) wrap_fun(init_xperiment,...);
-      wrap_fun(init_doc_xperiment,...);
+      if (need.init) wrapfun(init_xperiment,...);
+      wrapfun(init_doc_xperiment,...);
     }
     param(docfun);
     docfun(sect=sect);
@@ -41,59 +42,38 @@ dodoc=
 
 ## --- Document Functions ---
 ## utility functions to make figures and tables for documents
-## run plot function, save if required, label result with name
+## run plot function, label result with name
+## figfun can be a function or call
+##   if function, args from ... passed to it
+##   if call, it's eval'ed as is
 ## title -- can be NULL, string, or function -- if function, call to get actual title
 ## extra -- figure is 'extra' - will not be included in document
 ## CAUTION: ... interacts with partial argument matching to cause dofig args to be
 ##   matched by plot-function args. eg, 'd' matches 'doc', 'x' matches 'xtra'
 ##   choose argument names carefully!
 dofig=
-  function(figfun,figname=NULL,title=NULL,sect=param(sect),...) {
-    param(figdev,figextra,save.fig,figscreen,fignew);
-    if (!figdev) {
-      ## not in figdev - usual case
-      file=filename_fig(figlabel(where='filename'),sect,figname);
-      plot.to.file=((is.na(save.fig)&!file.exists(file))|(!is.na(save.fig)&save.fig));
-      plot.to.screen=figscreen;           # for stylistic consistency
-      ## NG 18-08-10: new scheme for plotting to file
-      ##   plot to screen and file: dev.new here, dev.copy later
-      ##   plot to screen only: dev.new here, no dev.copy later
-      ##   plot to file only: png here, dev.off later
-      ## plot.to.file only doesn't work if figfun returns multiple figures
-      ##   trash multi-figure capability. we don't use it now
-      if (!(plot.to.file||plot.to.screen)) {
-        msg=paste(sep=' ',nv(figscreen),'and',nv(save.fig));
-        if (is.na(save.fig)) msg=paste(sep=' ',msg,'and figure file',file,'exists');
-        msg=paste(sep=' ',msg,'which means there is no where to plot the figure');
-        stop(msg);
-      }
-      ##   bg='white' needed else image copied with transparent bg; renders as grey
-      if (plot.to.screen) {
-        dev.new(bg='white');
-        dev=dev.cur();
-      }
-      if (plot.to.file&!plot.to.screen) {
-        ## png parameters found by trial and error. look reasonable
-        ## TODO: learn the right way to do this!
-        png(filename=file,height=8,width=8,units='in',res=200,pointsize=12);
-        dev.png=dev.cur();
-      }}
-    ## make title if necessary and draw the figure!
-    if (is.function(title)) title=wrap_fun(title,...);
-    ## wrap_fun(figfun,...);
-    figfun(title=title,...);
-    if (!figdev) {
-      ## not in figdev - usual case
-      if (plot.to.file&plot.to.screen) 
-        ## png parameters found by trial and error. look reasonable
-        ## TODO: learn the right way to do this!
-        dev.png=dev.copy(png,filename=file,height=8,width=8,units='in',res=200,pointsize=12);
-      ## always close plot.to.file device
-      if (plot.to.file)  dev.off(dev.png);
-      ## close plot.to.screen device unless user wants each figure in new window
-      if (plot.to.screen&&!fignew) dev.off(dev);
+  function(figname,figfun,sect=param(sect),...) {
+    param(pjto);
+    parent.env=parent.frame(n=1);
+    file=filename_fig(figlabel(where='filename'),sect,figname);
+    ## png parameters found by trial and error. look reasonable
+    ## in any case, same as in plon
+    ## TODO: learn the right way to do this!
+    png(filename=file,height=8,width=8,units='in',res=200,pointsize=12);
+    dev=dev.cur();
+    figfun=pryr::subs(figfun);
+    ## figfun can be name or call
+    if (!(is.name(figfun)||is.call(figfun)))
+      stop("'figfun' must be a function or call, not ",class(figfun));
+    if (is.name(figfun)) {
+      figfun=eval(figfun,parent.env);     # must eval to function
+      if (!is.function(figfun)) stop("'figfun' must be function, not ",class(figfun));
+      wrapfun(figfun,...);                # draw the figure!
     }
-    figinc();
+    else eval(figfun,parent.env)          # draw the figure!
+    dev.off(dev);                         # close device
+    if (pjto) system(paste('pjto',file)); # copy to Mac if desired (usally is)
+    figinc();                             # increment figure info for next time
     figname;
   }
 ## save one or more tables.
@@ -197,9 +177,9 @@ figinc=function(extra=FALSE)
   }
 figblk_start=function(extra=FALSE) {
   if (extra) return(xfigblk_start());
-  ## param(figblk,fignum);
+  param(figblk,fignum);
   ## ## if already in block, end it
-  ## if (!is.null(figblk)) param(fignum=fignum+1);
+  if (!is.null(figblk)) param(fignum=fignum+1);
   param(figblk=1);
 }
 figblk_end=function(extra=FALSE) {
