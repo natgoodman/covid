@@ -120,7 +120,7 @@ do_objs=function(what=cq(cases,admits,deaths),datasrc=cq(doh,jhu,nyt,trk),versio
     assign(paste(sep='.',datasrc,what,'raw'),obj,globalenv());
     ## 'standard' objects differ by datasrc
     obj=switch(datasrc,
-               doh=extra(obj),
+               doh={obj=extra(obj); edit(obj,'0_59'='0_19'+'20_39'+'40_59')},
                jhu=weekly(incremental(obj)),
                nyt=weekly(incremental(obj)),
                trk=weekly(obj));
@@ -128,10 +128,10 @@ do_objs=function(what=cq(cases,admits,deaths),datasrc=cq(doh,jhu,nyt,trk),versio
     if (datasrc!='trk')
       obj=edit(obj,SUM=list(SKP=cq(Snohomish,King,Pierce),Top5=head(cum,n=5),Top10=head(cum,n=10)),
                NEG=list(notKing='King',notSKP='SKP',notTop5='Top5',notTop10='Top10'));
-    assign(paste(sep='.',datasrc,what),obj,globalenv());
+    assign(paste(sep='.',datasrc,what,'noroll'),obj,globalenv());
     ## rolling mean
     obj=roll(obj);
-    assign(paste(sep='.',datasrc,what,'roll'),obj,globalenv());
+    assign(paste(sep='.',datasrc,what),obj,globalenv());
   });
   cases;  
 }
