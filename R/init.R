@@ -21,21 +21,23 @@
 ## create output directories if necessary.
 ## no docs at present
 ## inputs and data are source specific, figures and tables global
-## doc.all=cq(readme,covid);
+## doc.all=cq(readme,updat);
+doc.all=cq(updat);                      # README presently has no code
 init=function(
   ## datasrc=cq(doh,ihme,jhu,tracking,c19pro),
   datasrc=cq(doh,ihme,jhu,nyt,trk,yyg),
   ## doc parameters 
-  ## doc=NULL,                             # controls data, figure, table subdirs
-  ## docx=match.arg(doc,doc.all),
+  doc='updat',                             # controls data, figure, table subdirs
+  docx=match.arg(doc,doc.all),
   ## docx=NULL,
   run.id=NULL,                              # to separate runs for tests
   ## data directories. 
   indir='input',                            # top level input dir
   datadir=filename('data',run.id),          # top level output data files
   metadir=filename('meta',run.id),          # metadata files
-  figdir=filename('figure',run.id),         # figures
-  tbldir=filename('table',run.id),          # tables
+  ## NG 20-11-14: figdir, tbldir moved to init_doc
+  ## figdir=filename('figure',run.id),         # figures
+  ## tbldir=filename('table',run.id),          # tables
   tmpdir=filename(datadir,'tmp'),           # tmp dir if needed
   inmetadir=filename(indir,'meta'),
   placedir=filename(inmetadir,'place'),
@@ -100,9 +102,10 @@ init=function(
   save.txt.data=is.na(save.txt)|save.txt, # save txt top level results. default T
   save.txt.meta=is.na(save.txt)|save.txt, # save txt metadata. default T
   save.out=T,                    # save outputs - figures and tables - when called via dofig
-  save.fig=save.out,             # save figures (when called via dofig)
-  save.tbl=save.out,             # save tables (when called via dotbl)
-  save.txt.tbl=T,                # save txt tables. default T
+  ## NG 20-11-14: save.fig, save.tbl moved to init_doc
+  ## save.fig=save.out,             # save figures (when called via dofig)
+  ## save.tbl=save.out,             # save tables (when called via dotbl)
+  ## save.txt.tbl=T,                # save txt tables. default T
                                  #    
   ## clean=switch(docx,readme=T,F), # remove everything and start fresh
   clean=F,                       # remove everything and start fresh
@@ -116,7 +119,7 @@ init=function(
                                  # 
   end=NULL                       # placeholder for last parameter
   ) {
-  ## doc=docx;                      # to avoid confusion later
+  doc=docx;                      # to avoid confusion later
   ## source doc-specific files
   ## source_doc(doc);
   ## inputs and data are source specific, figures and tables global
@@ -124,7 +127,9 @@ init=function(
   indirs=sapply(datasrc,function(src) filename(indir,src));
   ## output dirs
   datadirs=sapply(datasrc,function(src) filename(datadir,src));
-  outdirs=c(datadirs,metadir,figdir,tbldir,tmpdir)
+  ## NG 20-11-14: figdir, tbldir moved to init_doc
+  ## outdirs=c(datadirs,metadir,figdir,tbldir,tmpdir)
+  outdirs=c(datadirs,metadir,tmpdir)
   ## assign parameters to param environment
   ## do it before calling any functions that rely on params
   init_param();
@@ -151,6 +156,69 @@ init=function(
     rbind,lapply(places.other,function(row) 
       data.frame(place=row[1],state=row[2],county=row[3],stringsAsFactors=FALSE)));
   param(places.other=places.other);
+  invisible();
+}
+## initialize doc parameters
+## NG 19-01-11: abandon subdoc concept for 'supp' - not useful for effit
+##              retain for xperiment just in case...
+init_doc=function(
+  doc=param(doc),                  
+  subdoc=NULL,
+  version='latest',
+  versionx=if(version=='latest') latest_version('doh') else version,
+  ## output directories. filename function ignores subdoc if NULL
+  vsndir=if(doc=='updat') versionx else NULL,
+  figdir=filename('figure',param(doc),subdoc,param(run.id),vsndir), # directory for figures
+  tbldir=filename('table',param(doc),subdoc,param(run.id),vsndir),  # directory for tables
+  ## output modifiers
+  outpfx=NULL,                  # prefix before figure or table number - NOT USED
+  outsfx=letters,               # suffix in figure and table blocks
+  sectpfx=F,                    # add section number to prefix eg, S1 - NOT USED
+  sectnum=1,                    # section number. usually set in docs
+  sect=NULL,
+  ## figures
+  figpfx=outpfx,
+  figsfx=outsfx,
+  fignum=1,
+  figblk=NULL,                  # index into figsfx if in figure block
+  ## tables
+  tblpfx=outpfx,
+  tblsfx=outsfx,
+  tblnum=1,
+  tblblk=NULL,                  # index into tblsfx if in table block
+  ##
+  pjto=TRUE,                    # copy to Mac using pjto command (reverse tunnel)
+  ## xtra figures - not included in document
+  xfigpfx='X',
+  xfigsfx=outsfx,
+  ## xfignum=1,                 # extras now use same numbers and blocks as regulars
+  ## xfigblk=NULL,              # ditto
+  ## clean, save
+  save.out=TRUE,
+  save.fig=save.out,            # save figures (when called via dofig)
+  save.tbl=save.out,            # save tables (when called via dotbl)
+  save.txt.tbl=TRUE,            # save txt tables. default T
+  clean.out=FALSE,
+  clean.fig=clean.out,          # remove figdir
+  clean.tbl=clean.out,          # remove tbldir
+  ## plot control
+  figscreen=FALSE,               # plot figures on screen - disabled due to X11 issues
+  fignew=figscreen,              # plot each figure in new window
+  figextra=F,                    # plot extra figures
+  ## doc generation function
+  docfun=get(paste(collapse='',c('doc_',param(doc),subdoc))),
+  docsect=NULL,                  # all document sections. set by docfun
+  end=NULL                       # placeholder for last parameter
+  ) {
+  version=versionx;              # to avoid confusion later
+  ## assign parameters to param environment
+  ## do it before calling any functions that rely on params
+  assign_param();
+  ## clean and create output directories if needed
+  outdir=c(figdir,tbldir);
+  if (clean.fig) unlink(figdir,recursive=T);
+  if (clean.tbl) unlink(tbldir,recursive=T);
+  sapply(outdir,function(dir) dir.create(dir,recursive=TRUE,showWarnings=FALSE));
   invisible();
 }
 
