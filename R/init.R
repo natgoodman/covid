@@ -55,10 +55,11 @@ init=function(
   places.other=
     list(c('Ann Arbor','MI','Washtenaw'),
          c('DC','DC','District of Columbia'),
-         c('Boston','MA','Suffolk'),
+         cq(Boston,MA,Suffolk),
          c('San Diego','CA','San Diego'),
-         c('Omaha','NE','Douglas'),
-         c('Austin','TX','Travis')),
+         cq(Omaha,NE,Douglas),
+         cq(Austin,TX,Travis),
+         cq(Fairbury,IL,Livingston)),
   ages.all=c("all","0_19","20_39","40_59","60_79","80_"),
   ## outdir=c(datadir,figdir,tbldir,tmpdir),  # top level output dirs
   ## cached data
