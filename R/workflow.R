@@ -138,12 +138,12 @@ do_objs=function(what=cq(cases,admits,deaths),datasrc=cq(doh,jhu,nyt,trk),versio
 
 ## ---- Standard plots ----
 ## mostly a placeholder. expect it to change
-do_plots=function(objs=NULL,objs.roll=NULL) {
+do_plots=function(objs=NULL,objs.noroll=NULL) {
   ok=system('pjtest')==0;
   if (!ok) stop('Reverse tunnel not running; stopping before doing plots');
   if (is.null(objs)) objs=list(doh.cases,jhu.cases,nyt.cases,trk.cases);
-  if (is.null(objs.roll))
-    objs.roll=list(doh.cases.roll,jhu.cases.roll,nyt.cases.roll,trk.cases.roll);
+  if (is.null(objs.noroll))
+    objs.noroll=list(doh.cases.noroll,jhu.cases.noroll,nyt.cases.noroll,trk.cases.noroll);
  ## all sources 'state'
   plon('all.state');
   plot_cvdat(objs,places=cq(state),ages='all',per.capita=TRUE);
@@ -174,15 +174,15 @@ do_plots=function(objs=NULL,objs.roll=NULL) {
   plon('all.other');
   plot_cvdat(list(jhu.cases,nyt.cases),places=places_other(),ages=NULL,per.capita=TRUE);
   ploff();
-  ## all sources 'state', regular and roll
-  n=length(objs.roll);
-  plon('all.regroll');
-  plot_cvdat(c(objs,objs.roll),places=cq(state),ages='all',per.capita=TRUE,
+  ## all sources 'state', regular and noroll
+  n=length(objs.noroll);
+  plon('all.regnoroll');
+  plot_cvdat(c(objs,objs.noroll),places=cq(state),ages='all',per.capita=TRUE,
              lty=c(rep('solid',n),rep('dotted',n)),col=rep(col_brew(n,'d3')));
   ploff()
-  ## all sources 'state' roll
-  plon('all.roll');
-  plot_cvdat(objs.roll,places=cq(state),ages='all',per.capita=TRUE);
+  ## all sources 'state' noroll
+  plon('all.noroll');
+  plot_cvdat(objs.noroll,places=cq(state),ages='all',per.capita=TRUE);
   ploff()
 }
 
