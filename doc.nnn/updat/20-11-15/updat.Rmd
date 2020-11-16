@@ -1,0 +1,116 @@
+```{r echo=FALSE,include=FALSE,cache=FALSE}
+## setup variables for figures and document date
+source('R/dat.R');
+doc='updat';
+vsn=latest_version('doh',NULL,'data/doh');
+figdir=file.path('figure',doc,vsn);
+```
+---
+title: "COVID-19 Counts in Washington State and Select Other Locations"
+author: "Nathan (Nat) Goodman"
+date: "`r format(as.Date(vsn,format='%y-%m-%d')+1,'%B %-d, %Y')`"
+output:
+  html_document:
+    css: css/html_document.css
+    highlight: kate
+  pdf_document: default
+linkcolor: cyan
+citecolor: green
+urlcolor: blue
+---
+
+*Counts of cases and deaths are key metrics of COVID-19 prevalence and burden, and are the basis for model-based estimates and predictions of these statistics. I present here graphs showing these metrics over time in Washington state and a few other USA locations of interest to me. I hope to update the graphs weekly.*
+
+See [below](#caveats) for caveats and details. 
+
+Figure 1a shows *case* counts per million for Washington state as a whole, the Seattle area where I live, and the adjacent counties to the north and south (Snohomish and Pierce, resp.) using data is from Washington Department of Health (DOH) weekly downloads. Figure 1b shows *case* counts for Ann Arbor, Boston, San Diego, and Washington DC using data from Johns Hopkins Center for Systems Science and Engineering (JHU). 
+
+```{r out.width="50%",echo=FALSE,fig.show='asis'}
+knitr::include_graphics(file.path(figdir,'figure_001a_cases_wa.png'));
+knitr::include_graphics(file.path(figdir,'figure_001b_cases_other.png'));
+```
+
+The Washington data (Figure 1a) clearly shows the three waves widely reported in the media with peaks increasing over time (but heed the caveats!). What jumps out from the non-Washington data (Figure 1b) are the very high early peaks in Boston and DC. We can also see three waves if we look closely ("squint" may be more apt), though the timing is different across locations.
+
+Figures 2a-b show *deaths* per million for the same locations.
+
+```{r out.width="50%",echo=FALSE,fig.show='asis'}
+knitr::include_graphics(file.path(figdir,'figure_002a_deaths_wa.png'));
+knitr::include_graphics(file.path(figdir,'figure_002b_deaths_other.png'));
+```
+
+The Washington data (Figure 2a) shows two waves with a hint of a third, but the amplitudes are thankfully declining. Early peaks dominate the non-Washington data (Figure 2b) making it hard to see details later on, but the rates are much lower than the early peaks and seem generally steady.
+
+The next graphs show the Washington results broken down by age. Figures 3a-d are *cases*. The graphs are split into 20-year age ranges starting with 0-19, with a final group for 80+.
+
+```{r out.width="50%",echo=FALSE,fig.show='asis'}
+knitr::include_graphics(file.path(figdir,'figure_003a_cases_state.png'));
+knitr::include_graphics(file.path(figdir,'figure_003b_cases_King.png'));
+knitr::include_graphics(file.path(figdir,'figure_003c_cases_Snohomish.png'));
+knitr::include_graphics(file.path(figdir,'figure_003d_cases_Pierce.png'));
+```
+
+Early on, the pandemic struck older age groups most heavily. Over time, *cases* spread into all age groups, even the young. One notable difference is that in the latest wave, the oldest groups are doing better in Seattle than the surrounding counties, at least in relative terms.
+
+Figures 4a-d are *deaths*. These graphs aggregate 0-59 into a single group, since the death rate in these ages is near 0.
+
+```{r out.width="50%",echo=FALSE,fig.show='asis'}
+knitr::include_graphics(file.path(figdir,'figure_004a_deaths_state.png'));
+knitr::include_graphics(file.path(figdir,'figure_004b_deaths_King.png'));
+knitr::include_graphics(file.path(figdir,'figure_004c_deaths_Snohomish.png'));
+knitr::include_graphics(file.path(figdir,'figure_004d_deaths_Pierce.png'));
+```
+
+The shocking devastation of the 80+ age group early in the pandemic jumps off the page. The early death rate in Seattle (King County) hit almost 700 per million reflecting the early outbreak at a long term care facility in the area. The *deaths* data in Seattle and Snohomish show waves with declining peaks, but in Pierce, the peaks seem to be steady. The data for Snohomish and Pierce are rather variable; I suspect this reflects delays in reporting deaths to DOH.
+
+## Caveats {#caveats}
+
+1. The term *case* means a person with a detected COVID infection. Washington state limits this to "confirmed cases", meaning people with positive molecular COVID tests. Some states include "probable cases", but the data source I use here only includes "confirmed cases" (or so I believe based on the name of the file I download).
+
+2. Detected *cases* undercount actual cases by an unknown amount. As testing volume increases over time, it's reasonable to expect the detected count to get closer to the actual count. Some of the increase in *cases* we see in the data is due to this artifact. Modelers attempt to correct for this. I don't include any such corrections here (but I do extrapolate Washington DOH data as described [below](#doh)). 
+
+3. The same issues apply to *deaths* to a lesser extent, except perhaps early in the pandemic.
+
+4. The geographic granularity is *state* or *county*. I refer to locations by city names reasoning that readers are more likely to know "Seattle" or "Ann Arbor" than "King" or "Washtenaw".
+
+5. The date granularity in the graphs is weekly. The underlying JHU data is daily; I sum the data by week before graphing.
+
+6. I smooth the graphs using a 3-week rolling mean for visual appeal. This is especially important for the *deaths* graphs where the counts are so low that unsmoothed week-to-week variation makes the graphs hard to read.
+
+## Data Sources
+
+### Washington Department of Health (DOH) {#doh}
+
+DOH provides three COVID data streams. 
+
+1. [Washington Disease Reporting System (WDRS)](https://www.doh.wa.gov/ForPublicHealthandHealthcareProviders/PublicHealthSystemResourcesandServices/WDRS) provides daily "hot off the presses" results for use by public health officials, health care providers, and qualified researchers. It is not available to the general public, including yours truly.
+
+2. [COVID-19 Data Dashboard](https://www.doh.wa.gov/Emergencies/COVID19/DataDashboard) provides a web graphical user interface to summary data from WDRS for the general public. (At least, I think the data is from WDRS - they don't actually say). 
+
+3. Weekly data downloads (available from the [Data Dashboard](https://www.doh.wa.gov/Emergencies/COVID19/DataDashboard) web page) of data curated by DOH staff. The curation corrects errors in the daily feed, such as, duplicate reports, multiple test results for the same incident (e.g., initial and confirmation tests for the same individual), incorrect reporting dates, incorrect county assignments (e.g., when an individual crosses county lines to get tested). DOH updates the weekly data on Sundays.
+
+The weekly downloads lag behind the daily feed causing data for the last few weeks to be incomplete. I correct for this undercount by extrapolating data from the preceeding six weeks using a linear model (R's `lm`). The extrapolation worked well previously but seems to overshoot a bit now (data not shown).
+
+The weekly DOH download reports data by age group: 20-year ranges starting with 0-19, with a final group for 80+.
+
+The DOH download includes data on hospital admissions (*admits*) in addition to *cases* and *deaths*, although I don't show this data here.
+
+### Johns Hopkins Center for Systems Science and Engineering (JHU) {#jhu}
+
+[JHU CSSE](https://systems.jhu.edu) has created an impressive portal for COVID data and analysis. They provide their data to the public through a [GitHub repository](https://github.com/CSSEGISandData/COVID-19/). The data I use is from the [csse_covid_19_data/csse_covid_19_time_series](https://github.com/CSSEGISandData/COVID-19/tree/master/csse_covid_19_data/csse_covid_19_time_series) directory: [time_series_covid19_confirmed_US.csv](https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv) for *cases* and [time_series_covid19_deaths_US.csv](https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_US.csv) for *deaths*.
+
+JHU updates the data daily. I usually download the data on Mondays to align with the DOH weekly data drops.
+
+### Other Data Sources {#other_sources}
+
+I use two other COVID data sources in my project (although not in this document).
+
+- [New York Times COVID Repository](https://github.com/nytimes/covid-19-data) (NYT). The file I download is [us-counties.csv](https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv). Like Washington DOH and JHU, NYT has county-level data. Unlike these, it includes "probable" as well as "confirmed" cases and deaths; I see no way to separate the two categories.
+
+- [COVID Tracking Project](https://covidtracking.com) (TRK). This project reports a wide range of interesting statistics (negative test counts, for example), but I only use the *case* and *death* data. It does not provide county-level data so is not useful for the non-Washington locations I show. The file I download is https://covidtracking.com/data/download/washington-history.csv. I use this only as a check on the state-level Washington data from the other sources.
+
+The population data used for the per capita calculations is from [Census Reporter](https://censusreporter.org). The file connecting Census Reporter *geoids* to counties is the [Census Bureau Gazetteer](https://www.census.gov/geographies/reference-files/time-series/geo/gazetteer-files.html).
+
+## Comments Please!
+
+Please post comments on [Twitter](https://twitter.com/gnatgoodman) or [Facebook](https://www.facebook.com/nathan.goodman.3367), or contact me by email [natg@shore.net](mailto:natg@shore.net).
