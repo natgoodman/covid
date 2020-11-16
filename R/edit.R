@@ -96,7 +96,7 @@ edit_args=function(dots,KEEP=NULL,DROP=NULL,SUM=list(),NEGATE=list(),SUB=list(),
     names=names(dots);
     if (is.null(names)) names=rep('',length(dots));
     ## 'date' is special - move to DATE variable
-    date=(('date'==tolower(names(dots)))|sapply(dots,function(dot) any(expr_vars(dot)=='date')))
+    date=(('date'==tolower(names))|sapply(dots,function(dot) any(expr_vars(dot)=='date')))
     if (any(date))
       if (sum(date)==1) {
         DATE=dots[[which(date)]];
@@ -104,7 +104,7 @@ edit_args=function(dots,KEEP=NULL,DROP=NULL,SUM=list(),NEGATE=list(),SUB=list(),
         names=names(dots);
       }
       else stop("Can only have 1 'date' expression, not ",sum(date),': ',
-                paste(collapse='; ',sapply(EXPR[date],expr2text)));
+                paste(collapse='; ',sapply(dots[date],expr2text)));
     ## remaining un-named dots are KEEPs or DROPs
     unnamed=(nchar(names)==0);
     udots=dots[unnamed];
