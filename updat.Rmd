@@ -8,7 +8,7 @@ figdir=file.path('figure',doc,vsn);
 ---
 title: "COVID-19 Counts in Washington State and Select Other Locations"
 author: "Nathan (Nat) Goodman"
-date: "`r format(as.Date(vsn,format='%y-%m-%d'),'%B %d, %Y')`"
+date: "`r format(as.Date(vsn,format='%y-%m-%d')+1,'%B %-d, %Y')`"
 output:
   html_document:
     css: css/html_document.css
@@ -41,31 +41,37 @@ knitr::include_graphics(file.path(figdir,'figure_002b_deaths_other.png'));
 
 The Washington data (Figure 2a) shows two waves with a hint of a third, but the amplitudes are thankfully declining. Early peaks dominate the non-Washington data (Figure 2b) making it hard to see details later on, but the rates are much lower than the early peaks and seem generally steady.
 
-The next graphs show the Washington results broken down by age. Figures 3a-d (the top row) are *cases*; Figures 4a-d (the bottom row) are *deaths*. 
-The *cases* data is split into 20-year age ranges starting with 0-19, with a final group for 80+. The *deaths* graphs aggregate 0-59 into a single group, since the death rate in these ages is near 0.
+The next graphs show the Washington results broken down by age. Figures 3a-d are *cases*. The graphs are split into 20-year age ranges starting with 0-19, with a final group for 80+.
 
-```{r out.width="25%",echo=FALSE,fig.show='asis'}
+```{r out.width="50%",echo=FALSE,fig.show='asis'}
 knitr::include_graphics(file.path(figdir,'figure_003a_cases_state.png'));
 knitr::include_graphics(file.path(figdir,'figure_003b_cases_King.png'));
 knitr::include_graphics(file.path(figdir,'figure_003c_cases_Snohomish.png'));
 knitr::include_graphics(file.path(figdir,'figure_003d_cases_Pierce.png'));
+```
+
+Early on, the pandemic struck older age groups most heavily. Over time, *cases* spread into all age groups, even the young. One notable difference is that in the latest wave, the oldest groups are doing better in Seattle than the surrounding counties, at least in relative terms.
+
+Figures 4a-d are *deaths*. These graphs aggregate 0-59 into a single group, since the death rate in these ages is near 0.
+
+```{r out.width="50%",echo=FALSE,fig.show='asis'}
 knitr::include_graphics(file.path(figdir,'figure_004a_deaths_state.png'));
 knitr::include_graphics(file.path(figdir,'figure_004b_deaths_King.png'));
 knitr::include_graphics(file.path(figdir,'figure_004c_deaths_Snohomish.png'));
 knitr::include_graphics(file.path(figdir,'figure_004d_deaths_Pierce.png'));
 ```
 
-Early on, the pandemic struck older age groups most heavily both in terms of *cases* and *deaths*. Over time, *cases* spread into all age groups, even the young. One notable difference in *cases* across locations is that in the latest wave, the oldest groups are doing better in Seattle than the surrounding counties, at least in relative terms. The *deaths* data in Seattle and Snohomish shows waves with declining peaks, but in Pierce, the peaks seem to be steady. The *deaths* data for Snohomish and Pierce are more variable; I suspect this reflects delays in reporting deaths to DOH.
+The shocking devastation of the 80+ age group early in the pandemic jumps off the page. The early death rate in Seattle (King County) hit almost 700 per million reflecting the early outbreak at a long term care facility in the area. The *deaths* data in Seattle and Snohomish show waves with declining peaks, but in Pierce, the peaks seem to be steady. The data for Snohomish and Pierce are rather variable; I suspect this reflects delays in reporting deaths to DOH.
 
 ## Caveats {#caveats}
 
-1. The term *case* means a person with a detected COVID infection. Washington state limits this to "confirmed cases", meaning people with positive molecular COVID tests. Some states include "probable cases", but the data source I use here only includes "confirmed cases" (or, so I believe based on the name of the file I download).
+1. The term *case* means a person with a detected COVID infection. Washington state limits this to "confirmed cases", meaning people with positive molecular COVID tests. Some states include "probable cases", but the data source I use here only includes "confirmed cases" (or so I believe based on the name of the file I download).
 
 2. Detected *cases* undercount actual cases by an unknown amount. As testing volume increases over time, it's reasonable to expect the detected count to get closer to the actual count. Some of the increase in *cases* we see in the data is due to this artifact. Modelers attempt to correct for this. I don't include any such corrections here (but I do extrapolate Washington DOH data as described [below](#doh)). 
 
 3. The same issues apply to *deaths* to a lesser extent, except perhaps early in the pandemic.
 
-4. The geographic granularity is *state* or *county*. I refer to locations by city names since readers are more likely to know "Seattle" or "Ann Arbor" rather than "King" or "Washtenaw".
+4. The geographic granularity is *state* or *county*. I refer to locations by city names reasoning that readers are more likely to know "Seattle" or "Ann Arbor" than "King" or "Washtenaw".
 
 5. The date granularity in the graphs is weekly. The underlying JHU data is daily; I sum the data by week before graphing.
 
@@ -83,11 +89,11 @@ DOH provides three COVID data streams.
 
 3. Weekly data downloads (available from the [Data Dashboard](https://www.doh.wa.gov/Emergencies/COVID19/DataDashboard) web page) of data curated by DOH staff. The curation corrects errors in the daily feed, such as, duplicate reports, multiple test results for the same incident (e.g., initial and confirmation tests for the same individual), incorrect reporting dates, incorrect county assignments (e.g., when an individual crosses county lines to get tested). DOH updates the weekly data on Sundays.
 
-The weekly downloads lag behind the daily feed, meaning that data for the last few weeks is incomplete. I correct for this undercount by extrapolating data from the preceeding six weeks using a linear model (R's `lm`).
+The weekly downloads lag behind the daily feed causing data for the last few weeks to be incomplete. I correct for this undercount by extrapolating data from the preceeding six weeks using a linear model (R's `lm`). The extrapolation worked well previously but seems to overshoot a bit now (data not shown).
 
 The weekly DOH download reports data by age group: 20-year ranges starting with 0-19, with a final group for 80+.
 
-The DOH download includes data on hospital admissions (*admits*) in addition to *cases* and *deaths*, though I don't show this data here.
+The DOH download includes data on hospital admissions (*admits*) in addition to *cases* and *deaths*, although I don't show this data here.
 
 ### Johns Hopkins Center for Systems Science and Engineering (JHU) {#jhu}
 
