@@ -17,15 +17,15 @@ data_series=
            attrs=cq(unit,cumulative,what,datasrc,version,fit,roll,extra,edit)) {
     if (is_cvdat(objs)) objs=list(objs);
     if (is.null(places)) stop("'places' cannot be NULL: nothing to select!");
-    if (identical(ages,'all')) ages=NULL;
-    if (!is.null(ages)) {
+    ## if (identical(ages,'all')) ages=NULL;
+    if (!(is.null(ages)||identical(ages,'all'))) {
       datasrc=sapply(objs,function(obj) obj$datasrc);
       bad=unique(datasrc[datasrc!='doh']);
       if (length(bad)>0) 
         stop("Only doh objects have ages, not ",paste(collapse=', ',bad)," objects");
     }
     ## check whether edited objects are compatible
-    cmp_pops(objs,places,ages,incompatible.ok);
+    cmp_pops(objs,places,ages,incompatible.ok=incompatible.ok);
     ## get data frame values from objs
     xattr=objs_attr(objs,attrs,label=FALSE);
     xattr=cbind(obj=seq_along(objs),xattr);  # tack 'obj' to front of xattr
