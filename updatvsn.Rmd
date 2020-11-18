@@ -9,12 +9,10 @@ title: "COVID-19 Counts in Washington State and Select Other Locations: Weekly U
 author: "Nathan (Nat) Goodman"
 date: "`r format(as.Date(vsn,format='%y-%m-%d')+1,'%B %-d, %Y')`"
 output:
-  github_document:
-    html_preview: no
-  pdf_document: default
   html_document:
     css: css/html_document.css
     highlight: kate
+  pdf_document: default
 linkcolor: cyan
 citecolor: green
 urlcolor: blue
