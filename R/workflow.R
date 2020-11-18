@@ -195,6 +195,63 @@ do_meta=function() {
   import_pop();
 }
 
+## ---- Deploy updat doc  ----
+## Run after rendering doc in RStudio
+##   can't render here 'cuz main sunfish R version not compatible...
+do_updat=function(save=param(save)) {
+  if (is.na(save)) overwrite=FALSE
+  else {
+    if (!save) stop("Cannot deploy: 'save' is FALSE");
+    overwrite=save;
+  }
+  param(verbose,pjto);
+  if (pjto) {
+    ok=system('pjtest')==0;
+    if (!ok) warning('Cannot copy to Mac: reverse tunnel not running. Deploying on Linux');
+  }
+  vsn=latest_version('doh',NULL,'data/doh');
+  ## create version directory (for maintaining old version)
+  vsndir=file.path('doc.nnn','updat',vsn);
+  if (verbose) print(paste('+++ creating directory',vsndir))
+  dir.create(vsndir,recursive=TRUE,showWarnings=FALSE);
+  ## create date file used by updat_vsn.Rmd, blog/README
+  date=format(as.Date(vsn,format='%y-%m-%d')+1,'%B %-d, %Y');
+  file='updat.date';
+  if (overwrite||(!file.exists(file))) {
+    if (verbose) print(paste('+++ creating',file));
+    cat(date,file=file);
+  } else warning("Cannot update ",file,". File exists and save is NA");
+  ## copy files to 'stable' and version directory
+  sfx=cq(Rmd,html,pdf);
+  sapply(sfx,function(sfx) {
+    file=paste(sep='.','updat',sfx);
+    cp_if_allowed(file,paste(sep='.','updat','stable',sfx),overwrite=overwrite);
+    cp_if_allowed(file,file.path(vsndir,file),overwrite=overwrite);
+  });
+  ## create link file used by updat_vsn.Rmd
+  vsn=sort(list.files('doc.nnn/updat','\\d\\d-\\d\\d-\\d\\d'));
+  date=format(as.Date(vsn,format='%y-%m-%d')+1,'%B %-d, %Y');
+  file=file.path('doc.nnn/updat',vsn,'updat.html')
+  link=paste0('[',date,'](',file,')')
+  file='updat.link';
+  if (overwrite||(!file.exists(file))) {
+    if (verbose) print(paste('+++ creating',file));
+    writeLines(link,con='updat.link')
+  } else warning("Cannot update ",file,". File exists and save is NA");
+  if (verbose) 
+    print('>>> do_updat done. remember to knit updat_vsn.Rmd and commit all docs');
+}
+cp_if_allowed=function(infile,file,overwrite) {
+  if (overwrite||(!file.exists(file))) {
+    param(verbose,pjto);
+    if (verbose) print(paste('+++ creating',file));
+    file.copy(infile,file,overwrite=TRUE);
+    if (pjto) system(paste('pjto',file)); # copy to Mac if desired (usally is)
+  }
+  else warning("Cannot update ",file,". File exists and save is NA");
+}
+
+
 ## ---- Test transforms ----
 ## CAUTION: not up-to-date !!
 do_test=function(what=cq(cases,deaths),datasrc=cq(doh,jhu,nyt),version='latest') {
