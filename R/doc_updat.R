@@ -15,9 +15,9 @@
 #################################################################################
 ## --- Generate Figures and Tables for updat Blog Post ---
 ## no sections. only 4 figures
-doc_updat=function(need.objs=FALSE,need.init=TRUE,sect=NULL,...) {
-  if (need.objs) make_updat_objs();
-  if (need.init) init_doc(doc='updat',...);
+doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',...) {
+  if (need.objs) make_updat_objs(version=version);
+  if (need.init) init_doc(doc='updat',version=version,...);
   labels.wa=setNames(c('Washington state','Seattle (King County)',
                        'Snohomish (North of Seattle)','Pierce (South of Seattle)'),
               cq(state,King,Snohomish,Pierce));
@@ -83,7 +83,10 @@ make_updat_objs=
       ## start with raw
       obj=raw(what,datasrc,version);    # start with raw
       obj=switch(datasrc,               # transform as needed for src
-                 doh={obj=extra(obj); edit(obj,'0_59'='0_19'+'20_39'+'40_59')},
+                 doh={
+                   obj=edit(obj,'0_59'='0_19'+'20_39'+'40_59',
+                            KEEP=cq(state,King,Snohomish,Pierce));
+                   extra(obj)},
                  jhu=weekly(incremental(obj)),
                  nyt=weekly(incremental(obj)),
                  trk=weekly(obj));
