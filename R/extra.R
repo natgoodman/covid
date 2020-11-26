@@ -77,16 +77,14 @@ extrafun_split=function(objs,cases,dates,ws,ex.min,formula.type) {
     model=lm(as.formula(fmla),data=data);
     w.model=as.numeric(unique(data[,'w']));
     w.min=min(w.model);
-    w.max=max(w.model);
-
+    w.max=max(w.model);    
     fun=function(date,w) {
-      ## if w too big, return 1
-      if (w>w.max) return(1);
-      ## if w too small, return NA
-      if (w<w.min) return(NA);
+      if (w>w.max) return(1);           # if w too big, return 1
+      if (w%notin%w.model) return(NA);  # if w not in model, return NA
       p=suppressWarnings(predict(model,list(date=date,w=as.factor(w))));
       pmax(ex.min,pmin(1,p));         # clamp to [ex.min,1]
-    }})
+    }
+  });
   names(funs)=paste(sep=';',cases$place,cases$age);
   fun1=function(date,place,age,w) {
     ## get correct function from funs
