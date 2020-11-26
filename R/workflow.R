@@ -56,7 +56,7 @@ cmp_prev=function(datasrc,version) {
            trk=cmp_files(filename$trk,prevname$trk));
   });
   sapply(datasrc[!ok],function(datasrc) 
-    print(paste0('+++ skiping ',datasrc,': current version ',version,' same as previous ',prev)));
+    print(paste0('--- skiping ',datasrc,': current version ',version,' same as previous ',prev)));
   datasrc=datasrc[ok];
 }
 cmp_files=function(file1,file2) {
