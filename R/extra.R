@@ -47,7 +47,6 @@ extrafun=
     if (formula.type=='crossing') formula.type='*'
     else if (formula.type=='interaction') formula.type=':';
     model.type=match.arg(model.type);
-    
     places.all=Reduce(intersect,lapply(objs,function(obj) colnames(obj$data$all)[-1]));
     places=if(is.null(places)) places.all else places.all %&% places;
     ages.all=Reduce(intersect,lapply(objs,function(obj) names(obj$data)))
@@ -56,6 +55,8 @@ extrafun=
     dates=if(is.null(dates)) dates.all else as_date(dates.all %&% dates);
     ## dates wth enough versions are vmin-1*7..vmax-6*7
     enuff=which(dates>=(vmin-7)&dates<=(vmax-nv.min*7));
+    if (length(enuff)==0)
+      stop('No objects have enough versions to extrapolate: need versions >= 2020-05-31');
     dates=dates[enuff];
     cases=expand.grid(place=places,age=ages,stringsAsFactors=FALSE);
     if (model.type=='split') extrafun_split(objs,cases,dates,ws,ex.min,formula.type)
@@ -171,13 +172,17 @@ extra_props=function(objs,dates,ws,place,age) {
   nv=ncol(counts);
   cw=do.call(rbind,
              lapply(1:nrow(counts),function(i) {
-               row=if(i==1) counts[i,ws] else counts[i,-(1:(i-1))][,ws]
+               row=if(i==1) counts[i,ws] else counts[i,-(1:(i-1))][,ws];
                setNames(row,ws)}
                ));
-  cw=apply(cw,2,function(counts) ifelse(counts>0,counts,NA));
+  ## NG 20-11-26: use my capply, not R's apply, 'cuz apply simplifies single row to vector. sigh...
+  ## cw=apply(cw,2,function(counts) ifelse(counts>0,counts,NA));
+  cw=capply(cw,function(counts) ifelse(counts>0,counts,NA));
   ## make relative to final data
   finals=counts[,nv];
-  props=apply(cw,2,function(counts) counts/finals);
+  ## NG 20-11-26: use my capply, not R's apply, 'cuz apply simplifies single row to vector. sigh...
+  ## props=apply(cw,2,function(counts) counts/finals);
+  props=capply(cw,function(counts) counts/finals);
   rownames(props)=as.character(dates);
   props;
 }
