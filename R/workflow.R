@@ -239,7 +239,7 @@ do_updat=function(save=param(save)) {
     writeLines(link,con='updat.link')
   } else warning("Cannot update ",file,". File exists and save is NA");
   if (verbose) 
-    print('>>> do_updat done. remember to knit updat_vsn.Rmd and commit all docs');
+    print('>>> do_updat done. remember to knit updatvsn.Rmd, blog/README.Rmd and commit all docs');
 }
 cp_if_allowed=function(infile,file,overwrite) {
   if (overwrite||(!file.exists(file))) {
