@@ -25,7 +25,7 @@ doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',...) {
   figblk_start();
   dofig('cases_wa',
         plot_cvdat(
-          doh.cases,places=cq(state,King,Snohomish,Pierce),
+          jhu.cases,places=cq(state,King,Snohomish,Pierce),
           ages='all',per.capita=TRUE,lwd=2,
           title=figtitle("Weekly cases per million in Washington locations"),
           legends=list(labels=labels.wa)));
@@ -38,7 +38,7 @@ doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',...) {
   figblk_start();
   dofig('deaths_wa',
         plot_cvdat(
-          doh.deaths,places=cq(state,King,Snohomish,Pierce),
+          jhu.deaths,places=cq(state,King,Snohomish,Pierce),
           ages='all',per.capita=TRUE,lwd=2,
           title=figtitle("Weekly deaths per million in Washington locations"),
           legend='top',
@@ -69,6 +69,21 @@ doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',...) {
           doh.deaths,places=place,ages=ages,per.capita=TRUE,lwd=2,col=col,
           title=figtitle(paste("Weekly deaths per million by age in",labels.wa[place])),
           legend='top')));
+
+   ## Figures 5a-b compare DOH, JHU
+  figblk_start();
+  dofig('cases_dohjhu',
+        plot_cvdat(
+          list(doh.cases.roll,doh.cases,jhu.cases),places=cq(state),
+          ages='all',per.capita=TRUE,lwd=c(4,2,2),
+          title=figtitle("Weekly cases per million: DOH and JHU (Washington state)"),
+          legends=list(title='Data Source',labels=c('DOH raw','DOH extrapolated','JHU'))));
+  dofig('deaths_dohjhu',
+        plot_cvdat(
+          list(doh.deaths.roll,doh.deaths,jhu.deaths),places=cq(state),
+          ages='all',per.capita=TRUE,lwd=c(4,2,2),
+          title=figtitle("Weekly deaths per million: DOH and JHU (Washington state)"),
+          legends=list(title='Data Source',labels=c('DOH raw','DOH extrapolated','JHU'))));
   invisible();
 }
 
@@ -83,15 +98,16 @@ make_updat_objs=
       ## start with raw
       obj=raw(what,datasrc,version);    # start with raw
       obj=switch(datasrc,               # transform as needed for src
-                 doh={
-                   obj=edit(obj,'0_59'='0_19'+'20_39'+'40_59',
-                            KEEP=cq(state,King,Snohomish,Pierce));
-                   extra(obj)},
+                 doh=edit(obj,'0_59'='0_19'+'20_39'+'40_59',KEEP=cq(state,King,Snohomish,Pierce)),
                  jhu=weekly(incremental(obj)),
                  nyt=weekly(incremental(obj)),
                  trk=weekly(obj));
-      obj=roll(obj);                    # rolling mean
-      assign(paste(sep='.',datasrc,what),obj,globalenv()); # assign to global
+      assign(paste(sep='.',datasrc,what,'raw'),obj,globalenv());  # save as 'raw'
+      obj=roll(obj);                                              # rolling mean
+      assign(paste(sep='.',datasrc,what,'roll'),obj,globalenv()); # save as 'roll'
+      ## extrapolate doh
+      if (datasrc=='doh') obj=extra(obj);
+      assign(paste(sep='.',datasrc,what),obj,globalenv());        # save as final
     });
     cases;
   }
