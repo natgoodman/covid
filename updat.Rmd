@@ -30,7 +30,7 @@ knitr::include_graphics(file.path(figdir,'figure_001a_cases_wa.png'));
 knitr::include_graphics(file.path(figdir,'figure_001b_cases_other.png'));
 ```
 
-The Washington data (Figure 1a) clearly shows the three waves widely reported in the media, with cases increasing rapidly now. What jumps out from the non-Washington data (Figure 1b) are the high early peaks in Boston and DC, followed by smaller peaks in most locations, and rapidly increasing counts now. 
+Cases are rapidly increasing everywhere. In Washington state (Figure 1a), case counts are at their highest ever and continuing to rise. What jumps out from the non-Washington data (Figure 1b) are the high early peaks in Boston and DC, followed by smaller peaks in most locations, and rapidly increasing counts now. 
 
 Figures 2a-b show *deaths* per million for the same locations.
 
@@ -41,7 +41,7 @@ knitr::include_graphics(file.path(figdir,'figure_002b_deaths_other.png'));
 
 The Washington data (Figure 2a) shows two waves with a third starting. The second peak was thankfully lower than the first; it remains to be seen how high the third wave will go. Early peaks dominate the non-Washington data (Figure 2b) making it hard to see details later on, but the rates are much lower than the early peaks and seem generally steady.
 
-The next graphs show the Washington results broken down by age. This data is from Washington State Department of Health (DOH) weekly downloads, described [below](#doh). An important caveat is that I extrapolate data for the last few weeks to compensate for systematic undercounting in the DOH weekly downloads. The extrapolation is probably overshooting a bit (about 10% I think). Inter-group comparisons are reasonable but the exact numbers may be too high. 
+The next graphs show the Washington results broken down by age. This data is from Washington State Department of Health (DOH) weekly downloads, described [below](#doh). An important caveat is that I extrapolate data for the last few weeks to compensate for systematic undercounting in the DOH weekly downloads. See [below](#extra). The extrapolation is probably overshooting by as much as 25%. Inter-group comparisons are reasonable but the exact numbers may be too high. 
 
 Figures 3a-d are *cases*. The graphs are split into 20-year age ranges starting with 0-19, with a final group for 80+.
 
@@ -63,14 +63,7 @@ knitr::include_graphics(file.path(figdir,'figure_004c_deaths_Snohomish.png'));
 knitr::include_graphics(file.path(figdir,'figure_004d_deaths_Pierce.png'));
 ```
 
-The shocking devastation of the 80+ age group early in the pandemic jumps off the page. The early death rate for this group in Seattle (King County) hit almost 700 per million reflecting the early outbreak at a long term care facility in the area. Statewide, the death rate in the 80+ group shows three waves with deaths higher now than in the first wave and rapidly increasing. Deaths in Snohomish (north of Seattle) for the 80+ group have climbed to 1,000 per million, even higher than in the first wave in Seattle; I don't know what's going on up there - there haven't been any news reports about big outbreaks, so perhaps it's a data problem. Deaths in Pierce (south of Seattle) for this group is more variable than elsewhere, possibly reflecting delays in reporting deaths to DOH.
-
-Figures 5a-b compare DOH and JHU *cases* and *deaths* for Washington state to illustrate the undercount in the raw DOH data and overcount in the extrapolated data. The discrepancy is most apparent in the *deaths* graph.
-
-```{r out.width="50%",echo=FALSE,fig.show='asis'}
-knitr::include_graphics(file.path(figdir,'figure_005a_cases_dohjhu.png'));
-knitr::include_graphics(file.path(figdir,'figure_005b_deaths_dohjhu.png'));
-```
+The shocking devastation of the 80+ age group early in the pandemic jumps off the page. The early death rate for this group in Seattle (King County) hit almost 700 per million reflecting the early outbreak at a long term care facility in the area. Statewide, the death rate in the 80+ group shows three waves with deaths now almost as high as in the first wave. Deaths in Snohomish (north of Seattle) for the 80+ group have climbed to 500 per million, almost as high as the first wave in Seattle; this may reflect an outbreak in a long term care facility in the county. Deaths in Pierce (south of Seattle) for this group is more variable than elsewhere, possibly reflecting delays in reporting deaths to DOH.
 
 ## Caveats {#caveats}
 
@@ -80,11 +73,13 @@ knitr::include_graphics(file.path(figdir,'figure_005b_deaths_dohjhu.png'));
 
 3. The same issues apply to *deaths* to a lesser extent, except perhaps early in the pandemic.
 
-4. The geographic granularity is *state* or *county*. I refer to locations by city names reasoning that readers are more likely to know "Seattle" or "Ann Arbor" than "King" or "Washtenaw".
+4. The geographic granularity in the underlyong data is *state* or *county*. I refer to locations by city names reasoning that readers are more likely to know "Seattle" or "Ann Arbor" than "King" or "Washtenaw".
 
 5. The date granularity in the graphs is weekly. The underlying JHU data is daily; I sum the data by week before graphing.
 
 6. I smooth the graphs using a 3-week rolling mean for visual appeal. This is especially important for the *deaths* graphs where the counts are so low that unsmoothed week-to-week variation makes the graphs hard to read.
+
+7. I extrapolate recent Washington State DOH data to compensate for systematic undercounting in the DOH weekly downloads. See [below](#extra). The extrapolation probably overshoots by about 25%.
 
 ## Data Sources
 
@@ -98,11 +93,20 @@ DOH provides three COVID data streams.
 
 3. Weekly data downloads (available from the [Data Dashboard](https://www.doh.wa.gov/Emergencies/COVID19/DataDashboard) web page) of data curated by DOH staff. The curation corrects errors in the daily feed, such as, duplicate reports, multiple test results for the same incident (e.g., initial and confirmation tests for the same individual), incorrect reporting dates, incorrect county assignments (e.g., when an individual crosses county lines to get tested). DOH updates the weekly data on Sundays.
 
-The weekly downloads lag behind the daily feed causing data for the last few weeks to be incomplete. I correct for this undercount by extrapolating data from the preceeding six weeks using a linear model (R's `lm`). A quick looks suggests the extrapolation works well but overshoots a bit (Figures 5a-b).
+The weekly downloads lag behind the daily feed causing data for the last few weeks to be incomplete. I correct for this undercount by extrapolating data from the preceeding six weeks using a linear model (R's `lm`). A quick looks suggests the extrapolation is presently overshooting by approximately 25% ([below](#extra) Figures 5a-b).
 
 The weekly DOH download reports data by age group: 20-year ranges starting with 0-19, with a final group for 80+.
 
 The DOH download includes data on hospital admissions (*admits*) in addition to *cases* and *deaths*, although I don't show this data here.
+
+#### Issues with DOH Extrapolation {#extra}
+
+Figures 5a-b compare DOH and JHU *cases* and *deaths* for Washington state to illustrate the undercount in the raw DOH data and overcount in the extrapolated data. The discrepancy is most apparent in the *deaths* graph.
+
+```{r out.width="50%",echo=FALSE,fig.show='asis'}
+knitr::include_graphics(file.path(figdir,'figure_005a_cases_dohjhu.png'));
+knitr::include_graphics(file.path(figdir,'figure_005b_deaths_dohjhu.png'));
+```
 
 ### Johns Hopkins Center for Systems Science and Engineering (JHU) {#jhu}
 
