@@ -103,11 +103,18 @@ make_updat_objs=
                  nyt=weekly(incremental(obj)),
                  trk=weekly(obj));
       assign(paste(sep='.',datasrc,what,'raw'),obj,globalenv());  # save as 'raw'
-      obj=roll(obj);                                              # rolling mean
-      assign(paste(sep='.',datasrc,what,'roll'),obj,globalenv()); # save as 'roll'
-      ## extrapolate doh
-      if (datasrc=='doh') obj=extra(obj);
-      assign(paste(sep='.',datasrc,what),obj,globalenv());        # save as final
+      ## as of version 20-12-06, I tried not using roll in 'final' objects
+      ## but results were way noisy so I decided to keep it. hence the odd 'if (TRUE) ...'
+      ## if (version(obj)<'20-12-06') {
+      if (TRUE) {
+       obj=roll(obj);                                              # rolling mean
+        assign(paste(sep='.',datasrc,what,'roll'),obj,globalenv()); # save as 'roll'
+        ## extrapolate doh
+        if (datasrc=='doh') obj=extra(obj);
+      } else {
+        if (datasrc=='doh') obj=extra(obj);
+      }
+      assign(paste(sep='.',datasrc,what),obj,globalenv());        # save as 'final'
     });
     cases;
   }
