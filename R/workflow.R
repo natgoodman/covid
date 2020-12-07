@@ -115,22 +115,37 @@ do_objs=function(what=cq(cases,admits,deaths),datasrc=cq(doh,jhu,nyt,trk),versio
   cum=c('King','Yakima','Pierce','Spokane','Snohomish','Benton','Franklin','Clark','Grant','Chelan','Whitman','Whatcom','Kitsap','Thurston','Douglas','Skagit','Okanogan','Walla Walla','Adams','Cowlitz','Lewis','Kittitas','Grays Harbor','Mason','Island','Clallam','Stevens','Klickitat','Asotin','Pacific','Pend Oreille','Jefferson','Skamania','Lincoln','Ferry','San Juan','Columbia','Garfield','Wahkiakum');
   withrows(cases,case,{
     if (param(verbose)) print(paste('+++ making',datasrc,what));
-    ## all cases need raw
     obj=raw(what,datasrc,version);
-    assign(paste(sep='.',datasrc,what,'raw'),obj,globalenv());
-    ## 'standard' objects differ by datasrc
-    obj=switch(datasrc,
-               doh={obj=extra(obj); edit(obj,'0_59'='0_19'+'20_39'+'40_59')},
-               jhu=weekly(incremental(obj)),
-               nyt=weekly(incremental(obj)),
-               trk=weekly(obj));
+    ## 'raw' really means 'weekly, incremental'
+    obj.raw=switch(datasrc,
+                   doh=edit(obj,'0_59'='0_19'+'20_39'+'40_59'),
+                   jhu=weekly(incremental(obj)),
+                   nyt=weekly(incremental(obj)),
+                   trk=weekly(obj));
     ## edit all but trk to include, eg, SKP, before assigning to global
     if (datasrc!='trk')
-      obj=edit(obj,SUM=list(SKP=cq(Snohomish,King,Pierce),Top5=head(cum,n=5),Top10=head(cum,n=10)),
-               NEG=list(notKing='King',notSKP='SKP',notTop5='Top5',notTop10='Top10'));
-    assign(paste(sep='.',datasrc,what,'noroll'),obj,globalenv());
-    ## rolling mean
-    obj=roll(obj);
+      obj.raw=edit(obj.raw,
+                   SUM=list(SKP=cq(Snohomish,King,Pierce),Top5=head(cum,n=5),Top10=head(cum,n=10)),
+                   NEG=list(notKing='King',notSKP='SKP',notTop5='Top5',notTop10='Top10'));
+    obj.roll=roll(obj.raw);
+    if (datasrc=='doh') {
+      obj.extra=extra(obj.raw);
+      obj.rx=extra(obj.roll);
+      obj.xr=roll(obj.extra);
+    }
+    ## add id and assign to global
+    id=cq(raw,roll,extra,rx,xr);
+    names.local=paste0('obj.',id);
+    names.global=paste(sep='.',datasrc,what,id);
+    objs=mget(names.local,ifnotfound=rep(list(NULL),length(id)));
+    sapply(seq_along(objs),function(i) {
+      obj=objs[[i]];
+      if (!is.null(obj)) {
+        obj$id=id[i];
+        assign(names.global[i],obj,globalenv());
+      }});
+    ## also assign 'standard' object for source
+    obj=if(datasrc=='doh') obj.xr else obj.roll;
     assign(paste(sep='.',datasrc,what),obj,globalenv());
   });
   cases;  
@@ -144,14 +159,18 @@ do_plots=function(objs=NULL,objs.noroll=NULL) {
   if (is.null(objs)) objs=list(doh.cases,jhu.cases,nyt.cases,trk.cases);
   if (is.null(objs.noroll))
     objs.noroll=list(doh.cases.noroll,jhu.cases.noroll,nyt.cases.noroll,trk.cases.noroll);
- ## all sources 'state'
+  objs.notrk=objs[sapply(objs,function(obj) datasrc(obj)!='trk')]
+  ## all sources 'state'
   plon('all.state');
   plot_cvdat(objs,places=cq(state),ages='all',per.capita=TRUE);
   ploff();
   ## all sources (except trk) 'King'
-  objs.notrk=objs[sapply(objs,function(obj) datasrc(obj)!='trk')]
   plon('all.King');
   plot_cvdat(objs.notrk,places=cq(King),ages='all',per.capita=TRUE);
+  ploff();
+  ## all sources (except trk) 'San Juan'
+  plon('all.SanJuan');
+  plot_cvdat(objs.notrk,places=cq('San Juan'),ages='all',per.capita=FALSE);
   ploff();
   ## doh several places
   plon('doh.places');
@@ -228,8 +247,9 @@ do_updat=function(save=param(save)) {
     cp_if_allowed(file,paste(sep='.','updat','stable',sfx),overwrite=overwrite);
     cp_if_allowed(file,file.path(vsndir,file),overwrite=overwrite);
   });
-  ## create link file used by updat_vsn.Rmd
-  vsn=sort(list.files('doc.nnn/updat','\\d\\d-\\d\\d-\\d\\d'));
+  ## create link file used by updatvsn.Rmd
+  ## NG 20-12-07: sort links from latest to oldest. makes much more sense!
+  vsn=sort(list.files('doc.nnn/updat','\\d\\d-\\d\\d-\\d\\d'),decreasing=TRUE);
   date=format(as.Date(vsn,format='%y-%m-%d')+1,'%B %-d, %Y');
   file=file.path('doc.nnn/updat',vsn,'updat.html')
   link=paste0('[',date,'](',file,')')
