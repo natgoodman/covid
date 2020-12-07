@@ -20,7 +20,6 @@ urlcolor: blue
 
 *Counts of cases and deaths are key metrics of COVID-19 prevalence and burden, and are the basis for model-based estimates and predictions of these statistics. This page provides links to weekly updates that present graphs showing these metrics over time in Washington state and a few other USA locations of interest to me.*
 
-- [Current version](updat.stable.html)<br/>
 `r paste(collapse='<br/>\n',paste('-',readLines('updat.link')))`<br/>
 
 ## Comments Please!
