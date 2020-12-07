@@ -129,7 +129,7 @@ plot_cvdat=
         legend=auto_legend(blocks=blocks,lprop=lprop,legend.order=legend.order,legends=legends,
                            blocks.order=blocks.order,attrs=attrs.legend,
                            col=col.legend,lty=lty.legend,lwd=lwd.legend);
-      } else if (is.logical(legend)&&!legend) legend=list();
+     } else if (is.logical(legend)&&!legend) legend=list();
       if (length(legend)>0) add_legend(legend,where=where.legend,cex=cex.legend);
     }
   }
