@@ -31,8 +31,8 @@ extrafun=
     } else {
       if (is_cvdat(objs)) objs=list(objs);
       ## check whether edited objects are compatible
-      if (incompatible.ok) {
-        ok=cmp_pops(objs,incompatible.ok=incompatible.ok);
+      if (!incompatible.ok) {
+        ok=cmp_pops(objs,places=places,ages=ages,incompatible.ok=incompatible.ok);
         if (!ok) stop("Objects are incompatible (edited in conflicting ways). ",
                       "Sorry I can't be more specific");
       }
