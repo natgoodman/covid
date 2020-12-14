@@ -146,7 +146,7 @@ fix_doh_deaths=function(data,what,version) {
                  "does not have expected missing week after: 2020-01-26"));
     data=doh_insert(data,1,2);
   }
-  if (version %in% c('20-06-28','20-07-05','20-07-12')) {
+  if (version %in% c('20-06-28','20-07-05','20-07-12','20-12-13')) {
     ## expect 2 missing weeks after 2020-01-26
     if ((sum(bad)!=1)&&!bad[1]&&!all(data$date[1:2]==c("2020-01-26","2020-02-16")))
       stop(paste("doh",what,"version",version,
