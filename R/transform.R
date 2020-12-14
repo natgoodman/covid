@@ -228,6 +228,9 @@ cntr1=function(data,inc) {
 }
 ## add 'extra' counts to DOH objects to adjust for incomplete data near end
 ## fun computed by 'extrafun' (via 'init_extra') function in extra.R
+## NG 20-12-14: fixed longstanding bug: 'extra' has to pass objs to 'extrafun' to include
+##   current object in check for compatibility
+## TODO: refactor using lessons from 'xper_wmat' et al
 extra=function(obj,...) UseMethod('extra')
 extra.cvdat=function(obj,fun=NULL,objs=NULL,versions=NULL,incompatible.ok=param(incompatible.ok))
   stop("'extra' transform only makes sense for 'doh' objects, not ",obj$datasrc," objects")
@@ -235,12 +238,15 @@ extra.cvdoh=function(obj,fun=NULL,objs=NULL,versions=NULL,incompatible.ok=param(
   dates=dates(obj);
   places=places(obj);
   ages=ages(obj);
+  what=obj$what;
   if (is.null(fun)) {
-    if (!is.null(objs)) {
-      if (is_cvdat(objs)) objs=list(objs);
-      objs=c(list(obj),objs);
+    if (is.null(objs)) {
+      ## read objects
+      versions.all=list_versions('doh',what) %-% version(obj);
+      versions=if(is.null(versions)) versions.all else versions.all %&% versions;
+      objs=c(list(obj),lapply(versions,function(version) raw(what,'doh',version)));
     }
-    fun=extrafun(what=obj$what,objs=objs,versions=versions,incompatible.ok=incompatible.ok,
+    fun=extrafun(what=what,objs=objs,versions=versions,incompatible.ok=incompatible.ok,
                 dates=dates,places=places,ages=ages);
   }
   vdate=vdate(obj);
