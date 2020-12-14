@@ -41,7 +41,7 @@ knitr::include_graphics(file.path(figdir,'figure_002b_deaths_other.png'));
 
 The Washington data (Figure 2a) shows three waves. We should know in a week or two whether the peak in the third wave is real or merely reflects reporting delays due to the Thanksgiving holiday. The second peak was thankfully lower than the first; the third is higher than the second. Early peaks dominate the non-Washington data (Figure 2b) making it hard to see details later on, but the rates are heading up. There's a hint of a flattening (or, at least, slower increase) in Boston. When comparing Figures 2a and 2b, please heed the difference in y-scale: the current Washington rates (10-20 per million) are similar to the non-Washington rates.
 
-The next graphs show the Washington results broken down by age. This data is from Washington State Department of Health (DOH) weekly downloads, described [below](#doh). An important caveat is that the DOH download systematically undercounts events in recent weeks due to manual curation. See [below](#extra). In previous versions of this document, I used extrapolation to compensate for the DOH undercounting but have turned it off in this version: performance of the extrapolation has become erratic in the most recent data, overshooting some weeks and undershooting others by large amounts. The DOH data in this version is smoothed using a 3-week rolling mean but is otherwise raw.
+The next graphs show the Washington results broken down by age. This data is from Washington State Department of Health (DOH) weekly downloads, described [below](#doh). An important caveat is that the DOH download systematically undercounts events in recent weeks due to manual curation. See [below](#extra). In previous versions of this document, I used extrapolation to compensate for the DOH undercounting but have turned it off in this version: performance of the extrapolation became erratic in the most recent data, overshooting some weeks and undershooting others by large amounts. The DOH data in this version is smoothed using a 3-week rolling mean but is otherwise raw.
 
 Figures 3a-d are *cases*. The graphs are split into 20-year age ranges starting with 0-19, with a final group for 80+.
 
@@ -69,7 +69,7 @@ The shocking devastation of the 80+ age group early in the pandemic jumps off th
 
 1. The term *case* means a person with a detected COVID infection. Washington state limits this to "confirmed cases", meaning people with positive molecular COVID tests. Some states include "probable cases", but the data source I use here only includes "confirmed cases" (or so I believe based on the name of the file I download).
 
-2. Detected *cases* undercount actual cases by an unknown amount. As testing volume increases over time, it's reasonable to expect the detected count to get closer to the actual count. Some of the increase in *cases* we see in the data is due to this artifact. Modelers attempt to correct for this. I don't include any such corrections here (but I do extrapolate Washington DOH data as described [below](#doh)). 
+2. Detected *cases* undercount actual cases by an unknown amount. As testing volume increases over time, it's reasonable to expect the detected count to get closer to the actual count. Some of the increase in *cases* we see in the data is due to this artifact. Modelers attempt to correct for this. I don't include any such corrections here. 
 
 3. The same issues apply to *deaths* to a lesser extent, except perhaps early in the pandemic.
 
@@ -91,7 +91,7 @@ DOH provides three COVID data streams.
 
 3. Weekly data downloads (available from the [Data Dashboard](https://www.doh.wa.gov/Emergencies/COVID19/DataDashboard) web page) of data curated by DOH staff. The curation corrects errors in the daily feed, such as, duplicate reports, multiple test results for the same incident (e.g., initial and confirmation tests for the same individual), incorrect reporting dates, incorrect county assignments (e.g., when an individual crosses county lines to get tested). DOH updates the weekly data on Sundays.
 
-The weekly downloads lag behind the daily feed causing data for the last few weeks to be incomplete (see [below](#extra) Figures 5a-b). In previous versions of this document I corrected for this undercount by extrapolating data from the preceding six weeks using a linear model (R's `lm`). Performance of my extrapolation became erratic in the most recent data, and I've turned it off in this version of the document.
+The weekly downloads lag behind the daily feed causing data for the last few weeks to be incomplete (see [below](#extra) Figures 5a-b). In previous versions of this document I corrected for this undercount by extrapolating data from the preceding six weeks using a linear model (R's `lm`). Performance of the extrapolation became erratic in the most recent data, and I've turned it off in this version of the document.
 
 The weekly DOH download reports data by age group: 20-year ranges starting with 0-19, with a final group for 80+.
 
