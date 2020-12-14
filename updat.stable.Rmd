@@ -30,7 +30,7 @@ knitr::include_graphics(file.path(figdir,'figure_001a_cases_wa.png'));
 knitr::include_graphics(file.path(figdir,'figure_001b_cases_other.png'));
 ```
 
-In Washington state (Figure 1a), cases are rapidly increasing overall with a hint of a downturn in Seattle (King County) and Snohomish County to the north; counts are far higher now than earlier in the pandemic. In non-Washington locations (Figure 1b), cases are rapidly increasing everywhere except for a slight decline in Ann Arbor. We should know in a week or two whether the declines in Seattle, Snohomish, and Ann Arbor mean we've reached the peak or are just bumps on the way up.
+In Washington state (Figure 1a), cases are rapidly increasing and are far higher now than earlier in the pandemic. In non-Washington locations (Figure 1b), cases are rapidly increasing everywhere except for a slight decline in Ann Arbor. The decline in Ann Arbor has persisted for two weeks in a row, and while the differences are small, we can hope it's the start of a downward trend.
 
 Figures 2a-b show *deaths* per million for the same locations.
 
@@ -39,9 +39,9 @@ knitr::include_graphics(file.path(figdir,'figure_002a_deaths_wa.png'));
 knitr::include_graphics(file.path(figdir,'figure_002b_deaths_other.png'));
 ```
 
-The Washington data (Figure 2a) shows three waves with the third yet to reach its peak. The second peak was thankfully lower than the first, but the third is already higher than the second and continuing to climb. Early peaks dominate the non-Washington data (Figure 2b) making it hard to see details later on, but the rates are heading up. When comparing Figures 2a and 2b, please heed the difference in y-scale: the current Washington rates (15-20 per million) are similar to the non-Washington rates.
+The Washington data (Figure 2a) shows three waves. We should know in a week or two whether the peak in the third wave is real or merely reflects reporting delays due to the Thanksgiving holiday. The second peak was thankfully lower than the first; the third is higher than the second. Early peaks dominate the non-Washington data (Figure 2b) making it hard to see details later on, but the rates are heading up. There's a hint of a flattening (or, at least, slower increase) in Boston. When comparing Figures 2a and 2b, please heed the difference in y-scale: the current Washington rates (10-20 per million) are similar to the non-Washington rates.
 
-The next graphs show the Washington results broken down by age. This data is from Washington State Department of Health (DOH) weekly downloads, described [below](#doh). An important caveat is that I extrapolate data for the last few weeks to compensate for systematic undercounting in the DOH weekly downloads. See [below](#extra). The extrapolation is probably overshooting by as much as 25%. Inter-group comparisons are reasonable but the exact numbers may be too high. 
+The next graphs show the Washington results broken down by age. This data is from Washington State Department of Health (DOH) weekly downloads, described [below](#doh). An important caveat is that the DOH download systematically undercounts events in recent weeks due to manual curation. See [below](#extra). In previous versions of this document, I used extrapolation to compensate for the DOH undercounting but have turned it off in this version: performance of the extrapolation has become erratic in the most recent data, overshooting some weeks and undershooting others by large amounts. The DOH data in this version is smoothed using a 3-week rolling mean but is otherwise raw.
 
 Figures 3a-d are *cases*. The graphs are split into 20-year age ranges starting with 0-19, with a final group for 80+.
 
@@ -52,7 +52,7 @@ knitr::include_graphics(file.path(figdir,'figure_003c_cases_Snohomish.png'));
 knitr::include_graphics(file.path(figdir,'figure_003d_cases_Pierce.png'));
 ```
 
-Early on, the pandemic struck older age groups most heavily. Over time, *cases* spread into all age groups, even the young. During the second wave, older groups did better in most locations, but now counts are going up rapidly in all age groups and locations.
+Early on, the pandemic struck older age groups most heavily. Over time, *cases* spread into all age groups, even the young. During the second wave, older groups did better in most locations, but counts are now going up rapidly in all age groups and locations. The dip at the end is at least partially an artifact of DOH undercounting (see [below](#extra))
 
 Figures 4a-d are *deaths*. These graphs aggregate 0-59 into a single group, since the death rate in these ages is near 0.
 
@@ -63,7 +63,7 @@ knitr::include_graphics(file.path(figdir,'figure_004c_deaths_Snohomish.png'));
 knitr::include_graphics(file.path(figdir,'figure_004d_deaths_Pierce.png'));
 ```
 
-The shocking devastation of the 80+ age group early in the pandemic jumps off the page. The early death rate for this group in Seattle (King County) hit almost 700 per million reflecting the early outbreak at a long term care facility in the area. Statewide, the death rate in the 80+ group shows three waves with deaths now higher than the first wave and almost as high as the early King County peak. Deaths in Snohomish (north of Seattle) for the 80+ group have climbed beyond 600 per million, almost as high as the first wave in Seattle, but may be heading back down; the high recent peak may reflect an outbreak in a long term care facility in the county. Deaths in Pierce (south of Seattle) for this group are more variable than elsewhere, possibly reflecting delays in reporting deaths to DOH; sadly the rate seems to be heading up.
+The shocking devastation of the 80+ age group early in the pandemic jumps off the page. The early death rate for this group in Seattle (King County) hit almost 700 per million reflecting the early outbreak at a long term care facility in the area. Statewide, the death rate in the 80+ group shows three waves. Deaths in Snohomish (north of Seattle) for the 80+ group peaked early in the pandemic, then declined and stayed fairly low, but now have climbed back up to nearly the first peak; some of the increase reflects an outbreak in a long term care facility in the county. Deaths in Pierce (south of Seattle) for this group are more variable than elsewhere, possibly reflecting delays in reporting deaths to DOH and political turmoil in the county department responsible for reporting this data. The overall rate seems fairly steady at a level near or slightly below the second and third King county peaks.
 
 ## Caveats {#caveats}
 
@@ -79,8 +79,6 @@ The shocking devastation of the 80+ age group early in the pandemic jumps off th
 
 6. I smooth the graphs using a 3-week rolling mean for visual appeal. This is especially important for the *deaths* graphs where the counts are so low that unsmoothed week-to-week variation makes the graphs hard to read.
 
-7. I extrapolate recent Washington State DOH data to compensate for systematic undercounting in the DOH weekly downloads. See [below](#extra). The extrapolation probably overshoots by about 25%.
-
 ## Data Sources
 
 ### Washington State Department of Health (DOH) {#doh}
@@ -93,7 +91,7 @@ DOH provides three COVID data streams.
 
 3. Weekly data downloads (available from the [Data Dashboard](https://www.doh.wa.gov/Emergencies/COVID19/DataDashboard) web page) of data curated by DOH staff. The curation corrects errors in the daily feed, such as, duplicate reports, multiple test results for the same incident (e.g., initial and confirmation tests for the same individual), incorrect reporting dates, incorrect county assignments (e.g., when an individual crosses county lines to get tested). DOH updates the weekly data on Sundays.
 
-The weekly downloads lag behind the daily feed causing data for the last few weeks to be incomplete. I correct for this undercount by extrapolating data from the preceding six weeks using a linear model (R's `lm`). A quick looks suggests the extrapolation is presently overshooting by approximately 25% (see [below](#extra) Figures 5a-b).
+The weekly downloads lag behind the daily feed causing data for the last few weeks to be incomplete (see [below](#extra) Figures 5a-b). In previous versions of this document I corrected for this undercount by extrapolating data from the preceding six weeks using a linear model (R's `lm`). Performance of my extrapolation became erratic in the most recent data, and I've turned it off in this version of the document.
 
 The weekly DOH download reports data by age group: 20-year ranges starting with 0-19, with a final group for 80+.
 
@@ -101,7 +99,7 @@ The DOH download includes data on hospital admissions in addition to *cases* and
 
 #### Issues with DOH Extrapolation {#extra}
 
-Figures 5a-b compare DOH and JHU *cases* and *deaths* for Washington state to illustrate the undercount in the raw DOH data and overcount in the extrapolated data. The discrepancy is sizable in the *deaths* graph; I have no explanation for this but am exploring the problem.
+Figures 5a-b compare DOH and JHU *cases* and *deaths* for Washington state to illustrate the undercount in the raw DOH data. The discrepancy is sizable in the *deaths* data. 
 
 ```{r out.width="50%",echo=FALSE,fig.show='asis'}
 knitr::include_graphics(file.path(figdir,'figure_005a_cases_dohjhu.png'));
