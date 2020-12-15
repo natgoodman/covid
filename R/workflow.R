@@ -106,35 +106,37 @@ dl_filenames=function(datasrc,version) {
 }
 
 ## ---- Make standard objects ----
-## make objects I tend to use circa Oct 2010
+## make objects I tend to use circa Oct 2020
+## NG 20-12-14: fixed longstanding bug. have to do 'extra' before 'edit' else objects
+##   will be incompatible. bug in 'extra' caused error to be missed and results of edited
+##   places and ages to be 0!
 do_objs=function(what=cq(cases,admits,deaths),datasrc=cq(doh,jhu,nyt,trk),version='latest') {
   cases=expand.grid(what=what,datasrc=datasrc,stringsAsFactors=FALSE);
   ## only 'doh' has 'admits'. prune others
   cases=cases[(cases$what!='admits'|cases$datasrc%in%cq(doh,trk)),]
   ## cum is names of sorted cumulative cases. handcrafted 20-10-14 from jhu.cases.raw
   cum=c('King','Yakima','Pierce','Spokane','Snohomish','Benton','Franklin','Clark','Grant','Chelan','Whitman','Whatcom','Kitsap','Thurston','Douglas','Skagit','Okanogan','Walla Walla','Adams','Cowlitz','Lewis','Kittitas','Grays Harbor','Mason','Island','Clallam','Stevens','Klickitat','Asotin','Pacific','Pend Oreille','Jefferson','Skamania','Lincoln','Ferry','San Juan','Columbia','Garfield','Wahkiakum');
+  id=cq(raw,roll,extra,rx,xr);
   withrows(cases,case,{
     if (param(verbose)) print(paste('+++ making',datasrc,what));
     obj=raw(what,datasrc,version);
     ## 'raw' really means 'weekly, incremental'
+    ## BREAKPOINT('do_objs: after raw',nv(datasrc,what))
     obj.raw=switch(datasrc,
-                   doh=edit(obj,'0_59'='0_19'+'20_39'+'40_59'),
+                   doh=obj,
                    jhu=weekly(incremental(obj)),
                    nyt=weekly(incremental(obj)),
                    trk=weekly(obj));
-    ## edit all but trk to include, eg, SKP, before assigning to global
-    if (datasrc!='trk')
-      obj.raw=edit(obj.raw,
-                   SUM=list(SKP=cq(Snohomish,King,Pierce),Top5=head(cum,n=5),Top10=head(cum,n=10)),
-                   NEG=list(notKing='King',notSKP='SKP',notTop5='Top5',notTop10='Top10'));
+    ## BREAKPOINT('do_objs: after switch',nv(datasrc,what))
+    ## NG 20-12-14: for doh, do 'extra' before 'edit'. not an issue for jhu, nyt
+    ##   means we have to process doh raw and extra in separate streams
     obj.roll=roll(obj.raw);
     if (datasrc=='doh') {
       obj.extra=extra(obj.raw);
       obj.rx=extra(obj.roll);
       obj.xr=roll(obj.extra);
     }
-    ## add id and assign to global
-    id=cq(raw,roll,extra,rx,xr);
+    ## iterate over object. edit (except trk), add id, assign to global
     names.local=paste0('obj.',id);
     names.global=paste(sep='.',datasrc,what,id);
     objs=mget(names.local,ifnotfound=rep(list(NULL),length(id)));
@@ -142,11 +144,16 @@ do_objs=function(what=cq(cases,admits,deaths),datasrc=cq(doh,jhu,nyt,trk),versio
       obj=objs[[i]];
       if (!is.null(obj)) {
         obj$id=id[i];
+        if (datasrc=='doh') obj=edit(obj,'0_59'='0_19'+'20_39'+'40_59');
+        if (datasrc!='trk')
+          obj=edit(obj,SKP=Snohomish+King+Pierce,
+                   SUM=list(Top5=head(cum,n=5),Top10=head(cum,n=10)),
+                   NEG=list(notKing='King',notSKP='SKP',notTop5='Top5',notTop10='Top10'));
         assign(names.global[i],obj,globalenv());
       }});
     ## also assign 'standard' object for source
-    obj=if(datasrc=='doh') obj.xr else obj.roll;
-    assign(paste(sep='.',datasrc,what),obj,globalenv());
+    name.std=paste(sep='.',datasrc,what,if(datasrc=='doh') 'xr' else 'roll');  
+    assign(paste(sep='.',datasrc,what),get(name.std,globalenv()),globalenv());
   });
   cases;  
 }
@@ -171,6 +178,10 @@ do_plots=function(objs=NULL,objs.noroll=NULL) {
   ## all sources (except trk) 'San Juan'
   plon('all.SanJuan');
   plot_cvdat(objs.notrk,places=cq('San Juan'),ages='all',per.capita=FALSE);
+  ploff();
+  ## all sources (except trk) 'Okanogan'
+  plon('all.Okanogan');
+  plot_cvdat(objs.notrk,places=cq('Okanogan'),ages='all',per.capita=TRUE);
   ploff();
   ## doh several places
   plon('doh.places');
