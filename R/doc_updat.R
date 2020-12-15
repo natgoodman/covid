@@ -72,22 +72,41 @@ doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',...) {
 
    ## Figures 5a-b compare DOH, JHU
   figblk_start();
-  dofig('cases_dohjhu',
-        plot_cvdat(
-          list(doh.cases.roll,doh.cases,jhu.cases),places=cq(state),
-          ages='all',per.capita=TRUE,lwd=c(4,2,2),
-          title=figtitle("Weekly cases per million: DOH and JHU (Washington state)"),
-          legends=list(title='Data Source',labels=c('DOH raw','DOH extrapolated','JHU'))));
-  dofig('deaths_dohjhu',
-        plot_cvdat(
-          list(doh.deaths.roll,doh.deaths,jhu.deaths),places=cq(state),
-          ages='all',per.capita=TRUE,lwd=c(4,2,2),
-          title=figtitle("Weekly deaths per million: DOH and JHU (Washington state)"),
-          legends=list(title='Data Source',labels=c('DOH raw','DOH extrapolated','JHU'))));
-  invisible();
+  version=version(doh.cases);
+  if (version<='20-12-06') {
+    dofig('cases_dohjhu',
+          plot_cvdat(
+            list(doh.cases.roll,doh.cases,jhu.cases),
+            places=cq(state),ages='all',per.capita=TRUE,lwd=c(4,2,2),
+            title=figtitle("Weekly cases per million: DOH and JHU (Washington state)"),
+            legends=list(title='Data Source',labels=c('DOH raw','DOH extrapolated','JHU'))));
+    dofig('deaths_dohjhu',
+          plot_cvdat(
+            list(doh.deaths.roll,doh.deaths,jhu.deaths),
+            places=cq(state),ages='all',per.capita=TRUE,lwd=c(4,2,2),
+            title=figtitle("Weekly deaths per million: DOH and JHU (Washington state)"),
+            legends=list(title='Data Source',labels=c('DOH raw','DOH extrapolated','JHU'))));
+  } else {
+    dofig('cases_dohjhu',
+          plot_cvdat(
+            list(doh.cases,jhu.cases),
+            places=cq(state),ages='all',per.capita=TRUE,lwd=2,
+            title=figtitle("Weekly cases per million: DOH and JHU (Washington state)"),
+            legends=list(title='Data Source',labels=c('DOH','JHU'))));
+    dofig('deaths_dohjhu',
+          plot_cvdat(
+            list(doh.deaths,jhu.deaths),
+            places=cq(state),ages='all',per.capita=TRUE,lwd=2,
+            title=figtitle("Weekly deaths per million: DOH and JHU (Washington state)"),
+            legends=list(title='Data Source',labels=c('DOH','JHU'))));
+  }
+    invisible();
 }
 
 ## make objs doc_updat needs. 'global' controls whether set globally or just in parent
+## NG 20-12-14: fixed longstanding bug. have to do 'extra' before 'editing' object to create
+##   new places or ages, else objects will be incompatible.
+##   bug in 'extra' caused error to be missed and results of edited places and ages to be 0!
 make_updat_objs=
   function(what=cq(cases,deaths),datasrc=cq(doh,jhu),version='latest') {
     cases=expand.grid(what=what,datasrc=datasrc,stringsAsFactors=FALSE);
@@ -95,25 +114,37 @@ make_updat_objs=
     cases=cases[(cases$what!='admits'|cases$datasrc%in%cq(doh,trk)),]
     withrows(cases,case,{
       if (param(verbose)) print(paste('+++ making',datasrc,what));
-      ## start with raw
+      ## start with raw. really 'weekly, incremental'
       obj=raw(what,datasrc,version);    # start with raw
       obj=switch(datasrc,               # transform as needed for src
-                 doh=edit(obj,'0_59'='0_19'+'20_39'+'40_59',KEEP=cq(state,King,Snohomish,Pierce)),
+                 doh=edit(obj,KEEP=cq(state,King,Snohomish,Pierce)),
                  jhu=weekly(incremental(obj)),
                  nyt=weekly(incremental(obj)),
                  trk=weekly(obj));
       assign(paste(sep='.',datasrc,what,'raw'),obj,globalenv());  # save as 'raw'
-      ## as of version 20-12-06, I tried not using roll in 'final' objects
-      ## but results were way noisy so I decided to keep it. hence the odd 'if (TRUE) ...'
+      ## in version 20-12-06, I tried not using roll in 'final' objects
+      ## but results were way noisy so I decided to keep it. hence the commented out section
+      ## in version 20-12-13, I decided to omit 'extra'
+      ##   extrapolation became unacceptably erratic for some reason
+      ##   will probably change again next week...
       ## if (version(obj)<'20-12-06') {
-      if (TRUE) {
-       obj=roll(obj);                                              # rolling mean
-        assign(paste(sep='.',datasrc,what,'roll'),obj,globalenv()); # save as 'roll'
-        ## extrapolate doh
-        if (datasrc=='doh') obj=extra(obj);
-      } else {
-        if (datasrc=='doh') obj=extra(obj);
+      version=version(obj);
+      obj=roll(obj);                                              # rolling mean
+      assign(paste(sep='.',datasrc,what,'roll'),obj,globalenv()); # save as 'roll'
+      if (datasrc=='doh') {
+        if (version<='20-12-06') {
+          ## extrapolate then edit
+          obj=extra(obj);
+          obj=edit(obj,'0_59'='0_19'+'20_39'+'40_59');
+        } else {
+          ## omit extrapolation - just edit
+          if (datasrc=='doh') obj=edit(obj,'0_59'='0_19'+'20_39'+'40_59')
+        }
       }
+      ## in version 20-12-06, I tried not using roll in 'final' objects
+      ## but results were way noisy so I decided to keep it. hence this commented out section
+      ## if (datasrc=='doh') obj=extra(obj);
+      ##   obj=edit(obj,'0_59'='0_19'+'20_39'+'40_59');
       assign(paste(sep='.',datasrc,what),obj,globalenv());        # save as 'final'
     });
     cases;
