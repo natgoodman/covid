@@ -32,7 +32,7 @@ fitfun=function(x,y,method=cq(aspline,ispline,sspline,spline,loess,linear,approx
   args=cl(
     switch(method,
            aspline=list(method='improved'),
-           sspline=list(spar=NULL),
+           sspline=list(spar=0.5),
            spline=list(method='monoH.FC'),
            loess=list(span=0.75),
            linear=list(method='linear',yleft=0,rule=2),
