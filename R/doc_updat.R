@@ -15,12 +15,13 @@
 #################################################################################
 ## --- Generate Figures and Tables for updat Blog Post ---
 ## no sections. only 4 figures
-doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',...) {
-  if (need.objs) make_updat_objs(version=version);
+doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',do.roll=TRUE,do.extra=NA,...) {
+  if (need.objs) make_updat_objs(version=version,do.roll=do.roll,do.extra=do.extra);
   if (need.init) init_doc(doc='updat',version=version,...);
   labels.wa=setNames(c('Washington state','Seattle (King County)',
                        'Snohomish (North of Seattle)','Pierce (South of Seattle)'),
               cq(state,King,Snohomish,Pierce));
+  if (param(verbose)) print(paste('+++ making figures'));
   ## Figures 1a-b cases
   figblk_start();
   dofig('cases_wa',
@@ -108,7 +109,7 @@ doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',...) {
 ##   new places or ages, else objects will be incompatible.
 ##   bug in 'extra' caused error to be missed and results of edited places and ages to be 0!
 make_updat_objs=
-  function(what=cq(cases,deaths),datasrc=cq(doh,jhu),version='latest') {
+  function(what=cq(cases,deaths),datasrc=cq(doh,jhu),version='latest',do.roll=TRUE,do.extra=NA) {
     cases=expand.grid(what=what,datasrc=datasrc,stringsAsFactors=FALSE);
     ## only 'doh' has 'admits'. prune others
     cases=cases[(cases$what!='admits'|cases$datasrc%in%cq(doh,trk)),]
@@ -129,17 +130,15 @@ make_updat_objs=
       ##   will probably change again next week...
       ## if (version(obj)<'20-12-06') {
       version=version(obj);
-      obj=roll(obj);                                              # rolling mean
-      assign(paste(sep='.',datasrc,what,'roll'),obj,globalenv()); # save as 'roll'
+      roll.width=if(is.numeric(do.roll)) do.roll else NULL;
+      if ((is.logical(do.roll)&&do.roll)||is.numeric(do.roll)) {
+        obj=roll(obj,roll.width);                                   #  rolling mean
+        assign(paste(sep='.',datasrc,what,'roll'),obj,globalenv()); # save as 'roll'
+      }
       if (datasrc=='doh') {
-        if (version<='20-12-06') {
-          ## extrapolate then edit
-          obj=extra(obj);
-          obj=edit(obj,'0_59'='0_19'+'20_39'+'40_59');
-        } else {
-          ## omit extrapolation - just edit
-          if (datasrc=='doh') obj=edit(obj,'0_59'='0_19'+'20_39'+'40_59')
-        }
+        if (is.na(do.extra)) if (version<='20-12-06') do.extra=TRUE else do.extra=FALSE;
+        if (do.extra) obj=extra(obj);
+        obj=edit(obj,'0_59'='0_19'+'20_39'+'40_59');
       }
       ## in version 20-12-06, I tried not using roll in 'final' objects
       ## but results were way noisy so I decided to keep it. hence this commented out section
