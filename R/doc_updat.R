@@ -14,9 +14,15 @@
 ##
 #################################################################################
 ## --- Generate Figures and Tables for updat Blog Post ---
-## no sections. only 4 figures
+## no sections.
 doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',do.roll=TRUE,do.extra=NA,...) {
-  if (need.objs) make_updat_objs(version=version,do.roll=do.roll,do.extra=do.extra);
+  if (need.objs) {
+    if (version=='20-12-20') {
+      ## version 20-12-20: DOH update not available. hopefully temporary...
+      make_updat_objs(datasrc='jhu',version=version,do.roll=do.roll,do.extra=do.extra)
+    }
+    else make_updat_objs(version=version,do.roll=do.roll,do.extra=do.extra);
+  }
   if (need.init) init_doc(doc='updat',version=version,...);
   labels.wa=setNames(c('Washington state','Seattle (King County)',
                        'Snohomish (North of Seattle)','Pierce (South of Seattle)'),
@@ -49,6 +55,8 @@ doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',do.roll=TRUE,d
           jhu.deaths,places=cq('Ann Arbor',Boston,'San Diego',DC),
           ages='all',per.capita=TRUE,lwd=2,
           title=figtitle("Weekly deaths per million in non-Washington locations")));
+  ## version 20-12-20: DOH update not available. hopefully temporary...
+  if (version=='20-12-20') return();
   ## Figures 3a-d cases by age
   figblk_start();
   ages=ages_all()[-1];

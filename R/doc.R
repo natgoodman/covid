@@ -302,3 +302,8 @@ figdev_label=function() {
   paste(collapse='',c(pfx,num));
 }
 
+## figure and table filenames
+filename_fig=function(figlabel,sect,figname,suffix='png')
+  filename(param(figdir),paste(collapse='_',c('figure',figlabel,sect,figname)),suffix=suffix);
+filename_tbl=function(tbllabel,sect,tblname,suffix='RData')
+  filename(param(tbldir),paste(collapse='_',c('table',tbllabel,sect,tblname)),suffix=suffix);

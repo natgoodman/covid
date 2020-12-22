@@ -2,7 +2,8 @@
 ## setup variables
 source('R/dat.R');
 doc='updat';
-vsn=latest_version('doh',NULL,'data/doh');
+## vsn=latest_version('doh',NULL,'data/doh');
+vsn='20-12-20'
 ```
 ---
 title: "COVID-19 Counts in Washington State and Select Other Locations: Weekly Updates"
