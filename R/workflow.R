@@ -13,23 +13,31 @@
 ##
 #################################################################################
 ## ---- Download and import big 3 data sources plus trk ----
-do_dlim=function(datasrc=cq(doh,jhu,nyt,trk),version=NULL,monday.only=TRUE,cmp.prev=monday.only,
-                   url=param(download.url)) {
+## with new DOH release schedule have to do it on Tuesdays
+## make sure obj transforms truncate non-DOH data to previous week
+do_dlim=function(datasrc=cq(doh,jhu,nyt,trk),version=NULL,
+                 force.sunday=TRUE,monday.only=!force.sunday,cmp.prev=force.sunday,
+                 url=param(download.url),
+                 do.download=TRUE,do.import=TRUE,do.pjto=TRUE) {
   datasrc=match.arg(datasrc,several.ok=TRUE);
-  if (is.null(version)) version=dl_version(monday.only=monday.only);
-  if (param(verbose)) print(paste('+++ running download: version',version));
-  ok=system('pjtest')==0;
-  if (!ok) stop('Reverse tunnel not running; stopping before download');
-  download(datasrc,version,url=url);
-  if (cmp.prev) datasrc=cmp_prev(datasrc,version);
-  sapply(datasrc,function(datasrc) {
-    if (param(verbose)) print(paste('+++ importing',datasrc));
-    import(datasrc,version);
-  });
-  pjto(datasrc,version);
+  if (is.null(version)) version=dl_version(force.sunday=force.sunday,monday.only=monday.only);
+  if (do.pjto) {
+    ok=system('pjtest')==0;
+    if (!ok) stop('Reverse tunnel not running; stopping before download');
+  }
+  if (do.download) do_download(datasrc,version,url);
+  if (do.import) {
+    if (cmp.prev) datasrc=cmp_prev(datasrc,version);
+    do_import(datasrc,version);
+  }
+  if (do.pjto) pjto(datasrc,version);
   version;
 }
-download=function(datasrc,version,url) {
+do_download=function(datasrc=cq(doh,jhu,nyt,trk),version=NULL,
+                     force.sunday=TRUE,monday.only=!force.sunday,cmp.prev=force.sunday,
+                     url=param(download.url)) {
+  if (is.null(version)) version=dl_version(force.sunday=force.sunday,monday.only=monday.only);
+  if (param(verbose)) print(paste('+++ running download: version',version));
   filename=dl_filenames(datasrc,version);
   sapply(datasrc,function(datasrc) {
     if (param(verbose)) print(paste('+++ downloading',datasrc));
@@ -41,6 +49,14 @@ download=function(datasrc,version,url) {
            },
            nyt=download.file(url$nyt,filename$nyt),
            trk=download.file(url$trk,filename$trk));
+  });
+}
+do_import=function(datasrc=cq(doh,jhu,nyt,trk),version=NULL) {
+  if (is.null(version)||version=='latest') version=latest_version(datasrc[1],dir=indir);
+  if (param(verbose)) print(paste('+++ running import: version',version));
+  sapply(datasrc,function(datasrc) {
+    if (param(verbose)) print(paste('+++ importing',datasrc));
+    import(datasrc,version);
   });
 }
 cmp_prev=function(datasrc,version) {
@@ -64,8 +80,8 @@ cmp_files=function(file1,file2) {
     system(paste('cmp',file1,file2),ignore.stdout=T)==0
   else FALSE;
 }
-
-pjto=function(datasrc,version) {
+pjto=function(datasrc=cq(doh,jhu,nyt,trk),version=NULL) {
+  if (is.null(version)||version=='latest') version=latest_version(datasrc[1],dir=indir);
   sapply(datasrc,function(datasrc) {
     dir=indir(datasrc);
     cmd=paste('pjto',
@@ -87,11 +103,11 @@ pjto=function(datasrc,version) {
     system(cmd);
   });
 }
-dl_version=function(today=Sys.Date(),delta=0,monday.only=TRUE) {
+dl_version=function(today=Sys.Date(),delta=0,force.sunday=TRUE,monday.only=!force.sunday) {
   today=today+delta;
   if ((weekdays(today)!='Monday')&&monday.only) 
     stop("Have to run 'download' workflow on Mondays so non-'doh' and 'doh' versions will match");
-  as_version(today-1);
+  if (force.sunday) as_version(sunday_week(today)) else as_version(today-1);
 }
 dl_filenames=function(datasrc,version) {
   sapply(datasrc,function(datasrc) {
@@ -121,13 +137,11 @@ do_objs=function(what=cq(cases,admits,deaths),datasrc=cq(doh,jhu,nyt,trk),versio
     if (param(verbose)) print(paste('+++ making',datasrc,what));
     obj=raw(what,datasrc,version);
     ## 'raw' really means 'weekly, incremental'
-    ## BREAKPOINT('do_objs: after raw',nv(datasrc,what))
     obj.raw=switch(datasrc,
                    doh=obj,
                    jhu=weekly(incremental(obj)),
                    nyt=weekly(incremental(obj)),
                    trk=weekly(obj));
-    ## BREAKPOINT('do_objs: after switch',nv(datasrc,what))
     ## NG 20-12-14: for doh, do 'extra' before 'edit'. not an issue for jhu, nyt
     ##   means we have to process doh raw and extra in separate streams
     obj.roll=roll(obj.raw);
@@ -151,21 +165,32 @@ do_objs=function(what=cq(cases,admits,deaths),datasrc=cq(doh,jhu,nyt,trk),versio
                    NEG=list(notKing='King',notSKP='SKP',notTop5='Top5',notTop10='Top10'));
         assign(names.global[i],obj,globalenv());
       }});
-    ## also assign 'standard' object for source
+    ## also assign 'standard' and 'noroll' object for source
     name.std=paste(sep='.',datasrc,what,if(datasrc=='doh') 'xr' else 'roll');  
     assign(paste(sep='.',datasrc,what),get(name.std,globalenv()),globalenv());
+    name.noroll=paste(sep='.',datasrc,what,if(datasrc=='doh') 'extra' else 'raw');  
+    assign(paste(sep='.',datasrc,what,'noroll'),get(name.noroll,globalenv()),globalenv());
   });
   cases;  
 }
 
 ## ---- Standard plots ----
 ## mostly a placeholder. expect it to change
-do_plots=function(objs=NULL,objs.noroll=NULL) {
+do_plots=function(datasrc=cq(doh,jhu,nyt,trk),objs=NULL,objs.noroll=NULL) {
   ok=system('pjtest')==0;
   if (!ok) stop('Reverse tunnel not running; stopping before doing plots');
-  if (is.null(objs)) objs=list(doh.cases,jhu.cases,nyt.cases,trk.cases);
-  if (is.null(objs.noroll))
-    objs.noroll=list(doh.cases.noroll,jhu.cases.noroll,nyt.cases.noroll,trk.cases.noroll);
+  if (is.null(objs)) {
+    objs=sapply(datasrc,function(datasrc) {
+      name=paste(sep='.',datasrc,'cases');
+      get(name,globalenv());
+    });
+  }
+  if (is.null(objs.noroll)) {
+    objs.noroll=sapply(datasrc,function(datasrc) {
+      name=paste(sep='.',datasrc,'cases.noroll');
+      get(name,globalenv());
+    });
+  }
   objs.notrk=objs[sapply(objs,function(obj) datasrc(obj)!='trk')]
   ## all sources 'state'
   plon('all.state');
@@ -183,27 +208,33 @@ do_plots=function(objs=NULL,objs.noroll=NULL) {
   plon('all.Okanogan');
   plot_cvdat(objs.notrk,places=cq('Okanogan'),ages='all',per.capita=TRUE);
   ploff();
-  ## doh several places
-  plon('doh.places');
-  plot_cvdat(doh.cases,places=cq(state,King,SKP,Top5,Top10),ages='all',per.capita=TRUE);
-  ploff();
-  ## doh several ages
-  plon('doh.ages');
-  plot_cvdat(doh.cases,places=cq(state),ages=NULL,per.capita=TRUE);
-  ploff();
-  ## jhu King, kids
-  plon('jhu.kids');
-  plot_cvdat(jhu.cases,places=cq(King,'Ann Arbor',DC),ages=NULL,per.capita=TRUE);
-  ploff();
-  ## jhu King, others
-  plon('jhu.other');
-  plot_cvdat(jhu.cases,places=cq(King,'Ann Arbor',DC,Boston,'San Diego',Austin),
-             ages=NULL,per.capita=TRUE);
-  ploff();
-  ## jhu, nyt other
-  plon('all.other');
-  plot_cvdat(list(jhu.cases,nyt.cases),places=places_other(),ages=NULL,per.capita=TRUE);
-  ploff();
+  if ('doh' %in% datasrc) {
+    ## doh several places
+    plon('doh.places');
+    plot_cvdat(doh.cases,places=cq(state,King,SKP,Top5,Top10),ages='all',per.capita=TRUE);
+    ploff();
+    ## doh several ages
+    plon('doh.ages');
+    plot_cvdat(doh.cases,places=cq(state),ages=NULL,per.capita=TRUE);
+    ploff();
+  }
+  if ('jhu' %in% datasrc) {
+    ## jhu King, kids
+    plon('jhu.kids');
+    plot_cvdat(jhu.cases,places=cq(King,'Ann Arbor',DC),ages=NULL,per.capita=TRUE);
+    ploff();
+    ## jhu King, others
+    plon('jhu.other');
+    plot_cvdat(jhu.cases,places=cq(King,'Ann Arbor',DC,Boston,'San Diego',Austin),
+               ages=NULL,per.capita=TRUE);
+    ploff();
+  }
+  if (cq(jhu,nyt) %<=% datasrc) {
+    ## jhu, nyt other
+    plon('all.other');
+    plot_cvdat(list(jhu.cases,nyt.cases),places=places_other(),ages=NULL,per.capita=TRUE);
+    ploff();
+  }
   ## all sources 'state', regular and noroll
   n=length(objs.noroll);
   plon('all.regnoroll');
@@ -228,7 +259,8 @@ do_meta=function() {
 ## ---- Deploy updat doc  ----
 ## Run after rendering doc in RStudio
 ##   can't render here 'cuz main sunfish R version not compatible...
-do_updat=function(save=param(save)) {
+do_updat=function(save=param(save),version='latest') {
+  if (is.null(version)||version=='latest') version=max(sapply(cq(jhu,doh),latest_version));
   if (is.na(save)) overwrite=FALSE
   else {
     if (!save) stop("Cannot deploy: 'save' is FALSE");
@@ -239,13 +271,13 @@ do_updat=function(save=param(save)) {
     ok=system('pjtest')==0;
     if (!ok) warning('Cannot copy to Mac: reverse tunnel not running. Deploying on Linux');
   }
-  vsn=latest_version('doh',NULL,'data/doh');
   ## create version directory (for maintaining old version)
-  vsndir=file.path('doc.nnn','updat',vsn);
+  vsndir=file.path('doc.nnn','updat',version);
   if (verbose) print(paste('+++ creating directory',vsndir))
   dir.create(vsndir,recursive=TRUE,showWarnings=FALSE);
   ## create date file used by updat_vsn.Rmd, blog/README
-  date=format(as.Date(vsn,format='%y-%m-%d')+1,'%B %-d, %Y');
+  ## '+3' in line below sets date to Wed
+  date=format(as.Date(version,format='%y-%m-%d')+3,'%B %-d, %Y');
   file='updat.date';
   if (overwrite||(!file.exists(file))) {
     if (verbose) print(paste('+++ creating',file));
@@ -260,9 +292,13 @@ do_updat=function(save=param(save)) {
   });
   ## create link file used by updatvsn.Rmd
   ## NG 20-12-07: sort links from latest to oldest. makes much more sense!
-  vsn=sort(list.files('doc.nnn/updat','\\d\\d-\\d\\d-\\d\\d'),decreasing=TRUE);
-  date=format(as.Date(vsn,format='%y-%m-%d')+1,'%B %-d, %Y');
-  file=file.path('doc.nnn/updat',vsn,'updat.html')
+  versions=sort(list.files('doc.nnn/updat','\\d\\d-\\d\\d-\\d\\d'),decreasing=TRUE);
+  date=sapply(versions,function(version) {
+    ## used to update doc on Mondays. now Wednesdays
+    delta=if(version<'20-12-27') 1 else 3; 
+    format(as.Date(version,format='%y-%m-%d')+delta,'%B %-d, %Y');
+  });
+  file=file.path('doc.nnn/updat',versions,'updat.html')
   link=paste0('[',date,'](',file,')')
   file='updat.link';
   if (overwrite||(!file.exists(file))) {
