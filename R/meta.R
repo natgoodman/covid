@@ -124,6 +124,8 @@ import_stateid=function(infile=param(stateid.infile),base=param(stateid.file)) {
 
 ## ---- Filter, compare, format population metadata ----
 filter_pop=function(pop,places=NULL,ages=NULL) {
+  places=places%&%colnames(pop);
+  ages=ages%&%rownames(pop);
   if (!is.null(places)) pop=pop[,places,drop=FALSE];
   if (!is.null(ages)) pop=pop[ages,,drop=FALSE];
   pop;
