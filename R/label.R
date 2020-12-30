@@ -42,6 +42,13 @@ datasrc_label=Vectorize(function(datasrc)
   switch(datasrc,doh='DOH',ihme='IHME',jhu='JHU',nyt='NYTimes',trk='CovidTrack',yyg='C19Pro',
          datasrc),
   USE.NAMES=FALSE)
+id_label=Vectorize(function(id,fmt=cq(title,legend,ylab)) {
+  fmt=match.arg(fmt);
+  switch(fmt,
+         title=if(id==FALSE) NA else paste0("'",id,"'"),
+         legend=if(id==FALSE) 'raw' else id,
+         ylab=NA)},
+  vectorize.args='id');
 fit_label=Vectorize(function(fit,fmt=cq(title,legend,ylab)) {
   fmt=match.arg(fmt);
   switch(fmt,
@@ -59,8 +66,8 @@ roll_label=Vectorize(function(roll,fmt=cq(title,legend,ylab)) {
 extra_label=Vectorize(function(extra,fmt=cq(title,legend,ylab)) {
   fmt=match.arg(fmt);
   switch(fmt,
-         title=if(extra) '(late time points extrapolated)' else NA,
-         legend=if(extra) 'extra' else 'original',
+         title=if(extra==FALSE) NA else paste0('(late time points extrapolated by ',extra,')'),
+         legend=if(extra==FALSE) 'original' else extra,
          ylab=NA)},
   vectorize.args='extra');
 edit_label=Vectorize(function(edit,fmt=cq(title,legend,ylab)) {
@@ -147,6 +154,7 @@ name_label=function(name,val,fmt=cq(title,legend,ylab),SEP='&') {
          datasrc=datasrc_label(val),
          unit=time_label(val),
          cumulative=cuminc_label(val,fmt),
+         id=id_label(val,fmt=fmt),
          fit=fit_label(val,fmt=fmt),
          roll=roll_label(val,fmt=fmt),
          extra=extra_label(val,fmt=fmt),
@@ -194,6 +202,7 @@ ltitle_label=function(attr) {
          cumulative='Cum/Inc',
          datasrc='Source',
          roll='Rolling Mean',
+         id='ID',
          ## what, version, fit, extra, edit, place, age
          ucfirst(attr));
 }
