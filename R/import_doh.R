@@ -28,10 +28,26 @@ import_doh=function(file) {
     data=suppressMessages(read_excel(file,sheet=Sheet));
     data=as.data.frame(data,stringsAsFactors=F);
     data$County=sub(' County','',data$County);
-    data=data[,1:8];
-    names.age=colnames(data)[4:8];
+    if (version<'20-12-20') {
+      col.all=3;                        # hardcode it to easily cover all 3 sheets
+      col.noage=which(colnames(data)=='Positive UnkAge');
+    } else {
+      col.all=
+        if(what=='cases') which(colnames(data)=='TotalCases') else which(colnames(data)==Sheet);
+      col.noage=which(colnames(data)=='UnknownAge');
+    }
+    cols.age=grep('^Age',colnames(data));
+    cols.data=c(1,2,col.all,cols.age,col.noage);
+    ## for sanity, make sure 'all' matches individual groups
+    bad=which(data[,col.all]!=rowSums(data[,c(cols.age,col.noage)]))
+    if (length(bad)>0)
+      stop(paste('doh version',version,"'all' does not equal sum of 'ages' in these rows:",
+                 paste(collapse=', ',bad)));
+    ## convert age colnames to my internal age labels
+    names.age=colnames(data)[cols.age];
     names.age=sub('\\+','_',sub('-','_',sub('Age ','',names.age)));
-    colnames(data)=c(cq(county,date,all),names.age);
+    data=data[,cols.data];
+    colnames(data)=c(cq(county,date,all),names.age,'noage');
     ## Hospitalizations has some rows with Unknown date. delete 'em
     if (what=='admits') data=subset(data,subset=(date!='Unknown'));
     data$date=as_date(data$date);
@@ -40,7 +56,8 @@ import_doh=function(file) {
     bycounty=lapply(bycounty,function(data) {
       data=merge(dates,data[,-1],all=T);
       data=apply(data[,-1],2,function(col) ifelse(is.na(col),0,col));
-      data})
+      data});
+    ## TODO: add 'nage' group to data. probably many ramifications... too hard to do now
     names.dat=c('all',names.age)
     byage=sapply(names.dat,simplify=FALSE,function(nm) {
       data=as.data.frame(do.call(cbind,lapply(bycounty,function(data) data[,nm])));
@@ -50,9 +67,9 @@ import_doh=function(file) {
       data=cbind(date=as_date(dates$date),data);
       fix_doh=switch(what,cases=fix_doh_cases,admits=fix_doh_admits,deaths=fix_doh_deaths);
       data=fix_doh(data,what,version);
-      ## add in counties missing from early versions
+      ## add in counties and 'Unassigned' missing from early versions
       places=colnames(data)[-1];
-      missing=places_wa() %-% places;
+      missing=c(places_wa(),'Unassigned') %-% places;
       if (length(missing)>0) data[,missing]=0;
       ## for sanity, make sure we corrected all errors
       check_doh(data,what,version);
@@ -66,7 +83,18 @@ import_doh=function(file) {
 fix_doh_cases=function(data,what,version) {
   ## fix non-Sundays
   bad=(weekdays(data$date)!='Sunday');
-  if ((version %in% c('20-04-26','20-05-10','20-05-17'))||(version>='20-05-31')) {
+  if (version>='20-12-20') {
+    ## expect 6 bad dates (sigh...): 2020-01-17,2020-02-01,2020-02-04,2020-02-11,2020-02-21
+    bad.expect=c('2020-01-17','2020-02-01','2020-02-04','2020-02-11','2020-02-21');
+    if ((sum(bad)!=6)&&data$date[bad]!=bad.expect) {
+      missing=data$date[bad]!=bad.expect;
+      stop(paste("doh",what,"version",version,"does not have expected bad date(s):",
+                 paste(collapse=', ',missing)));
+    }
+    ## change dates to previous Sundays. fortunately, none of these duplicate correct dates
+    data$date[bad]=sunday_week(data$date[bad])
+  }
+  else if ((version %in% c('20-04-26','20-05-10','20-05-17'))||(version>='20-05-31')) {
     ## expect bad 1st date 2020-01-16
     if ((sum(bad)!=1)&&data$date[1]!='2020-01-16')
       stop(paste("doh",what,"version",version,
@@ -92,15 +120,16 @@ fix_doh_cases=function(data,what,version) {
                  "does not have expected missing week after: 2020-01-19"));
     data=doh_insert(data,1,2);
   ## } else if (version %in% c('20-05-24','20-06-07','20-06-14','20-06-21')) {
-  } else if ((version=='20-05-24')||(version>='20-06-07')) {
+  } else if ((version=='20-05-24')||(version>='20-06-07'&&version<'20-12-20')) {
     ## expect missing weeks after 2020-01-12
     if ((sum(bad)!=1)&&!bad[1]&&data$date[1]!='2020-01-12')
       stop(paste("doh",what,"version",version,
                  "does not have expected missing weeks after: 2020-01-12"));
     data=doh_insert(data,1,2);
   }
-  ## fix extra week (for some counties) in 20-10-11
-  if (version=='20-10-11') data=fix_extra_week(data,what,version);
+  ## fix extra week (for some counties) in 20-10-11 and >=20-12-20
+  if (version %in% c('20-10-11','20-12-20')) data=fix_extra_week(data,what,version);
+  if ((version=='20-10-11')||(version>='20-12-20')) data=fix_extra_week(data,what,version);
   ## done
   data;
 }
@@ -119,8 +148,9 @@ fix_doh_admits=function(data,what,version) {
   bad=diff(data$date)!=7;
   if (any(bad))
     stop(paste("doh",what,"version",version,"has",sum(bad),"unexpected missing weeks"));
-  ## fix extra week (for some counties) in 20-10-11 and 20-11-22
-  if (version %in% c('20-10-11','20-11-22')) data=fix_extra_week(data,what,version);
+  ## fix extra week (for some counties) in 20-09-27, 20-10-11, 20-11-22, and >=20-12-20
+  if (((version %in% c('20-09-27','20-10-11','20-11-22'))||(version>='20-12-20')))
+    data=fix_extra_week(data,what,version);
   ## done
   data;
 }
@@ -139,45 +169,71 @@ fix_doh_deaths=function(data,what,version) {
                        "does not have expected missing week after: 2020-01-19"));
           data=doh_insert(data,1,2);
   }
-  if (version=='20-05-31') {
+  else if (version=='20-05-31') {
     ## expect missing weeks after 2020-01-26
     if ((sum(bad)!=1)&&!bad[1]&&data$date[1]!='2020-01-26')
       stop(paste("doh",what,"version",version,
                  "does not have expected missing week after: 2020-01-26"));
     data=doh_insert(data,1,2);
   }
-  if (version %in% c('20-06-28','20-07-05','20-07-12','20-12-13')) {
+  else if (version %in% c('20-06-28','20-07-05','20-07-12','20-12-13')) {
     ## expect 2 missing weeks after 2020-01-26
     if ((sum(bad)!=1)&&!bad[1]&&!all(data$date[1:2]==c("2020-01-26","2020-02-16")))
       stop(paste("doh",what,"version",version,
                  "does not have expected 2 missing weeks after: 2020-01-26"));
     data=doh_insert(data,1,2);
   }
+  ## fix missing weeks at end
+  else if (version=='20-05-24') {
+    dates=data$date
+    ## expect 1 missing week at end (after 2020-05-10)
+    vdate=as_date(version);
+    d.last=tail(dates,n=1);
+    if ((vdate-d.last)!=14)
+      stop(paste("doh",what,"version",version,
+                 "does not have expected missing week at end (after 2020-05-10"));
+    data=doh_append(data,vdate);
+  }
   data;
 }
 ## for sanity, make sure we corrected all errors
 check_doh=function(data,what,version) {
-  ## make sure we have all counties
+  ## make sure we have all counties and Unassigned
   places=colnames(data)[-1];
   bad=places_wa() %-% places;
   if (length(bad)>0)
     stop(paste('doh version',version,'missing counties:',paste(collapse=', ',bad)));
+  if ('Unassigned' %notin% places) stop(paste('doh version',version,"missing 'Unassigned'"));
+  ## make sure we have no extra places
+  bad=places %-% c(places_wa(),'Unassigned');
+  if (length(bad)>0)
+    stop(paste('doh version',version,'has unexpected places:',paste(collapse=', ',bad)));
   ## check non-Sundays
   dates=data$date;
   bad=(weekdays(dates)!='Sunday');
   if (any(bad))
     stop(paste("Bad news: doh",what,"version",version,'has non-Sundays even after correction:',
                paste(collapse=', ',dates[bad])));
-  ## check missing weeks
-  bad=diff(data$date)!=7;
+  ## check missing weeks in middle
+  bad=diff(dates)!=7;
   if (any(bad))
     stop(paste("Bad news: doh",what,"version",version,'has missing weeks even after correction:',
-               paste(collapse=', ',head(dates,n=-1)[bad])));
+               paste(collapse=', ',dates[bad])));
+  ## check missing weeks at end
+  vdate=as_date(version);
+  d.last=tail(dates,n=1);
+  if ((vdate-d.last)>7) {
+    missing=seq(d.last+7,vdate-7,by=7);
+    stop(paste("Bad news: doh",what,"version",version,
+               'has missing final weeks even after correction:',
+               paste(collapse=', ',missing)));
+  }
   ## check extra week
   vdate=as_date(version);
-  bad=(data$date==vdate);
-  if (any(bad)) stop(paste("doh",what,"version",version,'has extra weeks even after correction:',
-                           paste(collapse=', ',head(dates,n=-1)[bad])));
+  bad=(dates>=vdate);
+  if (any(bad))
+    stop(paste("Bad news: doh",what,"version",version,'has extra weeks even after correction:',
+               paste(collapse=', ',dates[bad])));
   data;
 }
 ## add missing weeks in DOH input file. data all 0's
@@ -188,6 +244,17 @@ doh_insert=function(data,before,after) {
   colnames(new)=colnames(data);
   data=rbind(data[1:before,],new,data[after:nrow(data),]);
 }
+## add missing weeks at end of DOH input file. data all 0's
+doh_append=function(data,vdate) {
+  d.last=tail(data$date,n=1);
+  missing=seq(d.last+7,vdate-7,by=7);
+  nplace=ncol(data)-1;
+  new=do.call(rbind,lapply(missing,function(date) data.frame(date,repc(0,nplace))))
+  colnames(new)=colnames(data);
+  data=rbind(data,new);
+}
+
+
 fix_extra_week=function(data,what,version) {
   vdate=as_date(version);
   bad=(data$date==vdate);
