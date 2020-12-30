@@ -69,6 +69,11 @@ fit_method=function(obj) {
   fit=obj$fit;
   if (fit==FALSE) 'raw' else fit;
 }
+extra_method=function(obj) {
+  extra=obj$extra;
+  if (extra==FALSE) 'raw' else extra;
+}
+
 ## simple attribute testers
 is_fit=function(obj) if (obj$fit==FALSE) FALSE else TRUE
 is_extra=function(obj) obj$extra
