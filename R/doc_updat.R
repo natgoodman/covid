@@ -15,13 +15,14 @@
 #################################################################################
 ## --- Generate Figures and Tables for updat Blog Post ---
 ## no sections.
-doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',do.roll=TRUE,do.extra=NA,...) {
+doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',transforms=NULL,...) {
+  if (is.null(version)||version=='latest') version=max(sapply(cq(jhu,doh),latest_version))
+  if (is.null(transforms))
+    transforms=if (version<'20-12-20') list(jhu=roll,doh=c(roll,extra))
+               else if (version=='20-12-20') list(jhu=roll)
+               else list(jhu=fit_updat_objs,doh=c(extra,fit_updat_objs));                      
   if (need.objs) {
-    if (version=='20-12-20') {
-      ## version 20-12-20: DOH update not available. hopefully temporary...
-      make_updat_objs(datasrc='jhu',version=version,do.roll=do.roll,do.extra=do.extra)
-    }
-    else make_updat_objs(version=version,do.roll=do.roll,do.extra=do.extra);
+    make_updat_objs(version=version,transforms);
   }
   if (need.init) init_doc(doc='updat',version=version,...);
   labels.wa=setNames(c('Washington state','Seattle (King County)',
@@ -117,10 +118,12 @@ doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',do.roll=TRUE,d
 ##   new places or ages, else objects will be incompatible.
 ##   bug in 'extra' caused error to be missed and results of edited places and ages to be 0!
 make_updat_objs=
-  function(what=cq(cases,deaths),datasrc=cq(doh,jhu),version='latest',do.roll=TRUE,do.extra=NA) {
+  function(what=cq(cases,deaths),datasrc=cq(doh,jhu),version='latest',
+           transforms=list(jhu=fit_updat_objs,doh=c(extra,fit_updat_objs))) {
+    datasrc=datasrc%&%names(transforms);
+    ## R needs each transform entry to be a list for sapply below to work. sigh...
+    transforms=lapply(transforms,function(t) if (length(t)==1) list(t) else t);
     cases=expand.grid(what=what,datasrc=datasrc,stringsAsFactors=FALSE);
-    ## only 'doh' has 'admits'. prune others
-    cases=cases[(cases$what!='admits'|cases$datasrc%in%cq(doh,trk)),]
     withrows(cases,case,{
       if (param(verbose)) print(paste('+++ making',datasrc,what));
       ## start with raw. really 'weekly, incremental'
@@ -131,29 +134,16 @@ make_updat_objs=
                  nyt=weekly(incremental(obj)),
                  trk=weekly(obj));
       assign(paste(sep='.',datasrc,what,'raw'),obj,globalenv());  # save as 'raw'
-      ## in version 20-12-06, I tried not using roll in 'final' objects
-      ## but results were way noisy so I decided to keep it. hence the commented out section
-      ## in version 20-12-13, I decided to omit 'extra'
-      ##   extrapolation became unacceptably erratic for some reason
-      ##   will probably change again next week...
-      ## if (version(obj)<'20-12-06') {
-      version=version(obj);
-      roll.width=if(is.numeric(do.roll)) do.roll else NULL;
-      if ((is.logical(do.roll)&&do.roll)||is.numeric(do.roll)) {
-        obj=roll(obj,roll.width);                                   #  rolling mean
-        assign(paste(sep='.',datasrc,what,'roll'),obj,globalenv()); # save as 'roll'
-      }
-      if (datasrc=='doh') {
-        if (is.na(do.extra)) if (version<='20-12-06') do.extra=TRUE else do.extra=FALSE;
-        if (do.extra) obj=extra(obj);
-        obj=edit(obj,'0_59'='0_19'+'20_39'+'40_59');
-      }
-      ## in version 20-12-06, I tried not using roll in 'final' objects
-      ## but results were way noisy so I decided to keep it. hence this commented out section
-      ## if (datasrc=='doh') obj=extra(obj);
-      ##   obj=edit(obj,'0_59'='0_19'+'20_39'+'40_59');
+      ## now work down transforms
+      sapply(transforms[[datasrc]],function(f) obj<<-f(obj))
+      ## do final edit for doh
+      if (datasrc=='doh') obj=edit(obj,'0_59'='0_19'+'20_39'+'40_59');
       assign(paste(sep='.',datasrc,what),obj,globalenv());        # save as 'final'
     });
     cases;
   }
-
+fit_updat_objs=function(obj) {
+  ## use 1 day for cases, 10.5 days (1.5 weeks) for deaths
+  fit.unit=if(what(obj)=='cases') 1 else 10.5;
+  fit(obj,fit.unit=fit.unit);
+}
