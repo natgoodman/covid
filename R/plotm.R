@@ -16,6 +16,7 @@
 ## x is vector or 2-dimensional matrix-like object of dates with same number of columns as y
 ## y is vector or 2-dimensional matrix-like object
 ##   like matplot, each line is column of x or y
+## if y NULL, 1st column of x used for date, rest for y
 ## col, lty, lwd are the usual line properties
 ## title, cex.title are title and cex for title
 ## type is plot type - passed to matplot. 'n' also turns off extra lines, legend, grid
@@ -35,7 +36,7 @@
 ## legend.title is legend title
 ## legend.args are further legend params
 plotm=
-  function(x,y,title='',cex.title='auto',type='l',add=FALSE,
+  function(x=NULL,y=NULL,title='',cex.title='auto',type='l',add=FALSE,
            col=NULL,lty=NULL,lwd=NULL,xlab='date',ylab='y',xlim=NULL,ylim=NULL,
            col.pal='d3',lty.range=c(1,6),lwd.range=c(1,3),
            vline=NULL,hline=NULL,vhlty='dashed',vhcol='grey50',
@@ -49,7 +50,11 @@ plotm=
                             title=legend.title,labels=legend.labels,col=col,lty=lty,lwd=lwd),
            ...) {
     if (is.null(x)) stop("Nothing to plot: 'x' is NULL");
-    if (is.null(y)) stop("Nothing to plot: 'y' is NULL");
+    if (is.null(y)) {
+      y=x[,-1,drop=FALSE];
+      x=x[,1,drop=FALSE];
+    }
+    x=as_date(x);
     if (is_vector(x)) x=matrix(x)   # use is_vector to handle dates
     else if (length(dim(x))!=2) stop("'x' must be vector or 2-dimensional matrix-like object");
     if (is.vector(y)) y=matrix(y)
@@ -79,8 +84,9 @@ plotm=
       ## setup new plot
       if (is.null(cex.title)|cex.title=='auto') cex.title=cex_title(title);
       if (!is.null(xlim)) xlim=as_date(xlim);
+      xrange=range(x);
       yrange=range(c(0,y),na.rm=TRUE);
-      plot(x=range(x),y=yrange,type='n',xaxt='n',xlab=xlab,ylab=ylab,xlim=xlim,ylim=ylim,
+      plot(x=xrange,y=yrange,type='n',xaxt='n',xlab=xlab,ylab=ylab,xlim=xlim,ylim=ylim,
            main=title,cex.main=cex.title,...);
     }
     ## add columns to existing plot
