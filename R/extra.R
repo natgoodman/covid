@@ -8,195 +8,142 @@
 ## Adjust DOH data from recent weeks. This data is incomplete due to reporting
 ## and other delays. The solution is to add 'extra' data.
 ##
-## The code here constructs lm models that serve as correction factors
-## and packages the models in a function ('extrafun')
-## Note top-level 'extra' function in tranform.R calls 'extrafun' to correct the data.
+## The code here constructs functions that serve as correction factors
+## Top-level 'extra' function in tranform.R calls these functions to correct the data
 ##
 ## This software is open source, distributed under the MIT License. See LICENSE
 ## file at https://github.com/natgoodman/NewPro/FDR/LICENSE 
 ##
 ###################################################################################
-extrafun=
-  function(what=cq(cases,deaths,admits),objs=NULL,versions=NULL,
-           incompatible.ok=param(incompatible.ok),
-           w.max=param(extra.wmax),nv.min=param(extra.nvmin),ex.min=param(extra.exmin),
-           formula.type=cq('*',':',crossing,interaction),model.type=cq(split,joint),
-           dates=NULL,places=NULL,ages=NULL) {
-    what=match.arg(what);
-    if (is.null(objs)) {
-      ## read objects
-      versions.all=list_versions('doh',what);
-      versions=if(is.null(versions)) versions.all else versions.all %&% versions;
-      objs=lapply(versions,function(version) raw(what,'doh',version));
-    } else {
-      if (is_cvdat(objs)) objs=list(objs);
-      ## check whether edited objects are compatible
-      if (!incompatible.ok) {
-        ok=cmp_pops(objs,places=places,ages=ages,incompatible.ok=incompatible.ok);
-        if (!ok) stop("Objects are incompatible (edited in conflicting ways). ",
-                      "Sorry I can't be more specific");
-      }
-      versions=sort(sapply(objs,function(obj) obj$version))
-    }
-    vdates=as_date(versions);
-    vmin=min(vdates);
-    vmax=max(vdates);
-    ws=seq_len(w.max);
-    ys=min(ws):max(w.max,nv.min);
-    formula.type=match.arg(formula.type);
-    if (formula.type=='crossing') formula.type='*'
-    else if (formula.type=='interaction') formula.type=':';
-    model.type=match.arg(model.type);
-    places.all=Reduce(intersect,lapply(objs,function(obj) colnames(obj$data$all)[-1]));
-    places=if(is.null(places)) places.all else places.all %&% places;
-    ages.all=Reduce(intersect,lapply(objs,function(obj) names(obj$data)))
-    ages=if(is.null(ages)) ages.all else ages.all %&% ages;
-    dates.all=unique(do.call(c,lapply(objs,function(obj) obj$data[[1]]$date)))
-    dates=if(is.null(dates)) dates.all else as_date(dates.all %&% dates);
-    ## dates wth enough versions are vmin-1*7..vmax-6*7
-    enuff=which(dates>=(vmin-7)&dates<=(vmax-nv.min*7));
-    if (length(enuff)==0)
-      stop('No objects have enough versions to extrapolate: need versions >= 2020-05-31');
-    dates=dates[enuff];
-    cases=expand.grid(place=places,age=ages,stringsAsFactors=FALSE);
-    if (model.type=='split') extrafun_split(objs,cases,dates,ws,ex.min,formula.type)
-    else extrafun_joint(objs,cases,dates,ws,ex.min,formula.type);
+extrafun=function(obj,objs,places,ages,method=cq(lm,wfun),args=list(),err.type,wmax,mulmax) {
+  method=match.arg(method);
+  ## set default args. actual arg values override
+  args=cl(
+    switch(method,
+           lm=list(fmla='y~w',w.asfactor=TRUE),
+           wfun=list(wfun=colMedians),
+           stop("Bad news; unknown 'method' ",method,'. Should have been caught earlier!')),
+    args);
+  versions=sapply(objs,version);
+  objs=objs[order(versions)];
+  versions=sort(versions);
+  vdates=as_date(versions);
+  w=seq_len(wmax);
+  ## dates wth enough versions are vmin-1*7..vmax-6*7
+  vdates=as_date(sapply(objs,vdate));
+  d.first=min(vdates)-7;
+  d.last=max(vdates)-7*wmax;
+
+  fun=sapply(ages,simplify=FALSE,function(age)
+    sapply(places,simplify=FALSE,function(place) {
+      wmat=extra_wmat(obj,objs,place,age,vdates,wmax,d.first,d.last);
+      if (err.type=='*') werr=extra_errmul(wmat,mulmax) else werr=extra_erradd(wmat);
+      if (any(!is.finite(werr))) stop('Bad news: bad values in werr: ',nv(age,place));
+      fun=extrafun1(werr,w,method,args);
+    }));
+    invisible(fun);
   }
-extrafun_split=function(objs,cases,dates,ws,ex.min,formula.type) {
-  funs=withrows(cases,case,{
-    props=extra_props(objs=objs,dates=dates,ws=ws,place=place,age=age)
-    wide=data.frame(date=dates,props);
-    data=reshape(wide,varying=list(1+ws),dir='long',idvar='date',v.names='y',timevar='w');
-    data$w=as.factor(data$w)
-    data=data[is.finite(data$y),]       # remove NA, NaN, Inf
-    if (nrow(data)<=1) return(NA);
-    ## dumb R requires that terms in formula not be singleton. sigh...
-    terms=do.call(c,lapply(cq(date,w),
-                           function(var) if (length(unique(data[,var]))>1) var else NULL));
-    if (is.null(terms)) return(NA);
-    fmla=paste0('y~',paste(collapse=formula.type,terms));
-    model=lm(as.formula(fmla),data=data);
-    w.model=as.numeric(unique(data[,'w']));
-    w.min=min(w.model);
-    w.max=max(w.model);    
-    fun=function(date,w) {
-      if (w>w.max) return(1);           # if w too big, return 1
-      if (w%notin%w.model) return(NA);  # if w not in model, return NA
-      p=suppressWarnings(predict(model,list(date=date,w=as.factor(w))));
-      pmax(ex.min,pmin(1,p));         # clamp to [ex.min,1]
+extrafun1=function(werr,w,method,args) {
+  fun=with(args, {
+    if (method=='lm') {
+      wide=data.frame(date=as_date(rownames(werr)),werr[,w,drop=FALSE]);
+      colnames(wide)=c('date',w);
+      data=
+        reshape(wide,varying=list(2:ncol(wide)),dir='long',idvar='date',v.names='y',timevar='w');
+      rownames(data)=NULL;
+      if (w.asfactor) data$w=as.factor(data$w) else data$w=as.numeric(data$w);
+      mdl=lm(fmla,data=data,model=FALSE);
+      fun=function(date,w) {
+        dw=data.frame(date=date,w=w)
+        if (w.asfactor) dw$w=as.factor(dw$w);
+        pred=suppressWarnings(predict(mdl,dw));
+      }
+    } else if (method=='wfun') {
+      ## only other model type at present returns vector of values keyed by w
+      wvec=setNames(wfun(werr),colnames(werr));
+      fun=function(date,w) wvec[w];
+    } else {
+      stop("Bad news; unknown 'method' ",method,'. Should have been caught earlier!');
     }
   });
-  names(funs)=paste(sep=';',cases$place,cases$age);
-  fun1=function(date,place,age,w) {
-    ## get correct function from funs
-    fun=funs[[paste(sep=';',place,age)]];
-    ## if no functon for these args, return NA
-    if (is.function(fun)) fun(date,w) else NA;
-  }
-  fun=function(dates,places,ages,ws=NA,vdates=NA) {
-    dates=as_date(dates);
-    vdates=as_date(vdates);
-    cases=expand.grid(date=dates,place=places,age=ages,w=ws,vdate=vdates,
-                      stringsAsFactors=FALSE);
-    cases$w=with(cases,ifelse((is.na(w)&!is.na(vdate)),(vdate-date)/7,w));
-    ys=unlist(withrows(cases,case,fun1(date,place,age,w)));
-    ## construct names from multivalued args
-    names(ys)=extrafun_names(cases);
-    ys;
-  }
-  fun;
+  invisible(fun);
 }
-extrafun_joint=function(objs,cases,dates,ws,ex.min,formula.type) {
-  data=do.call(rbind,withrows(cases,case,{
-    props=extra_props(objs=objs,dates=dates,ws=ws,place=place,age=age)
-    wide=data.frame(date=dates,props);
-    long=reshape(wide,varying=list(1+ws),dir='long',idvar='date',v.names='y',timevar='w');
-    long$place=place;
-    long$age=age;
-    long;
-  }));
-  data$w=as.factor(data$w)
-  data=data[is.finite(data$y),]       # remove NA, NaN, Inf
-  if (nrow(data)==0) stop('No props data left after filtering bad values'); 
-  ## dumb R requires that terms in formula not be singelton. sigh...
-  terms=do.call(c,lapply(cq(date,place,age,w),
-                         function(var) if (length(unique(data[,var]))>1) var else NULL));
-  fmla=paste0('y~',paste(collapse=formula.type,terms));
-  model=lm(as.formula(fmla),data=data)
-  ## determine which cases are in model
-  ## see stackoverflow.com/questions/5916854 for ways to implement test
-  in.model=merge(cases,unique(data[,cq(place,age,w)]));
-  in.model$w=as.numeric(in.model$w);
-  in.model$in.model=TRUE;
-
-  w.max=max(ws);
-  fun=function(dates,places,ages,ws=NA,vdates=NA) {
-    dates=as_date(dates);
-    vdates=as_date(vdates);
-    cases=expand.grid(date=dates,place=places,age=ages,w=ws,vdate=vdates,
-                      stringsAsFactors=FALSE);
-    cases$w=with(cases,ifelse((is.na(w)&!is.na(vdate)),(vdate-date)/7,w));
-    cases$i=1:nrow(cases);             # for sorting after merges
-    cases.model=merge(cases,in.model);
-    cases.model$y=with(cases.model,{
-      p=suppressWarnings(
-        predict(model,list(date=date,place=place,age=age,w=as.factor(w))));
-      pmax(ex.min,pmin(1,p));         # clamp to [ex.min,1]
-    });
-    ## merge back with cases to get ones not in model. y=NA for these cases
-    cases=merge(cases,cases.model,all.x=TRUE);
-    cases=cases[order(cases$i),];
-    ## if w too big, set y=1
-    cases$y=with(cases,ifelse(w<=w.max,y,1));
-    ## construct names from multivalued args
-    setNames(cases$y,extrafun_names(cases));
+## compute error matrix from wmat: additive, multiplicative resp.
+extra_erradd=function(wmat) {
+  final=wmat[,'final'];
+  werr=capply(wmat,function(col) final-col);
+}
+extra_errmul=function(wmat,mulmax) {
+  final=wmat[,'final'];
+  capply(wmat,function(col) {
+    col=ifelse(col==0,1,col);
+    err=ifelse(col>=final,1,final/col);
+    ifelse(err>mulmax,mulmax,err);
+  });
+}
+## use functions from extra_fun to adjust data
+extraadj=function(obj,fun,places,ages,err.type,wmax,mulmax) {
+  ## define dates and corresponding ws for prediction
+  ## want dates from vdate(obj)-7*wmax to vdate(obj)-7
+  d.first=vdate(obj)-7*wmax
+  d.last=vdate(obj)-7;
+  d.pred=seq(d.first,d.last,by=7);
+  w.pred=wmax:1;
+  data1=sapply(ages,simplify=FALSE,function(age) {
+    data=obj$data[[age]];
+    data1=data[data$date<d.first,];
+  });
+  data2=sapply(ages,simplify=FALSE,function(age) {
+    data=obj$data[[age]];
+    data2=data[data$date>=d.first,];
+    dates2=data2$date;
+    counts2=do.call(cbind,sapply(places,simplify=FALSE,function(place) {
+      fun=fun[[age]][[place]];
+      pred=fun(d.pred,w.pred);
+      extraadj1(pred,data2[,place],err.type,mulmax);
+    }));
+    data2=cbind(date=dates2,as.data.frame(round(counts2)));
+  });
+  data=sapply(ages,simplify=FALSE,function(age) rbind(data1[[age]],data2[[age]]));
+  invisible(data);
+}
+extraadj1=function(pred,counts,err.type,mulmax) {
+  if (err.type=='+') {
+    ## clamp pred to positve
+    pred=pmax(0,pred);
+    pred+counts;
+  } else {
+    ## clamp pred to [1,mulmax]
+    pred=pmax(1,pmin(mulmax,pred));         # clamp to [ex.min,1]
+    pred*counts;
   }
-  fun;
 }
-## returns data frame of 'props' by 'w' for one 'place' and 'age'
-extra_props=function(objs,dates,ws,place,age) {
-  versions=sort(sapply(objs,function(obj) obj$version))
-  ## get data from objs
-  data=lapply(objs,function(obj) {
-    data=obj$data[[age]][,c('date',place)];
-    data=data[data$date%in%dates,];
-    colnames(data)[2]=obj$version;
-    data});
-  ## join on 'date' and format as data.frame
-  counts=Reduce(function(...) merge(..., by='date',all=TRUE), data);
-  dates=counts$date;
-  vdates=as_date(versions);
-  ## shift data so columns are delta-weeks (ie, number of versions covering date)
-  ## first drop 'date' column - simplifies index arithmetic
-  counts=counts[,-1];
-  nv=ncol(counts);
-  cw=do.call(rbind,
-             lapply(1:nrow(counts),function(i) {
-               row=if(i==1) counts[i,ws] else counts[i,-(1:(i-1))][,ws];
-               setNames(row,ws)}
-               ));
-  ## NG 20-11-26: use my capply, not R's apply, 'cuz apply simplifies single row to vector. sigh...
-  ## cw=apply(cw,2,function(counts) ifelse(counts>0,counts,NA));
-  cw=capply(cw,function(counts) ifelse(counts>0,counts,NA));
-  ## make relative to final data
-  finals=counts[,nv];
-  ## NG 20-11-26: use my capply, not R's apply, 'cuz apply simplifies single row to vector. sigh...
-  ## props=apply(cw,2,function(counts) counts/finals);
-  props=capply(cw,function(counts) counts/finals);
-  rownames(props)=as.character(dates);
-  props;
-}
-## construct names for return value of extrafun from multivalued args
-extrafun_names=function(cases) {
-  mvargs=do.call(
-    c,lapply(cq(date,place,age,w),
-             function(arg) if (length(unique(cases[[arg]]))>1) arg else NULL));
-  ## typically, 'date' is only real mv arg, but 'w' looks mv due to 'vdate' calculation
-  ##   handle specially
-  if (length(mvargs)==0) nms=NULL
-  else if (length(mvargs)==1) nms=cases[[mvargs]]
-  else if (identical(mvargs,cq(date,w))&(all((as.numeric(cases$vdate-cases$date)/7)==cases$w)))
-    nms=cases$date
-  else nms=Reduce(function(x,y) paste(sep=';',x,cases[[y]]),mvargs[-1],init=cases[[mvargs[1]]]);
-  nms;
+## returns matrix of counts by 'w' for one 'place' and 'age'
+extra_wmat=
+  function(obj,objs,place='state',age='all',
+           vdates=as_date(sapply(objs,vdate)),
+           wmax=param(extra.wmax),      
+           d.first=min(vdates)-7,
+           d.last=max(vdates)-7*wmax) {
+    data=data_cvdat(c(objs,list(obj)),places=place,ages=age);
+    colnames(data)=c('date',as.character(vdates),'final');
+    ## limit data to dates covered by 1:wmax versions
+    data=data[with(data,date>=d.first&date<=d.last),]
+    counts=data[,-1];
+    dates=data$date;
+    wmat=matrix(NA,nrow=nrow(counts),ncol=wmax,dimnames=list(as.character(dates),1:wmax));
+    sapply(seq_along(dates),function(i)
+      sapply(seq_along(vdates),function(j) {
+        w=extra_wf(vdates[j],dates[i],wmax);
+        if (!is.na(w)) {
+          wmat[i,w]<<-counts[i,j]
+          }
+      }));
+    wmat=cbind(wmat,final=data$final);
+    invisible(wmat)
+  }
+## vdate, date vectors
+extra_wf=function(vdate,date,wmax=6) {
+  w=(vdate-date)/7;
+  ifelse((w>0&w<=wmax),w,NA);
 }
