@@ -1,14 +1,18 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
 ```{r echo=FALSE,include=FALSE,cache=FALSE}
 ## setup variables
 source('R/dat.R');
 doc='updat';
-## vsn=latest_version('doh',NULL,'data/doh');
-vsn='20-12-20'
+vsn=latest_version('doh',NULL,'data/doh');
 ```
 ---
 title: "COVID-19 Counts in Washington State and Select Other Locations: Weekly Updates"
 author: "Nathan (Nat) Goodman"
-date: "`r format(as.Date(vsn,format='%y-%m-%d')+1,'%B %-d, %Y')`"
+date: "`r format(as.Date(vsn,format='%y-%m-%d')+3,'%B %-d, %Y')`"
 output:
   html_document:
     css: css/html_document.css
