@@ -47,7 +47,7 @@ plot_cvdat=
            xgrid=cq(biweekly,weekly,semimonthly,monthly),
            vline=NULL,hline=NULL,vhlty='dashed',vhcol='grey50',
            vhlwd=1,vlab=TRUE,hlab=TRUE,vhdigits=2,
-           attrs=cq(unit,cumulative,what,datasrc,version,fit,roll,extra,edit),
+           attrs=cq(unit,cumulative,what,datasrc,version,id,fit,roll,extra,edit),
            attrs.ylab=cq(unit,cumulative,what),
            attrs.legend=attrs,
            blocks.order=cq(obj,place,age,objs,places,ages),
@@ -135,7 +135,7 @@ plot_cvdat=
   }
 
 auto_title=
-  function(series,ct=NULL,attrs=cq(unit,cumulative,what,datasrc,version,fit,roll,extra),
+  function(series,ct=NULL,attrs=cq(unit,cumulative,what,datasrc,version,id,fit,roll,extra),
            per.capita=FALSE,SEP='&') {
     if (is.null(ct)) ct=ct_attrs(series,attrs);
     ## attrs=ct$sv.attrs[ct$sv.attrs!='obj'];    # don't want 'obj' in title
@@ -307,5 +307,3 @@ auto_legend=
     names(legend)=legend.order;
     legend[!sapply(legend,is.null)];
   }
-
-  

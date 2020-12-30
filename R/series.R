@@ -14,7 +14,7 @@
 ###################################################################################
 data_series=
   function(objs,places='state',ages=NULL,incompatible.ok=param(incompatible.ok),
-           attrs=cq(unit,cumulative,what,datasrc,version,fit,roll,extra,edit)) {
+           attrs=cq(unit,cumulative,what,datasrc,version,id,fit,roll,extra,edit)) {
     if (is_cvdat(objs)) objs=list(objs);
     if (is.null(places)) stop("'places' cannot be NULL: nothing to select!");
     ## if (identical(ages,'all')) ages=NULL;
@@ -41,7 +41,7 @@ data_series=
     });
     list(objs=objs,xattr=xattr,series=series)
   }
-ct_attrs=function(series,attrs=cq(unit,cumulative,what,datasrc,version,fit,roll,extra,edit)) {
+ct_attrs=function(series,attrs=cq(unit,cumulative,what,datasrc,version,id,fit,roll,extra,edit)) {
   xattr=series$xattr;
   attrs=c(cq(series,obj),attrs,cq(place,age));
   attrs=attrs %&% colnames(xattr);
