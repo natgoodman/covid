@@ -74,15 +74,18 @@ init=function(
                                  #
   ## transform params
   extra.wmax=6,                  # max weeks for computing models
-  extra.nvmin=extra.wmax,        # min versions covering data used in models
-  extra.exmin=0.25,              # min extra value. smaller values expand counts too much
-  age.label=list(),              # labels for custom ages. each entry is vector of labels for fmts
+  extra.errtype=cq('*','+',multiplicative,additive),  # error type for models
+  extra.mulmax=4,                # max multiplicative error. larger values expand counts too much
   incompatible.ok=FALSE,         # require edited objects to be compatible
+
+  age.label=list(),              # labels for custom ages. each entry is vector of labels for fmts
 
   ## workflow params
   ## URLs for automatic downloads
   download.url=list(
-    doh='https://www.doh.wa.gov/Portals/1/Documents/1600/coronavirus/data-tables/PUBLIC_CDC_Event_Date_SARS.xlsx',    
+    ## DOH URL changed as of version 20-12-20
+    ## doh='https://www.doh.wa.gov/Portals/1/Documents/1600/coronavirus/data-tables/PUBLIC_CDC_Event_Date_SARS.xlsx',
+    doh='https://www.doh.wa.gov/Portals/1/Documents/1600/coronavirus/data-tables/WA_COVID19_Cases_Hospitalizations_Deaths.xlsx',
     jhu.cases='https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv',
     jhu.deaths='https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_US.csv',
     nyt='https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv',
@@ -157,7 +160,7 @@ init=function(
     rbind,lapply(places.other,function(row) 
       data.frame(place=row[1],state=row[2],county=row[3],stringsAsFactors=FALSE)));
   param(places.other=places.other);
-  invisible();
+ invisible();
 }
 ## initialize doc parameters
 ## NG 19-01-11: abandon subdoc concept for 'supp' - not useful for effit
