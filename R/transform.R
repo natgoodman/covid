@@ -30,7 +30,7 @@ raw=function(what=cq(cases,admits,deaths),datasrc=param(datasrc),version='latest
   data=load_data(whatv=what,datasrc=datasrc,version=version);
   newobj=if(datasrc!='doh') cvdat else cvdoh;
   obj=newobj(data=data,datasrc=datasrc,what=what,version=version,
-             fit=FALSE,roll=FALSE,extra=FALSE,edit=FALSE);
+             id=FALSE,fit=FALSE,roll=FALSE,extra=FALSE,edit=FALSE);
   clc(obj,switch(datasrc,
                   doh=list(unit=7,start.on='Sunday',center=FALSE,cumulative=FALSE),
                   ihme=list(unit=1,cumulative=FALSE),
@@ -44,24 +44,29 @@ raw=function(what=cq(cases,admits,deaths),datasrc=param(datasrc),version='latest
 }
 ## fit object data
 fit=function(obj,...) UseMethod('fit')
-fit.cvdat=function(obj,method='sspline',args=list(),fit.clamp=0,fit.unit=1) {
+fit.cvdat=function(obj,method='sspline',args=list(),fit.clamp=0,fit.unit=1,...) {
+  args=cl(args,...);
   dates=dates(obj);
   counts=counts(obj);
   fun=fitfun(x=as.numeric(dates),y=counts,method=method,args=args,clamp=fit.clamp);
   dates=seq(min(dates),max(dates),by=fit.unit);
-  data=data.frame(date=dates,sapply(fun,function(f) f(dates)));
-  clc(obj,list(data=data,fit=method,fit.fun=fun,fit.args=args));
+  ## do it this convoluted way, so R won't munge place names or dates. sigh...
+  data=cbind(date=dates,as.data.frame(do.call(cbind,lapply(fun,function(f) f(dates)))));
+  clc(obj,list(data=data,fit=method,fit.fun=fun,fit.args=args,fit.unit=fit.unit));
 }
-fit.cvdoh=function(obj,method='sspline',args=list(),fit.clamp=0,fit.unit=1) {
+fit.cvdoh=function(obj,method='sspline',args=list(),fit.clamp=0,fit.unit=1,...) {
+  args=cl(args,...);
   dates=dates(obj);
   ages=ages(obj);
   x=as.numeric(dates);
   fun=lapply(ages,function(age) 
     fitfun(x=x,y=counts(obj,age),method=method,args=args,clamp=fit.clamp));
   dates=seq(min(dates),max(dates),by=fit.unit);
-  data=lapply(fun,function(fun) data.frame(date=dates,sapply(fun,function(f) f(dates))));
+  ## do it this convoluted way, so R won't munge place names or dates. sigh...
+  data=lapply(fun,function(fun) 
+    cbind(date=dates,as.data.frame(do.call(cbind,lapply(fun,function(f) f(dates))))));
   names(data)=ages;
-  clc(obj,list(data=data,fit=method,fit.fun=fun,fit.args=args));
+  clc(obj,list(data=data,fit=method,fit.fun=fun,fit.args=args,fit.unit=fit.unit));
 }
 ## use rolling mean to smooth object data
 ## right alignment only. fills bottom with partial means
@@ -227,45 +232,42 @@ cntr1=function(data,inc) {
   data;
 }
 ## add 'extra' counts to DOH objects to adjust for incomplete data near end
-## fun computed by 'extrafun' (via 'init_extra') function in extra.R
-## NG 20-12-14: fixed longstanding bug: 'extra' has to pass objs to 'extrafun' to include
+## model computed by 'extra_mdl' function in extra.R
+## NG 20-12-14: fixed longstanding bug: 'extra' has to pass objs to 'extra_mdl' to include
 ##   current object in check for compatibility
 ## TODO: refactor using lessons from 'xper_wmat' et al
 extra=function(obj,...) UseMethod('extra')
 extra.cvdat=function(obj,fun=NULL,objs=NULL,versions=NULL,incompatible.ok=param(incompatible.ok))
   stop("'extra' transform only makes sense for 'doh' objects, not ",obj$datasrc," objects")
-extra.cvdoh=function(obj,fun=NULL,objs=NULL,versions=NULL,incompatible.ok=param(incompatible.ok)) {
-  dates=dates(obj);
-  places=places(obj);
-  ages=ages(obj);
-  what=obj$what;
-  if (is.null(fun)) {
-    if (is.null(objs)) {
-      ## read objects
-      versions.all=list_versions('doh',what) %-% version(obj);
-      versions=if(is.null(versions)) versions.all else versions.all %&% versions;
-      objs=c(list(obj),lapply(versions,function(version) raw(what,'doh',version)));
-    }
-    fun=extrafun(what=what,objs=objs,versions=versions,incompatible.ok=incompatible.ok,
-                dates=dates,places=places,ages=ages);
+extra.cvdoh=
+  function(obj,fun=NULL,objs=NULL,versions=NULL,method='lm',args=list(fmla='y~w'),
+           err.type=param(extra.errtype),wmax=param(extra.wmax),mulmax=param(extra.mulmax),
+           incompatible.ok=param(incompatible.ok),...) {
+    args=cl(args,...);
+    err.type=match.arg(err.type);
+    err.type=switch(err.type,multiplicative='*',additive='+',err.type);
+    places=places(obj);
+    ages=ages(obj);
+    vdate=vdate(obj);
+    if (is.null(fun)) {
+      if (is.null(objs)) {
+        ## read objects
+        what=what(obj);
+        if (is.null(versions)) {
+          versions=list_versions('doh',what);
+          versions=versions[versions<version(obj)];
+        }
+        objs=lapply(versions,function(version) raw(what,'doh',version));
+      }
+      ## check whether edited objects are compatible
+      cmp_pops(c(list(obj),objs),places=places,ages=ages,incompatible.ok=incompatible.ok);
+      ## compute models
+      fun=extrafun(obj,objs,places,ages,method,args,err.type,wmax,mulmax);
   }
-  vdate=vdate(obj);
-  data=sapply(ages,function(age) extra1(fun,obj$data[[age]],places,age,vdate),
-              simplify=FALSE);
-  clc(obj,list(data=data,extra.fun=fun,extra=TRUE));
-}
-extra1=function(fun,data,places,age,vdate) {
-  data=do.call(rbind,lapply(1:nrow(data),function(i) {
-    date=data[i,1];
-    counts=data[i,-1,drop=FALSE];
-    props=fun(date,places,age,vdate=vdate);
-    ## have to use cbind, not data.frame, so R won't convert spaces
-    data=cbind(date=date,round(counts/props));
-  }));
-  ## replace NAs by 0. from stackoverflow.com/questions/8161836. Thx!
-  data[is.na(data)]=0;
-  data;
-}
+    data=extraadj(obj,fun,places,ages,err.type,wmax,mulmax)
+    clc(obj,list(data=data,extra=method,extra.fun=fun,extra.args=args,extra.errtype=err.type));
+  }
+
 ## edit object data
 ## there are separate functions for editing places, ages, and dates
 ## (presently just places)
