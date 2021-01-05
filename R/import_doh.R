@@ -86,8 +86,8 @@ fix_doh_cases=function(data,what,version) {
   if (version>='20-12-20') {
     ## expect 6 bad dates (sigh...): 2020-01-17,2020-02-01,2020-02-04,2020-02-11,2020-02-21
     bad.expect=c('2020-01-17','2020-02-01','2020-02-04','2020-02-11','2020-02-21');
-    if ((sum(bad)!=6)&&data$date[bad]!=bad.expect) {
-      missing=data$date[bad]!=bad.expect;
+    if ((sum(bad)!=6)&&data$date[bad]%==%bad.expect) {
+      missing=data$date[bad]%==%bad.expect;
       stop(paste("doh",what,"version",version,"does not have expected bad date(s):",
                  paste(collapse=', ',missing)));
     }
