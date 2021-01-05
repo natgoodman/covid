@@ -240,7 +240,7 @@ extra=function(obj,...) UseMethod('extra')
 extra.cvdat=function(obj,fun=NULL,objs=NULL,versions=NULL,incompatible.ok=param(incompatible.ok))
   stop("'extra' transform only makes sense for 'doh' objects, not ",obj$datasrc," objects")
 extra.cvdoh=
-  function(obj,fun=NULL,objs=NULL,versions=NULL,method='lm',args=list(fmla='y~w'),
+  function(obj,fun=NULL,objs=NULL,versions=NULL,method='lm',args=list(fmla=param(extra.fmla)),
            err.type=param(extra.errtype),wmax=param(extra.wmax),mulmax=param(extra.mulmax),
            incompatible.ok=param(incompatible.ok),...) {
     args=cl(args,...);
