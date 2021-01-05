@@ -98,7 +98,7 @@ plot_cvdat=
     data=series$series;
     sapply(seq_along(data),function(i)
       if (type=='l') lines(x=data[[i]]$date,y=data[[i]]$y,col=col[i],lty=lty[i],lwd=lwd[i])
-      else if (type=='p') points(x=data[[i]]$date,y=data[[i]]$y,col=col[i],lty=lty[i],lwd=lwd[i]));
+      else if (type=='p') points(x=data[[i]]$date,y=data[[i]]$y,col=col[i],pch=pch[i],lwd=lwd[i]));
     if (!add) {
       ## draw grid
       grid(nx=NA,ny=NULL) # draw y grid lines. we'll draw x ourselves at desired spacing
