@@ -37,7 +37,7 @@ fitfun=function(x,y,method=cq(aspline,ispline,sspline,spline,loess,linear,approx
            loess=list(span=0.75),
            linear=list(method='linear',yleft=0,rule=2),
            step=list(method='constant',yleft=0,rule=2),
-           stop("Bad news; unknown 'method' ",method,'. Should have been caught earlier!')),
+           list()),
     args);
   if (is.vector(x)&&is.vector(y)) {
     nna=!(is.na(x)|is.na(y));
