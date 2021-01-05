@@ -225,8 +225,7 @@ do_plots=function(datasrc=cq(doh,jhu,nyt,trk),objs=NULL,objs.noroll=NULL) {
     ploff();
     ## jhu King, others
     plon('jhu.other');
-    plot_cvdat(jhu.cases,places=cq(King,'Ann Arbor',DC,Boston,'San Diego',Austin),
-               ages=NULL,per.capita=TRUE);
+    plot_cvdat(jhu.cases,places=places_other(),ages=NULL,per.capita=TRUE);
     ploff();
   }
   if (cq(jhu,nyt) %<=% datasrc) {
