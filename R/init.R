@@ -73,8 +73,9 @@ init=function(
   yyg.maxdate='latest',          # max date is latest version
                                  #
   ## transform params
-  extra.wmax=6,                  # max weeks for computing models
+  extra.fmla='y~date:w+w',       # default formula for lm models
   extra.errtype=cq('*','+',multiplicative,additive),  # error type for models
+  extra.wmax=6,                  # max weeks for computing models
   extra.mulmax=4,                # max multiplicative error. larger values expand counts too much
   incompatible.ok=FALSE,         # require edited objects to be compatible
 

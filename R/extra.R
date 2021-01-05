@@ -20,7 +20,7 @@ extrafun=function(obj,objs,places,ages,method=cq(lm,wfun),args=list(),err.type,w
   ## set default args. actual arg values override
   args=cl(
     switch(method,
-           lm=list(fmla='y~w',w.asfactor=TRUE),
+           lm=list(fmla=param(extra.fmla),w.asfactor=TRUE),
            wfun=list(wfun=colMedians),
            stop("Bad news; unknown 'method' ",method,'. Should have been caught earlier!')),
     args);
