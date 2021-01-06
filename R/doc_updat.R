@@ -16,13 +16,13 @@
 ## --- Generate Figures and Tables for updat Blog Post ---
 ## no sections.
 doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',transforms=NULL,...) {
-  if (is.null(version)||version=='latest') version=max(sapply(cq(jhu,doh),latest_version))
+  if (is.null(version)||version=='latest') version=max(sapply(cq(jhu,doh),latest_version));
   if (is.null(transforms))
     transforms=if (version<'20-12-20') list(jhu=roll,doh=c(roll,extra))
                else if (version=='20-12-20') list(jhu=roll)
                else list(jhu=fit_updat_objs,doh=c(extra,fit_updat_objs));                      
   if (need.objs) {
-    make_updat_objs(version=version,transforms);
+    make_updat_objs(version=version,transforms=transforms);
   }
   if (need.init) init_doc(doc='updat',version=version,...);
   labels.wa=setNames(c('Washington state','Seattle (King County)',
@@ -96,7 +96,7 @@ doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',transforms=NUL
             places=cq(state),ages='all',per.capita=TRUE,lwd=c(4,2,2),
             title=figtitle("Weekly deaths per million: DOH and JHU (Washington state)"),
             legends=list(title='Data Source',labels=c('DOH raw','DOH extrapolated','JHU'))));
-  } else {
+  } else if (version<='20-12-27') {
     dofig('cases_dohjhu',
           plot_cvdat(
             list(doh.cases,jhu.cases),
@@ -110,7 +110,30 @@ doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',transforms=NUL
             title=figtitle("Weekly deaths per million: DOH and JHU (Washington state)"),
             legends=list(title='Data Source',labels=c('DOH','JHU'))));
   }
+  else {
+    dofig('cases_dohjhu',fig_dohjhu('cases'));
+    dofig('deaths_dohjhu',fig_dohjhu('deaths'));
+  }
+  
     invisible();
+}
+## hack to plot processed and raw data together
+## TODO: add this  plot_cvdat!
+fig_dohjhu=function(what=cq(cases,deaths)) {
+  what=match.arg(what);
+  doh=get(paste(sep='.','doh',what));
+  jhu=get(paste(sep='.','jhu',what));
+  doh.raw=get(paste(sep='.','doh',what,'raw'));
+  jhu.raw=get(paste(sep='.','jhu',what,'raw'));
+  data=data_cvdat(list(doh,jhu,doh.raw,jhu.raw),places=cq(state),ages='all',per.capita=TRUE);
+  ymax=max(data[,-1],na.rm=TRUE);
+  title=paste('Weekly fitted and raw',what,'per million: DOH and JHU (Washington state)');
+  plot_cvdat(
+    list(doh,jhu),places=cq(state),ages='all',per.capita=TRUE,lwd=2,ymax=ymax,
+    title=title,legends=list(title='Data Source',labels=c('DOH','JHU')));
+  plot_cvdat(
+    list(doh.raw,jhu.raw),places=cq(state),ages='all',per.capita=TRUE,lwd=2,
+    title=title,type='p',add=TRUE,pch=c(20,20));
 }
 
 ## make objs doc_updat needs. 'global' controls whether set globally or just in parent
@@ -126,7 +149,7 @@ make_updat_objs=
     cases=expand.grid(what=what,datasrc=datasrc,stringsAsFactors=FALSE);
     withrows(cases,case,{
       if (param(verbose)) print(paste('+++ making',datasrc,what));
-      ## start with raw. really 'weekly, incremental'
+     ## start with raw. really 'weekly, incremental'
       obj=raw(what,datasrc,version);    # start with raw
       obj=switch(datasrc,               # transform as needed for src
                  doh=edit(obj,KEEP=cq(state,King,Snohomish,Pierce)),
