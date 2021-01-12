@@ -23,23 +23,24 @@ urlcolor: blue
 
 See [below](#caveats) for caveats and details. I originally posted updates on Mondays but have switched to Wednesdays to accommodate the recently changed [Washington DOH](#doh) data release schedule.
 
-Figure 1a shows *case* counts per million for Washington state as a whole, the Seattle area where I live, and the adjacent counties to the north and south (Snohomish and Pierce, resp.). Figure 1b shows *case* counts for Ann Arbor, Boston, San Diego, and Washington DC. The figures use data from Johns Hopkins Center for Systems Science and Engineering (JHU), described [below](#jhu).
+Figure 1a shows *case* counts per million for Washington state as a whole, the Seattle area where I live, and the adjacent counties to the north and south (Snohomish and Pierce, resp.). Figure 1b shows *case* counts for Ann Arbor, Boston, San Diego, and Washington DC. The figures use data from Johns Hopkins Center for Systems Science and Engineering (JHU), described [below](#jhu). When comparing Figures 1a and 1b, please note the difference in y-scale: the current Washington rates (2000-2500 per million) are similar to the rates in Ann Arbor and DC, and much below the rates in Boston and San Diego.
 
 ```{r out.width="50%",echo=FALSE,fig.show='asis'}
 knitr::include_graphics(file.path(figdir,'figure_001a_cases_wa.png'));
 knitr::include_graphics(file.path(figdir,'figure_001b_cases_other.png'));
 ```
 
-In Washington state (Figure 1a), cases seem to have hit their peak after a prolonged increase and are heading down (but see [caveats](#caveats) below). In non-Washington locations (Figure 1b), cases continue to increase everywhere except Ann Arbor. The decline in Ann Arbor has persisted for several weeks: this very good news may be due to the University of Michigan ending on-site teaching for most students. The rate of increase in Boston and DC may be slowing; we'll know in a few weeks whether it's real.
+Last week, it appeared that cases in Washington state cases had hit their peak and were heading down, but this week's data (Figure 1a) belie that hopeful conclusion: after a small dip, cases are increasing again. The dip may reflect reporting lags over the holidays or operational issues caused by changes in
+[Washington DOH](#doh) reporting procedures [described below](#caveats). In non-Washington locations (Figure 1b), cases continue to increase everywhere except Ann Arbor. The decline in Ann Arbor has persisted for several weeks and is possibly due to the University of Michigan ending on-site teaching for most students. Last week, it seemed Boston and DC might be reaching their peaks, but this week's data shows a continuing climb.
 
-Figures 2a-b show *deaths* per million for the same locations.
+Figures 2a-b show *deaths* per million for the same locations. When comparing Figures 2a and 2b, please note the difference in y-scale: the current Washington rates (30-40 per million) are similar to the non-Washington rates.
 
 ```{r out.width="50%",echo=FALSE,fig.show='asis'}
 knitr::include_graphics(file.path(figdir,'figure_002a_deaths_wa.png'));
 knitr::include_graphics(file.path(figdir,'figure_002b_deaths_other.png'));
 ```
 
-The Washington data (Figure 2a) shows three waves. Last week it seemed that we had reached the peak of the third, but this week's data shows the death rate increasing. The second peak was thankfully lower than the first; the third peak is higher than the first in all areas except Seattle (King County). The non-Washington data (Figure 2b) is dominated by the early peak in Boston making it hard to see details later on, but the rates are heading up everywhere except Ann Arbor. Last week we saw a hint of a flattening in Boston, but it now seems that was wishful thinking. When comparing Figures 2a and 2b, please note the difference in y-scale: the current Washington rates (30-40 per million) are similar to the non-Washington rates.
+The Washington data (Figure 2a) shows three waves. Two weeks ago it seemed we had reached the peak of the third, but last week's and this week's data show the death rate increasing. The second peak was thankfully lower than the first; the third wave is already higher than the first in all areas except Seattle (King County). The non-Washington data (Figure 2b) is dominated by the early peak in Boston making it hard to see details later on, but the rates are heading up everywhere except Ann Arbor. Two weeks ago we saw a hint of a flattening in Boston, but it now seems that was wishful thinking.
 
 The next graphs show the Washington results broken down by age. This data is from Washington State Department of Health (DOH) weekly downloads, described [below](#doh). An important caveat is that the DOH download systematically undercounts events in recent weeks due to manual curation. I extrapolate data for late time points as discussed [below](#extra).
 
@@ -52,7 +53,7 @@ knitr::include_graphics(file.path(figdir,'figure_003c_cases_Snohomish.png'));
 knitr::include_graphics(file.path(figdir,'figure_003d_cases_Pierce.png'));
 ```
 
-Early on, the pandemic struck older age groups most heavily. Over time, *cases* spread into all age groups, even the young. During the second wave, older groups did better in most locations with young adults (20-39 years) becoming the most affected group. The third wave swept into all age groups with young and middle aged adults (20-39 and 40-59 years) leading the surge.
+Early on, the pandemic struck older age groups most heavily. Over time, *cases* spread into all age groups, even the young. During the second wave, older groups did better in most locations with young adults (20-39 years) becoming the most affected group. The third wave swept into all age groups with young and middle aged adults (20-39 and 40-59 years) leading the surge. As the wave has grown, the oldest people (80+) are again strongly affected. 
 
 Figures 4a-d are *deaths*. These graphs aggregate 0-59 into a single group, since the death rate in these ages is near 0.
 
@@ -63,7 +64,7 @@ knitr::include_graphics(file.path(figdir,'figure_004c_deaths_Snohomish.png'));
 knitr::include_graphics(file.path(figdir,'figure_004d_deaths_Pierce.png'));
 ```
 
-The shocking devastation of the 80+ age group early in the pandemic jumps off the page. The early death rate for this group in Seattle (King County) reached over 600 per million reflecting the early outbreak at a long term care facility in the area. Statewide, the death rate in the 80+ group shows three waves. Deaths in Snohomish (north of Seattle) for the 80+ group peaked early in the pandemic, then declined and stayed fairly low but now have climbed above the first peak; some of the increase reflects an outbreak in a long term care facility in the county. Deaths in Pierce (south of Seattle) for this group are more variable than elsewhere, possibly reflecting delays in reporting deaths to DOH and political turmoil in the county department responsible for reporting this data. The overall rate was fairly steady until recently at a level near or slightly below the second and third King County peaks but now has now surged to its highest level ever. The low counts at the latest time points in all locations are probably due to reporting lags caused by new DOH procedures as discussed [below](#caveats).
+The shocking devastation of the 80+ age group early in the pandemic jumps off the page. The early death rate for this group in Seattle (King County) reached over 600 per million reflecting the early outbreak at a long term care facility in the area. Statewide, the death rate in the 80+ group shows three waves. Deaths in Snohomish (north of Seattle) for the 80+ group peaked early in the pandemic, then declined and stayed fairly low but now have climbed above the early Seattle peak; some of the increase reflects an outbreak in a long term care facility in the county. Deaths in Pierce (south of Seattle) for this group are more variable than elsewhere, possibly reflecting delays in reporting deaths to DOH and political turmoil in the county department responsible for reporting this data. The overall rate was fairly steady until recently but now has now surged to nearly the level of the early Seattle peak. The low counts at the latest time points in all locations are probably due to reporting lags caused by new DOH procedures as discussed [below](#caveats). With cases climbing in the 80+ age group (as shown in Figures 3a-d above), increasing deaths seem sadly inevitable.
 
 ## Caveats {#caveats}
 
@@ -79,9 +80,9 @@ The shocking devastation of the 80+ age group early in the pandemic jumps off th
 
 6. The date granularity in the graphs is weekly. The underlying JHU data is daily; I sum the data by week before graphing.
 
-7. I truncate the data to the last full week prior to the week reported here. Thus, data for the January 6 update includes counts through the last week of December and first few days of January, ending January 2.
+7. I truncate the data to the last full week prior to the week reported here. Thus, data for the January 13 update includes counts through the first week of January, ending January 9.
 
-8. I smooth the graphs using a smoothing spline (R's `smooth.spline`) for visual appeal. This is especially important for the *deaths* graphs where the counts are so low that unsmoothed week-to-week variation makes the graphs hard to read. In versions of the document prior to last week, I used a 3-week rolling mean for this purpose.
+8. I smooth the graphs using a smoothing spline (R's `smooth.spline`) for visual appeal. This is especially important for the *deaths* graphs where the counts are so low that unsmoothed week-to-week variation makes the graphs hard to read. In versions of the document prior to December 30, 2020, I used a 3-week rolling mean for this purpose.
 
 ## Data Sources
 
