@@ -80,7 +80,8 @@ doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',transforms=NUL
           title=figtitle(paste("Weekly deaths per million by age in",labels.wa[place])),
           legend='top')));
 
-   ## Figures 5a-b compare DOH, JHU
+  ## Figures 5a-b compare DOH, JHU.
+  ## Note: not used in versions after Dec 13. Will probably come back...
   figblk_start();
   version=version(doh.cases);
   if (version<='20-12-06') {
