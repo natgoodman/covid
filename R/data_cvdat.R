@@ -14,10 +14,11 @@
 #################################################################################
 ## ---- Make data.frame from cvdat objects ----
 ## like plot_cvdat but generates data frome
+## cnm is optional list of colnames
 data_cvdat=
-  function(objs,places='state',ages=NULL,per.capita=FALSE,incompatible.ok=param(incompatible.ok),
-           attrs=cq(unit,cumulative,what,datasrc,version,fit,roll,extra,edit),
-           attrs.colnames=attrs) {
+  function(objs,places='state',ages=NULL,per.capita=FALSE,cnm=NULL,
+           incompatible.ok=param(incompatible.ok),
+           attrs=cq(unit,cumulative,what,datasrc,version,fit,roll,extra,edit)) {
     if (is_cvdat(objs)) objs=list(objs);
     places.all=Reduce(intersect,lapply(objs,function(obj) places(obj)));
     ages.all=Reduce(intersect,lapply(objs,function(obj) ages(obj)))
@@ -44,8 +45,12 @@ data_cvdat=
     nattr=series$xattr[,ct$mv.attrs%-%cq(series,obj),drop=FALSE];
     ## names=apply(nattr,1,function(row) paste(collapse=';',row));
     ## adapt code from plot_cvdat - produces nicer colnames
-    names=unlist(withrows(nattr,row,paste_legend(row,SEP=';')))
-    y=mapply(function(data,name) {colnames(data)[2]=name; data},series$series,names,SIMPLIFY=F);
+    if (is.null(cnm)) cnm=unlist(withrows(nattr,row,paste_legend(row,SEP=';')))
+    else if (length(cnm)<nrow(nattr))
+      stop("'cnm' too short: result has ",nrow(nattr),
+           " columns; cnm=c(",paste(collapse=',',cnm),") has only ",length(cnm)," names");
+    ## cnm=c(cnm,paste0('Var.',(length(cnm)+1):nrow(nattr)));
+    y=mapply(function(data,name) {colnames(data)[2]=name; data},series$series,cnm,SIMPLIFY=F);
     ## gather all dates for joining, then do it!
     dates=sort(unique(do.call(c,lapply(series$series,function(series) series$date))));
     data=Reduce(function(...) merge(...,by='date',all=TRUE), y, data.frame(date=dates));
