@@ -148,8 +148,9 @@ fix_doh_admits=function(data,what,version) {
   bad=diff(data$date)!=7;
   if (any(bad))
     stop(paste("doh",what,"version",version,"has",sum(bad),"unexpected missing weeks"));
-  ## fix extra week (for some counties) in 20-09-27, 20-10-11, 20-11-22, and >=20-12-20
-  if (((version %in% c('20-09-27','20-10-11','20-11-22'))||(version>='20-12-20')))
+  ## fix extra week (for some counties) in 20-09-27, 20-10-11, 20-11-22,
+  ## and from 20-12-20 to 21-01-10 inclusive
+  if (((version %in% c('20-09-27','20-10-11','20-11-22'))||between(version,'20-12-20','21-01-17')))
     data=fix_extra_week(data,what,version);
   ## done
   data;
