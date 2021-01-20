@@ -38,7 +38,8 @@ edit_df1=function(data,EXPR=list(),KEEP=NULL,DROP=NULL,total='state',TARGNAME='p
     colnames(out)=name;
     data<<-cbind(data,out);             # so later exprs can see this one
   }));
-  if (!is.null(KEEP)&&!is.null(DROP)) stop('Illegal to specify both KEEP and DROP')
+  if (!is.null(KEEP)&&!is.null(DROP)&&!DROP%==%total)
+    stop('Illegal to specify both KEEP and DROP (except to DROP ',total,')')
   if (!is.null(KEEP)) {
     KEEP=c(KEEP,names);
     if (total%in%colnames(data)) KEEP=c(total,KEEP);
@@ -46,7 +47,7 @@ edit_df1=function(data,EXPR=list(),KEEP=NULL,DROP=NULL,total='state',TARGNAME='p
     edit_chkvars(KEEP,'KEEP',colnames(data),TARGNAME);
     data=data[,KEEP,drop=FALSE];
   }
-  else if (!is.null(DROP)) {
+  if (!is.null(DROP)) {
     edit_chkvars(DROP,'DROP',colnames(data),TARGNAME);
     data=data[,colnames(data)%-%DROP,drop=FALSE];
   }
@@ -65,14 +66,15 @@ edit_ages1=function(data,EXPR=list(),KEEP=NULL,DROP=NULL) {
     names(out)=name;
     data<<-c(data,out);             # so later dots exprs see this one
   });;
-  if (!is.null(KEEP)&&!is.null(DROP)) stop('Illegal to specify both KEEP and DROP')
+  if (!is.null(KEEP)&&!is.null(DROP)&&!DROP%==%'all')
+    stop('Illegal to specify both KEEP and DROP (except to DROP ',total,')')
   if (!is.null(KEEP)) {
     KEEP=c(KEEP,names);
     if ('all'%in%names(data)) KEEP=c('all',KEEP);
     KEEP=unique(KEEP);
     data=data[unique(KEEP)];
   }
-  else if (!is.null(DROP)) data=data[names(data)%-%DROP];
+  if (!is.null(DROP)) data=data[names(data)%-%DROP];
   ## put back dates
   data=lapply(data,function(counts) cbind(date=dates,counts));
   data;
