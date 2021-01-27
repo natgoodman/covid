@@ -44,7 +44,7 @@ plot_cvdat=
            col.legend=col1,lty.legend=lty1,lwd.legend=lwd1,
            pch=20,ylab=NULL,title=NULL,cex.title=NA,
            legend=TRUE,where.legend='topleft',cex.legend=0.8,legends=list(),
-           xgrid=cq(biweekly,weekly,semimonthly,monthly),
+           xgrid=cq(biweekly,weekly,semimonthly,monthly),cex.axis=0.75,
            vline=NULL,hline=NULL,vhlty='dashed',vhcol='grey50',
            vhlwd=1,vlab=TRUE,hlab=TRUE,vhdigits=2,
            attrs=cq(unit,cumulative,what,datasrc,version,id,fit,roll,extra,edit),
@@ -118,7 +118,7 @@ plot_cvdat=
       ## abline(v=biweek,col="lightgray",lty="dotted");
       ## abline(v=c(mon.01,mon.15),col="lightgray",lty="dotted");
       ## axis line below adapted from stackoverflow.com/questions/4843969. Thx!
-      axis(1,mon.01,format(mon.01,"%b-%d"),cex.axis=0.8);
+      axis(1,mon.01,format(mon.01,"%b-%d"),cex.axis=cex.axis);
       ## plot extra lines & values if desired. nop if vline, hline NULL
       vhline(vline=vline,hline=hline,vlab=vlab,hlab=hlab,vhdigits=vhdigits,
              lty=vhlty,col=vhcol,lwd=vhlwd);
