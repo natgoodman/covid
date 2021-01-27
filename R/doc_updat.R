@@ -25,38 +25,69 @@ doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',transforms=NUL
     make_updat_objs(version=version,transforms=transforms);
   }
   if (need.init) init_doc(doc='updat',version=version,...);
+  places.wa=cq(state,King,Snohomish,Pierce);
   labels.wa=setNames(c('Washington state','Seattle (King County)',
                        'Snohomish (North of Seattle)','Pierce (South of Seattle)'),
-              cq(state,King,Snohomish,Pierce));
+                     places.wa);
+  places.nonwa=cq('Ann Arbor',Boston,'San Diego',DC);
+  labels.nonwa=setNames(c('Ann Arbor','Boston','San Diego','Washington DC'),places.nonwa);
   if (param(verbose)) print(paste('+++ making figures'));
   ## Figures 1a-b cases
   figblk_start();
   dofig('cases_wa',
         plot_cvdat(
-          jhu.cases,places=cq(state,King,Snohomish,Pierce),
-          ages='all',per.capita=TRUE,lwd=2,
+          jhu.cases,places=places.wa,ages='all',per.capita=TRUE,lwd=2,
           title=figtitle("Weekly cases per million in Washington locations"),
           legends=list(labels=labels.wa)));
-  dofig('cases_other',
+  dofig('cases_nonwa',
         plot_cvdat(
-          jhu.cases,places=cq('Ann Arbor',Boston,'San Diego',DC),
-          ages='all',per.capita=TRUE,lwd=2,
-          title=figtitle("Weekly cases per million in non-Washington locations")));
+          jhu.cases,places=places.nonwa,ages='all',per.capita=TRUE,lwd=2,
+          title=figtitle("Weekly cases per million in non-Washington locations"),
+          legends=list(labels=labels.nonwa)));
+  ## recent WA raw data very ragged in version 21-01-24. include figures showing this
+  if (version=='21-01-24') {
+    dofig('cases_wa_ragged',
+          plot_finraw(
+            datasrc='jhu',what='cases',places=places.wa,ages='all',per.capita=TRUE,lwd=2,
+            title=figtitle(
+              "Weekly cases per million in Washington locations showing raw data"),
+            legends=list(labels=labels.wa)));
+     dofig('cases_nonwa_ragged',
+          plot_finraw(
+            datasrc='jhu',what='cases',places=places.nonwa,ages='all',per.capita=TRUE,lwd=2,
+            title=figtitle(
+              "Weekly cases per million in non-Washington locations showing raw data"),
+            legends=list(labels=labels.nonwa)));
+  }
   ## Figures 2a-b deaths
   figblk_start();
   dofig('deaths_wa',
         plot_cvdat(
-          jhu.deaths,places=cq(state,King,Snohomish,Pierce),
-          ages='all',per.capita=TRUE,lwd=2,
+          jhu.deaths,places=places.wa,ages='all',per.capita=TRUE,lwd=2,
           title=figtitle("Weekly deaths per million in Washington locations"),
-          legend='top',
-          legends=list(labels=labels.wa)));
-  dofig('deaths_other',
+          legend='top',legends=list(labels=labels.wa)));
+  dofig('deaths_nonwa',
         plot_cvdat(
-          jhu.deaths,places=cq('Ann Arbor',Boston,'San Diego',DC),
+          jhu.deaths,places=places.nonwa,
           ages='all',per.capita=TRUE,lwd=2,
-          title=figtitle("Weekly deaths per million in non-Washington locations")));
-  ## version 20-12-20: DOH update not available. hopefully temporary...
+          title=figtitle("Weekly deaths per million in non-Washington locations"),
+          legend='top',legends=list(labels=labels.nonwa)));
+  ## recent WA raw data very ragged in version 21-01-24. include figures showing this
+  if (version=='21-01-24') {
+    dofig('deaths_wa_ragged',
+          plot_finraw(
+            datasrc='jhu',what='deaths',places=places.wa,ages='all',per.capita=TRUE,lwd=2,
+            title=figtitle(
+              "Weekly deaths per million in Washington locations showing raw data"),
+            legends=list(labels=labels.wa)));
+     dofig('deaths_nonwa_ragged',
+          plot_finraw(
+            datasrc='jhu',what='deaths',places=places.nonwa,ages='all',per.capita=TRUE,lwd=2,
+            title=figtitle(
+              "Weekly deaths per million in non-Washington locations showing raw data"),
+            legends=list(labels=labels.nonwa)));
+  }
+ ## version 20-12-20: DOH update not available. hopefully temporary...
   if (version=='20-12-20') return();
   ## Figures 3a-d cases by age
   figblk_start();
@@ -66,9 +97,9 @@ doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',transforms=NUL
   col=col_brew(5,'d3');
   sapply(cq(state,King,Snohomish,Pierce),function(place) 
     dofig(paste(sep='_','cases',place),
-        plot_cvdat(
-          doh.cases,places=place,ages=ages,per.capita=TRUE,lwd=2,col=col,
-          title=figtitle(paste("Weekly cases per million by age in",labels.wa[place])))));
+          plot_cvdat(
+            doh.cases,places=place,ages=ages,per.capita=TRUE,lwd=2,col=col,
+            title=figtitle(paste("Weekly cases per million by age in",labels.wa[place])))));
   ## Figures 4a-d deaths
   figblk_start();
   ages=c('0_59','60_79','80_');
@@ -83,7 +114,6 @@ doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',transforms=NUL
   ## Figures 5a-b compare DOH, JHU.
   ## Note: not used in versions after Dec 13. Will probably come back...
   figblk_start();
-  version=version(doh.cases);
   if (version<='20-12-06') {
     dofig('cases_dohjhu',
           plot_cvdat(
@@ -112,15 +142,42 @@ doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',transforms=NUL
             legends=list(title='Data Source',labels=c('DOH','JHU'))));
   }
   else {
-    dofig('cases_dohjhu',fig_dohjhu('cases'));
-    dofig('deaths_dohjhu',fig_dohjhu('deaths'));
+    dofig('cases_dohjhu',plot_dohjhu('cases'));
+    dofig('deaths_dohjhu',plot_dohjhu('deaths'));
   }
   
     invisible();
 }
-## hack to plot processed and raw data together
-## TODO: add this  plot_cvdat!
-fig_dohjhu=function(what=cq(cases,deaths)) {
+## hack to plot final (processed) and raw data together
+## used for jhu in Figures 1,2 version 21-01-24
+## TODO: add this to plot_cvdat!
+plot_finraw=
+  function(datasrc=cq(doh,jhu,nyt,trk),what=cq(cases,deaths),title,legends,
+           raw.plot=cq(lines,points),
+           places,ages='all',per.capita=TRUE,
+           lwd=2,lwd.fin=lwd,lwd.raw=0.375*lwd.fin,lty.fin='solid',lty.raw='dotted',pch=20) {
+    datasrc=match.arg(datasrc);
+    what=match.arg(what);
+    if (!is.null(raw.plot)) raw.plot=match.arg(raw.plot,several.ok=TRUE);
+    fin=get(paste(sep='.',datasrc,what));
+    raw=get(paste(sep='.',datasrc,what,'raw'));
+    data=data_cvdat(list(fin,raw),places=places,ages=ages,per.capita=per.capita);
+    ymax=max(data[,-1],na.rm=TRUE);
+    plot_cvdat(fin,places=places,ages=ages,per.capita=per.capita,ymax=ymax,
+               title=title,legends=legends,lwd=lwd.fin,lty=lty.fin);
+    if ('lines'%in%raw.plot)
+      plot_cvdat(
+        raw,places=places,ages=ages,per.capita=per.capita,add=TRUE,lwd=lwd.raw,lty=lty.raw);
+    if ('points'%in%raw.plot)
+      plot_cvdat(
+        raw,places=places,ages=ages,per.capita=per.capita,add=TRUE,lwd=lwd.raw,lty=lty.raw,
+        type='p',pch=rep(pch,length(places)*length(ages)))
+  }
+
+
+## hack to plot doh, jhu processed and raw data together. used in Figure 5
+## TODO: add this to plot_cvdat!
+plot_dohjhu=function(what=cq(cases,deaths)) {
   what=match.arg(what);
   doh=get(paste(sep='.','doh',what));
   jhu=get(paste(sep='.','jhu',what));
@@ -159,7 +216,18 @@ make_updat_objs=
                  trk=weekly(obj));
       assign(paste(sep='.',datasrc,what,'raw'),obj,globalenv());  # save as 'raw'
       ## now work down transforms
-      sapply(transforms[[datasrc]],function(f) obj<<-f(obj))
+      if (datasrc=='doh'&&version=='21-01-24') {
+        ## doh 21-01-24 has problems...
+        ## data before 2020-01-26 is anomalously high, eg, 2020-01-12 has 8779 cases!
+        ## completely missing fina week! should have week of 21-01-17 but ends at 21-01-10
+        ## do transforms explicitly: have to do 'extra' before editing out last week
+        obj=edit(obj,date>='2020-01-26');
+        assign(paste(sep='.',datasrc,what,'raw'),obj,globalenv());  # save as 'raw'
+        obj=extra(obj);                 # must come before editing out last week
+        obj=edit(obj,date<='2021-01-10');
+        obj=fit_updat_objs(obj);
+      } else 
+        sapply(transforms[[datasrc]],function(f) obj<<-f(obj));
       ## do final edit for doh
       if (datasrc=='doh') obj=edit(obj,'0_59'='0_19'+'20_39'+'40_59');
       assign(paste(sep='.',datasrc,what),obj,globalenv());        # save as 'final'

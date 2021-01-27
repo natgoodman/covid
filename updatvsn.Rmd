@@ -23,7 +23,7 @@ citecolor: green
 urlcolor: blue
 ---
 
-*Counts of cases and deaths are key metrics of COVID-19 prevalence and burden, and are the basis for model-based estimates and predictions of these statistics. This page provides links to weekly updates that present graphs showing these metrics over time in Washington state and a few other USA locations of interest to me.*
+*Counts of cases and deaths are key metrics of COVID-19 prevalence and burden, and are the basis for model-based estimates and predictions of these statistics. This page provides links to weekly updates that present graphs showing these metrics over time in Washington state and a few other USA locations of interest to me. I originally posted updates on Mondays but have switched to Wednesdays to accommodate changes in the Washington State Department of Health (DOH) data release schedule.*
 
 `r paste(collapse='<br/>\n',paste('-',readLines('updat.link')))`<br/>
 
