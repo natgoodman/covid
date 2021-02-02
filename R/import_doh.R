@@ -128,14 +128,14 @@ fix_doh_cases=function(data,what,version) {
     data=doh_insert(data,1,2);
   }
   ## fix missing weeks at end
-  if (version=='21-01-24') {
+  if (version>='21-01-24') {
     dates=data$date
-    ## expect 1 missing week at end
+    ## expect missing weeks at end
     vdate=as_date(version);
     d.last=tail(dates,n=1);
-    if ((vdate-d.last)!=14)
+    if ((vdate-d.last)==7)
       stop(paste("doh",what,"version",version,
-                 "does not have expected missing week at end (week",paste0(vdate-7,")")));
+                 "does not have expected missing week(s) at end (week",paste0(vdate-7,")")));
     data=doh_append(data,vdate);
   }
   ## fix extra week (for some counties) in 20-10-11 and between 20-12-20, 21-01-17
@@ -161,14 +161,14 @@ fix_doh_admits=function(data,what,version) {
   if (any(bad))
     stop(paste("doh",what,"version",version,"has",sum(bad),"unexpected missing weeks"));
   ## fix missing weeks at end
-  if (version=='21-01-24') {
+  if (version>='21-01-24') {
     dates=data$date
-    ## expect 1 missing week at end
+    ## expect missing weeks at end
     vdate=as_date(version);
     d.last=tail(dates,n=1);
-    if ((vdate-d.last)!=14)
+    if ((vdate-d.last)==7)
       stop(paste("doh",what,"version",version,
-                 "does not have expected missing week at end (week",paste0(vdate-7,")")));
+                 "does not have expected missing week(s) at end (week",paste0(vdate-7,")")));
     data=doh_append(data,vdate);
   }
   ## fix extra week (for some counties) in 20-09-27, 20-10-11, 20-11-22,
@@ -184,6 +184,16 @@ fix_doh_deaths=function(data,what,version) {
   if (version=='21-01-24') {
     ## expect 1 bad date: 2020-01-18
     bad.expect=as_date(c('2020-01-18'));
+    if (data$date[bad]%!=%bad.expect) {
+      missing=bad.expect%notin%data$date[bad];
+      stop(paste("doh",what,"version",version,"does not have expected bad date(s):",
+                 paste(collapse=', ',missing)));
+    }
+    ## change dates to previous Sundays. fortunately, none of these duplicate correct dates
+    data$date[bad]=sunday_week(data$date[bad])
+  } else  if (version=='21-01-31') {
+    ## expect 1 bad date: 2020-01-16
+    bad.expect=as_date(c('2020-01-16'));
     if (data$date[bad]%!=%bad.expect) {
       missing=bad.expect%notin%data$date[bad];
       stop(paste("doh",what,"version",version,"does not have expected bad date(s):",
@@ -226,15 +236,22 @@ fix_doh_deaths=function(data,what,version) {
                 "does not have expected 4 missing weeks after: 2020-01-12"));
     data=doh_insert(data,1,4);
   }
+  else if (version=='21-01-31') {
+    ## expect 4 missing weeks after 2020-01-19
+    if ((sum(bad)!=1)&&!bad[2]&&!all(data$date[1:3]==c("2020-01-12","2020-01-19","2020-02-23")))
+     stop(paste("doh",what,"version",version,
+                "does not have expected 4 missing weeks after: 2020-01-19"));
+    data=doh_insert(data,2,4);
+  }
   ## fix missing weeks at end
-  if (version=='20-05-24'||version=='21-01-24') {
-    dates=data$date;
-    ## expect 1 missing week at end
+  if (version>='21-01-24') {
+    dates=data$date
+    ## expect missing weeks at end
     vdate=as_date(version);
     d.last=tail(dates,n=1);
-    if ((vdate-d.last)!=14)
+    if ((vdate-d.last)==7)
       stop(paste("doh",what,"version",version,
-                 "does not have expected missing week at end (week",paste0(vdate-7,")")));
+                 "does not have expected missing week(s) at end (week",paste0(vdate-7,")")));
     data=doh_append(data,vdate);
   }
   data;
