@@ -45,7 +45,7 @@ doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',transforms=NUL
           title=figtitle("Weekly cases per million in non-Washington locations"),
           legends=list(labels=labels.nonwa)));
   ## recent WA raw data very ragged in version 21-01-24. include figures showing this
-  if (version=='21-01-24') {
+  if (version>='21-01-24') {
     dofig('cases_wa_ragged',
           plot_finraw(
             datasrc='jhu',what='cases',places=places.wa,ages='all',per.capita=TRUE,lwd=2,
@@ -73,7 +73,7 @@ doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',transforms=NUL
           title=figtitle("Weekly deaths per million in non-Washington locations"),
           legend='top',legends=list(labels=labels.nonwa)));
   ## recent WA raw data very ragged in version 21-01-24. include figures showing this
-  if (version=='21-01-24') {
+  if (version>='21-01-24') {
     dofig('deaths_wa_ragged',
           plot_finraw(
             datasrc='jhu',what='deaths',places=places.wa,ages='all',per.capita=TRUE,lwd=2,
@@ -216,15 +216,21 @@ make_updat_objs=
                  trk=weekly(obj));
       assign(paste(sep='.',datasrc,what,'raw'),obj,globalenv());  # save as 'raw'
       ## now work down transforms
-      if (datasrc=='doh'&&version=='21-01-24') {
-        ## doh 21-01-24 has problems...
-        ## data before 2020-01-26 is anomalously high, eg, 2020-01-12 has 8779 cases!
-        ## completely missing fina week! should have week of 21-01-17 but ends at 21-01-10
-        ## do transforms explicitly: have to do 'extra' before editing out last week
-        obj=edit(obj,date>='2020-01-26');
+      if (datasrc=='doh'&&version%in%c('21-01-24','21-01-31')) {
+        ## doh 21-01-24, 21-01-31 have problems... not exactly the same natch...
+        ## do transforms explicitly
+        ## in 21-01-24, data before 2020-01-26 is anomalously high, eg, 2020-01-12 has 8779 cases!
+        ## in 21-01-31, data before 2020-02-02 is anomalously high, eg, 2020-01-12 has 10331 cases!
+        min.date=if(version=='21-01-24') '2020-01-26' else '2020-02-02'
+        obj=edit(obj,date>=min.date);
         assign(paste(sep='.',datasrc,what,'raw'),obj,globalenv());  # save as 'raw'
-        obj=extra(obj);                 # must come before editing out last week
+        ## must do 'extra' before editing out last weeks, else code crashes
+        obj=extra(obj); 
+        ## both versions missing data after 21-01-10!
+        ##   21-01-24, should have week of 21-01-17 but ends at 21-01-10
+        ##   21-01-31, should have week of 21-01-24 but ends at 21-01-10
         obj=edit(obj,date<='2021-01-10');
+        ## edit out last weeks before doing fit, else 0s at end pull fit down
         obj=fit_updat_objs(obj);
       } else 
         sapply(transforms[[datasrc]],function(f) obj<<-f(obj));
