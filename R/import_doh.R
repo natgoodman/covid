@@ -22,6 +22,8 @@ import_doh=function(file) {
   if (param(verbose)) print(paste('>>> importing',file));
   version=baseonly(file,keep.dir=FALSE);
   vdate=as_date(version);
+  logdir=filename(param(logdir),'doh.import');
+  dir.create(logdir,recursive=TRUE,showWarnings=FALSE);
   Sheets=c(cq(Cases,Deaths),if(version>='20-05-24') 'Hospitalizations');
   sapply(Sheets,function(Sheet) {
     what=if(Sheet!='Hospitalizations') tolower(Sheet) else 'admits'
@@ -51,9 +53,10 @@ import_doh=function(file) {
     ## Hospitalizations has some rows with Unknown date. delete 'em
     if (what=='admits') data=subset(data,subset=(date!='Unknown'));
     data$date=as_date(data$date);
-    ddates=data$date;                                     # dates in data
+    ddates=sort(unique(data$date));                       # dates in data
     wdates=seq(sunday_week(min(data$date)),vdate-7,by=7); # weekly dates spanning data
-    adates=unique(c(ddates,wdates));                      # all dates of interest
+    adates=sort(unique(c(ddates,wdates)));                # all dates of interest
+    log_doherrs(logdir,what,version,vdate,ddates,wdates);
     dates=data.frame(date=adates,stringsAsFactors=F);
     bycounty=split(data,data$county)
     bycounty=lapply(bycounty,function(data) {
@@ -100,6 +103,20 @@ fix_nonsundays=function(data) {
 fix_extraweeks=function(data,vdate) {
   bad=(data$date>=vdate);
   data[!bad,];
+}
+## log errors
+log_doherrs=function(logdir,what,version,vdate,ddates,wdates) {
+  file=filename(logdir,base=what,tail=version,suffix='txt');
+  nonsundays=ddates[weekdays(ddates)!='Sunday'];
+  extraweeks=ddates[ddates>=vdate];
+  dsundays=sunday_week(ddates);
+  missing=as_date(wdates%-%dsundays);
+  tbl=data.frame(label=c('non-Sundays','extra weeks at end','missing weeks'),
+                 num=sapply(list(nonsundays,extraweeks,missing),length),
+                 weeks=sapply(list(nonsundays,extraweeks,missing),
+                              function(weeks) paste(collapse=', ',weeks)));
+  write.table(tbl,file=file,sep='\t',quote=F,row.names=F);
+  tbl;
 }
 
 ## for sanity, make sure we corrected all errors
