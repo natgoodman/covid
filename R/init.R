@@ -34,6 +34,7 @@ init=function(
   ## data directories. 
   indir='input',                            # top level input dir
   datadir=filename('data',run.id),          # top level output data files
+  logdir=filename('log',run.id),            # top level log directory
   metadir=filename('meta',run.id),          # metadata files
   ## NG 20-11-14: figdir, tbldir moved to init_doc
   ## figdir=filename('figure',run.id),         # figures
@@ -134,7 +135,7 @@ init=function(
   datadirs=sapply(datasrc,function(src) filename(datadir,src));
   ## NG 20-11-14: figdir, tbldir moved to init_doc
   ## outdirs=c(datadirs,metadir,figdir,tbldir,tmpdir)
-  outdirs=c(datadirs,metadir,tmpdir)
+  outdirs=c(datadirs,metadir,logdir,tmpdir)
   ## assign parameters to param environment
   ## do it before calling any functions that rely on params
   init_param();
