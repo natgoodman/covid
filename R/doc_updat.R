@@ -44,7 +44,7 @@ doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',transforms=NUL
           jhu.cases,places=places.nonwa,ages='all',per.capita=TRUE,lwd=2,
           title=figtitle("Weekly cases per million in non-Washington locations"),
           legends=list(labels=labels.nonwa)));
-  ## recent WA raw data very ragged in version 21-01-24. include figures showing this
+  ## recent WA raw data very ragged in versions >= 21-01-24. include figures showing this
   if (version>='21-01-24') {
     dofig('cases_wa_ragged',
           plot_finraw(
@@ -87,7 +87,7 @@ doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',transforms=NUL
               "Weekly deaths per million in non-Washington locations showing raw data"),
             legends=list(labels=labels.nonwa)));
   }
- ## version 20-12-20: DOH update not available. hopefully temporary...
+  ## version 20-12-20: DOH update not available. hopefully temporary...
   if (version=='20-12-20') return();
   ## Figures 3a-d cases by age
   figblk_start();
@@ -145,8 +145,21 @@ doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',transforms=NUL
     dofig('cases_dohjhu',plot_dohjhu('cases'));
     dofig('deaths_dohjhu',plot_dohjhu('deaths'));
   }
-  
-    invisible();
+  ## Tables 1-2 trend analysis. not used in document.
+  if (version>='21-02-07') {
+    if (param(verbose)) print(paste('+++ making figures'));
+    trend.cases=trend(jhu.cases.raw,places=c(places.wa,places.nonwa));
+    trend.deaths=trend(jhu.deaths.raw,places=c(places.wa,places.nonwa));
+    ## TODO: rewrite using dotbl when implemented!
+    ## dotbl('trend_cases',emit_trend,data=trend.cases,title='Trend analysis for cases');
+    ## dotbl('trend_deaths',emit_trend,data=trend.deaths,title='Trend analysis for deaths');
+    tbldir=param(tbldir);
+    file=file.path(tbldir,'table_001_trend_cases.txt');
+    write.table(trend.cases,file=file,sep='\t',quote=F,row.names=F);
+    file=file.path(tbldir,'table_002_trend_deaths.txt');
+    write.table(trend.deaths,file=file,sep='\t',quote=F,row.names=F);
+  }
+  invisible();
 }
 ## hack to plot final (processed) and raw data together
 ## used for jhu in Figures 1,2 version 21-01-24
@@ -174,7 +187,6 @@ plot_finraw=
         type='p',pch=rep(pch,length(places)*length(ages)))
   }
 
-
 ## hack to plot doh, jhu processed and raw data together. used in Figure 5
 ## TODO: add this to plot_cvdat!
 plot_dohjhu=function(what=cq(cases,deaths)) {
@@ -194,54 +206,70 @@ plot_dohjhu=function(what=cq(cases,deaths)) {
     title=title,type='p',add=TRUE,pch=c(20,20));
 }
 
-## make objs doc_updat needs. 'global' controls whether set globally or just in parent
+## generate trend tables
+## each table yields two files: one with complete data, other formated for Rmd
+trend_table=function(tbl,title) {
+
+
+}
+
+## make objs doc_updat needs
+## NG 21-02-09: abandoned the cute transform pipeline
+##   too many exceptions and with only two sources, not worth the trouble
 ## NG 20-12-14: fixed longstanding bug. have to do 'extra' before 'editing' object to create
 ##   new places or ages, else objects will be incompatible.
 ##   bug in 'extra' caused error to be missed and results of edited places and ages to be 0!
-make_updat_objs=
-  function(what=cq(cases,deaths),datasrc=cq(doh,jhu),version='latest',
-           transforms=list(jhu=fit_updat_objs,doh=c(extra,fit_updat_objs))) {
-    datasrc=datasrc%&%names(transforms);
-    ## R needs each transform entry to be a list for sapply below to work. sigh...
-    transforms=lapply(transforms,function(t) if (length(t)==1) list(t) else t);
-    cases=expand.grid(what=what,datasrc=datasrc,stringsAsFactors=FALSE);
-    withrows(cases,case,{
-      if (param(verbose)) print(paste('+++ making',datasrc,what));
-     ## start with raw. really 'weekly, incremental'
-      obj=raw(what,datasrc,version);    # start with raw
-      obj=switch(datasrc,               # transform as needed for src
-                 doh=edit(obj,KEEP=cq(state,King,Snohomish,Pierce)),
-                 jhu=weekly(incremental(obj)),
-                 nyt=weekly(incremental(obj)),
-                 trk=weekly(obj));
-      assign(paste(sep='.',datasrc,what,'raw'),obj,globalenv());  # save as 'raw'
-      ## now work down transforms
-      if (datasrc=='doh'&&version%in%c('21-01-24','21-01-31')) {
-        ## doh 21-01-24, 21-01-31 have problems... not exactly the same natch...
-        ## do transforms explicitly
-        ## in 21-01-24, data before 2020-01-26 is anomalously high, eg, 2020-01-12 has 8779 cases!
-        ## in 21-01-31, data before 2020-02-02 is anomalously high, eg, 2020-01-12 has 10331 cases!
-        min.date=if(version=='21-01-24') '2020-01-26' else '2020-02-02'
-        obj=edit(obj,date>=min.date);
-        assign(paste(sep='.',datasrc,what,'raw'),obj,globalenv());  # save as 'raw'
-        ## must do 'extra' before editing out last weeks, else code crashes
-        obj=extra(obj); 
-        ## both versions missing data after 21-01-10!
-        ##   21-01-24, should have week of 21-01-17 but ends at 21-01-10
-        ##   21-01-31, should have week of 21-01-24 but ends at 21-01-10
-        obj=edit(obj,date<='2021-01-10');
-        ## edit out last weeks before doing fit, else 0s at end pull fit down
-        obj=fit_updat_objs(obj);
-      } else 
-        sapply(transforms[[datasrc]],function(f) obj<<-f(obj));
-      ## do final edit for doh
-      if (datasrc=='doh') obj=edit(obj,'0_59'='0_19'+'20_39'+'40_59');
-      assign(paste(sep='.',datasrc,what),obj,globalenv());        # save as 'final'
-    });
-    cases;
+make_updat_objs=function(what=cq(cases,deaths),datasrc=cq(doh,jhu),version='latest') {
+  cases=expand.grid(what=what,datasrc=datasrc,stringsAsFactors=FALSE);
+  withrows(cases,case,{
+    if (param(verbose)) print(paste('+++ making',datasrc,what));
+    ## start with raw. really 'weekly, incremental'
+    obj=raw(what,datasrc,version);    # start with raw
+    assign(paste(sep='.',datasrc,what,'raw'),obj,globalenv());  # save as 'raw'
+    obj=switch(datasrc,               # transform as needed for src
+               doh=doh_updat_objs(obj,what),
+               jhu=jhu_updat_objs(obj,what));
+    assign(paste(sep='.',datasrc,what),obj,globalenv())        # save as 'final'
+  });
+  cases;
+}
+doh_updat_objs=function(obj,what) {
+  obj=edit(obj,KEEP=cq(state,King,Snohomish,Pierce));
+  version=version(obj);
+  if (version%in%c('21-01-24','21-01-31')) {
+    ## versions 21-01-24, 21-01-31 have problems... not exactly the same natch...
+    ## in 21-01-24, data before 2020-01-26 is anomalously high, eg, 2020-01-12 has 8779 cases!
+    ## in 21-01-31, data before 2020-02-02 is anomalously high, eg, 2020-01-12 has 10331 cases!
+    ## both versions missing data after 21-01-10!
+    ##   21-01-24, should have week of 21-01-17 but ends at 21-01-10
+    ##   21-01-31, should have week of 21-01-24 but ends at 21-01-10
+    min.date=if(version=='21-01-24') '2020-01-26' else '2020-02-02'
+    obj=edit(obj,date>=min.date);
+    assign(paste(sep='.','doh',what,'raw'),obj,globalenv());
+    ## must do 'extra' before editing out last weeks, else code crashes
+    obj=extra(obj); 
+    obj=edit(obj,date<='2021-01-10');   # edit out missing weeks
+    assign(paste(sep='.','doh',what,'extra'),obj,globalenv());
+  } else {
+    assign(paste(sep='.','doh',what,'raw'),obj,globalenv()); 
+    obj=extra(obj);
+    assign(paste(sep='.','doh',what,'extra'),obj,globalenv());
   }
-fit_updat_objs=function(obj) {
+  obj=fit_updat_objs(obj,what);
+  if (what=='deaths') obj=edit(obj,'0_59'='0_19'+'20_39'+'40_59');
+  assign(paste(sep='.','doh',what),obj,globalenv());        # save as 'final'
+  obj;
+}
+jhu_updat_objs=function(obj,what) {
+  obj=weekly(incremental(obj));
+  assign(paste(sep='.','jhu',what,'raw'),obj,globalenv());
+  obj=fit_updat_objs(obj,what);
+  assign(paste(sep='.','jhu',what),obj,globalenv());        # save as 'final'
+  obj;
+}
+  
+fit_updat_objs=function(obj,what) {
   ## use 1 day for cases, 10.5 days (1.5 weeks) for deaths
-  fit.unit=if(what(obj)=='cases') 1 else 10.5;
+  fit.unit=if(what=='cases') 1 else 10.5;
   fit(obj,fit.unit=fit.unit);
 }

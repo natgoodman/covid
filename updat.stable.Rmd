@@ -4,6 +4,7 @@ source('R/dat.R');
 doc='updat';
 vsn=max(sapply(c('jhu','doh'),function(src) latest_version(src,'cases',file.path('data',src))));
 figdir=file.path('figure',doc,vsn);
+tbldir=file.path('table',doc,vsn);
 ```
 ---
 title: "COVID-19 Counts in Washington State and Select Other Locations"
@@ -23,9 +24,9 @@ urlcolor: blue
 
 See [below](#caveats) for caveats and details. I originally posted updates on Mondays but have switched to Wednesdays to accommodate the recently changed [Washington DOH](#doh) data release schedule.
 
-Figures 1a-d show *case* counts per million for several Washington and non-Washington locations. Figures 1a-b (the top row) shows smoothed data (see details [below](#caveats)); Figures 1c-d (the bottom row) overlay raw data onto the smoothed. The Washington locations are the entire state, the Seattle area where I live, and the adjacent counties to the north and south (Snohomish and Pierce, resp.). The non-Washington locations are Ann Arbor, Boston, San Diego, and Washington DC. 
+Figures 1a-d show *case* counts per million for several Washington and non-Washington locations. Figures 1a-b (the top row) shows smoothed data (see details [below](#techdetails)); Figures 1c-d (the bottom row) overlay raw data onto the smoothed. The figures use data from Johns Hopkins Center for Systems Science and Engineering (JHU), described [below](#jhu). 
 
-The figures use data from Johns Hopkins Center for Systems Science and Engineering (JHU), described [below](#jhu). When comparing the Washington and non-Washington graphs, please note the difference in y-scale: the current Washington rates (1000-3500 per million) are similar to the rates in Ann Arbor and Washington DC, and well below the rates in Boston and San Diego.
+The Washington locations are the entire state, the Seattle area where I live, and the adjacent counties to the north and south (Snohomish and Pierce, resp.). The non-Washington locations are Ann Arbor, Boston, San Diego, and Washington DC. When comparing the Washington and non-Washington graphs, please note the difference in y-scale: the current Washington rates (1000-2000 per million) are similar to the rates in Ann Arbor and Washington DC, and slightly below the rates in Boston and San Diego.
 
 ```{r out.width="50%",echo=FALSE,fig.show='asis'}
 knitr::include_graphics(file.path(figdir,'figure_001a_cases_wa.png'));
@@ -34,11 +35,9 @@ knitr::include_graphics(file.path(figdir,'figure_001c_cases_wa_ragged.png'));
 knitr::include_graphics(file.path(figdir,'figure_001d_cases_nonwa_ragged.png'));
 ```
 
-From the smoothed data (Figure 1a) it looks like cases in Washington state have hit their peak and are heading down. The raw data (Figure 1c), though ragged, suggests the downward trend may be real.
+The smoothed and raw data for Washington (Figures 1a,c) suggest that cases have hit their peak and are heading down. Simple trend analysis (described [below](#techdetails)) cautions that the apparent decline in Pierce (south of Seattle) may be spurious. The graphs for non-Washington locations (Figures 1b,d) suggest that cases everywhere except Ann Arbor have hit their peaks and are heading down, while Ann Arbor is flattening. Trend analysis concurs.
 
-In non-Washington locations, the smoothed data (Figure 1b) shows cases below their recent peaks everywhere, and downward trends everywhere except Ann Arbor. The raw data (Figure 1d) suggests the reduction is real. The upward bend in Ann Arbor may be an artifact of the smoothing.
-
-Figures 2a-d show *deaths* per million for the same locations. When comparing the Washington and non-Washington graphs, again please note the difference in y-scale: the current Washington rates (20-50 per million) are similar to the non-Washington rates.
+Figures 2a-d show *deaths* per million for the same locations. When comparing the Washington and non-Washington graphs, again please note the difference in y-scale: the current Washington rates (10-30 per million) are similar to the non-Washington rates.
 
 ```{r out.width="50%",echo=FALSE,fig.show='asis'}
 knitr::include_graphics(file.path(figdir,'figure_002a_deaths_wa.png'));
@@ -47,11 +46,9 @@ knitr::include_graphics(file.path(figdir,'figure_002c_deaths_wa_ragged.png'));
 knitr::include_graphics(file.path(figdir,'figure_002d_deaths_nonwa_ragged.png'));
 ```
 
-The smoothed Washington data (Figure 2a) shows three waves. The second peak was thankfully lower than the first; the third wave is already higher than the first in all areas except Seattle (King County). The graphs are heading down now, but it's too soon to know if the trend is real. The non-Washington data (Figure 2b) shows early peaks in most location, followed by a long trough, followed by a second wave starting in November. Rates continue to rise in Boston, San Diego, and Washington DC, but are clearly declining in Ann Arbor. 
+The smoothed Washington data (Figure 2a) shows three waves. The second peak was thankfully lower than the first; the third wave is already higher than the first in all areas except Seattle (King County). The graphs are heading down now, but the raw data (Figure 2c) remains quite variable and trend analysis (described [below](#techdetails)) suggests the trends are weak. The smoothed non-Washington data (Figure 2b) shows early peaks in most location, followed by a long trough, followed by a second wave starting in November. Rates are declining everywhere except Washington DC. The raw data (Figure 2d) and trend analysis suggest the decline in Boston may be real, but the trends elsewhere are ill-defined.
 
-The raw data for Washington (Figure 2c) is very ragged. The smoothed curves undershoot the early peak. Data from mid-November to early January was extremely variable. Data for the last few weeks is lower than the recent peaks, offering hope that the downward trend is real. For non-Washington locations, the raw data (Figure 2d) is better behaved and supports the smoothed curves.
-
-The next graphs show the Washington results broken down by age. This data is from Washington State Department of Health (DOH) weekly downloads, described [below](#doh). An important caveat is that the DOH download systematically undercounts events in recent weeks due to manual curation. I extrapolate data for late time points as discussed [below](#extra). Further, the current data release (version 21-01-31) is completely missing the final two week: it should have data through the week of January 24 but stops at January 10. Further, this release has anomalously high counts for early dates, e.g, 10,331 cases statewide for the week of January 12, 2020, which was before the pandemic began! I truncate the data to avoid these problem dates. 
+The next graphs show the Washington results broken down by age. This data is from Washington State Department of Health (DOH) weekly downloads, described [below](#doh). An important caveat is that the DOH download systematically undercounts events in recent weeks due to manual curation. I extrapolate data for late time points as discussed [below](#techdetails). 
 
 Figures 3a-d are *cases*. The graphs are split into 20-year age ranges starting with 0-19, with a final group for 80+.
 
@@ -64,7 +61,7 @@ knitr::include_graphics(file.path(figdir,'figure_003d_cases_Pierce.png'));
 
 Early on, the pandemic struck older age groups most heavily. Over time, *cases* spread into all age groups, even the young. During the second wave, older groups did better in most locations with young adults (20-39 years) becoming the most affected group. The third wave swept into all age groups with young and middle aged adults (20-39 and 40-59 years) leading the surge. As the wave has grown, the oldest people (80+) are again strongly affected. 
 
-Cases seem to be heading down now, but bear in the mind the variability of recent Washington data illustrated in Figure 1c.
+Thankfully, cases seem to be heading down now.
 
 Figures 4a-d are *deaths*. These graphs aggregate 0-59 into a single group, since the death rate in these ages is near 0.
 
@@ -93,7 +90,13 @@ The decline at the latest time points in all locations may be due to reporting l
 
 6. I truncate the data to the last full week prior to the week reported here. Thus, data for the January 13 update includes counts through the first week of January, ending January 9.
 
-7. I smooth the graphs using a smoothing spline (R's `smooth.spline`) for visual appeal. This is especially important for the *deaths* graphs where the counts are so low that unsmoothed week-to-week variation makes the graphs hard to read. In versions of the document prior to December 30, 2020, I used a 3-week rolling mean for this purpose.
+## Technical Details {#techdetails}
+
+1. I smooth the graphs using a smoothing spline (R's `smooth.spline`) for visual appeal. This is especially important for the *deaths* graphs where the counts are so low that unsmoothed week-to-week variation makes the graphs hard to read. In versions of the document prior to December 30, 2020, I used a 3-week rolling mean for this purpose.
+
+2. The Washington DOH data (used in Figures 3 and 4 to show counts broken down by age) systematically undercounts events in recent weeks due to manual curation. I attempt to correct this undercount through a linear extrapolation function (using R's `lm`). I have tweaked the extrapolation repeatedly, even turning it off for a few weeks. The current version uses a model that combines date and recentness effects. 
+
+3. The trend analysis mentioned above computes a linear regression (using R's `lm`) over the most recent four weeks of data and reports the computed slope and the p-value for the slope. In essence, this compares the trend to the null hypothesis that the true counts are constant and the observed points are randomly selected from a normal distribution. After looking at trend results across the entire time series, I determined that p-values below 0.1 indicate convincing trends; this cutoff is arbitrary, of course.
 
 ## Data Sources
 
@@ -107,15 +110,15 @@ DOH provides three COVID data streams.
 
 3. Weekly data downloads (available from the [Data Dashboard](https://www.doh.wa.gov/Emergencies/COVID19/DataDashboard) web page) of data curated by DOH staff. The curation corrects errors in the daily feed, such as, duplicate reports, multiple test results for the same incident (e.g., initial and confirmation tests for the same individual), incorrect reporting dates, incorrect county assignments (e.g., when an individual crosses county lines to get tested). 
 
-In past, DOH updated the weekly data on Sundays, but as of December 22, 2020 they switched to Mondays.
+The weekly downloads lag behind the daily feed causing data for the last few weeks to be incomplete. I attempt to correct this undercount through a linear extrapolation function (described [above]{#techdetails}).
 
-The weekly downloads lag behind the daily feed causing data for the last few weeks to be incomplete. I attempt to correct this undercount through a linear extrapolation function (using R's `lm`). I have tweaked the extrapolation repeatedly, even turning it off for a few weeks. The current version using a linear model that combines date and recentness effects. 
-
-The current data release (version 21-01-31) has additional problems. It is completely missing the final two weeks: it should have data through the week of January 24 but stops at January 10. Further, this release has anomalously high counts for early dates, e.g, 10,331 cases statewide for the week of January 12, 2020, which was before the pandemic began! The combination of missing data for January 2021 and excess data for January 2020 makes me wonder whether this may be a "Y2.1K" problem; perhaps data that belongs in 2021 is instead being reported with 2020 dates. I will investigate further and possibly adjust the data in future versions of this document.
+The previous two data release (versions 21-01-24 and 21-01-31) had additional problems: they were completely missing data at the end and had anomalously high counts at the beginning. My theory is that this was a "Y2.1K" problem; data that belonged in 2021 was instead reported with 2020 dates. I implemented a correction based on this theory and the results looked reasonable. Whatever the cause, DOH has fixed the problem in the current release (21-02-07).
 
 The weekly DOH download reports data by age group: 20-year ranges starting with 0-19, with a final group for 80+.
 
 The DOH download includes data on hospital admissions in addition to *cases* and *deaths*, although I don't show this data here.
+
+In past, DOH updated the weekly data on Sundays, but as of December 22, 2020 they switched to Mondays.
 
 ### Johns Hopkins Center for Systems Science and Engineering (JHU) {#jhu}
 
