@@ -12,7 +12,7 @@
 ##
 ## Copyright (C) 2020 Nat Goodman.
 ## 
-## Source files for frecl documents
+## Source files for covid documents
 ##
 ## This software is open source, distributed under the MIT License. See LICENSE
 ## file at https://github.com/natgoodman/NewPro/FDR/LICENSE 
@@ -20,9 +20,9 @@
 #################################################################################
 source('../util/R/source.R');        # source first to get 'cq' and 'source_all' functions
 SOURCE=cq(cvdat,dat,data_cvdat,doc,edit,extra,fit,import,import_doh,init,label,pal,pal_yarrr,
-          meta,plot_cvdat,plotm,series,transform,workflow,xper_transform,
+          meta,plot_cvdat,plotm,series,transform,trend,workflow,
           ## add in doc-specific files. not too many as yet
           doc_updat);
-UTIL=cq(apply,cqcl,dat,date,dev,file,fill,nv,param,plot,rep,set,util,withrows);
+UTIL=cq(apply,cqcl,dat,date,dev,file,fill,nv,param,parent,plot,rep,set,util,withrows);
 source_all(SOURCE,UTIL);
 
