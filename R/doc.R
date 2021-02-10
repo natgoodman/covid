@@ -51,53 +51,52 @@ dodoc=
 ## CAUTION: ... interacts with partial argument matching to cause dofig args to be
 ##   matched by plot-function args. eg, 'd' matches 'doc', 'x' matches 'xtra'
 ##   choose argument names carefully!
-dofig=
-  function(figname,figfun,sect=param(sect),...) {
-    param(pjto);
-    parent.env=parent.frame(n=1);
-    file=filename_fig(figlabel(where='filename'),sect,figname);
-    ## png parameters found by trial and error. look reasonable
-    ## in any case, same as in plon
-    ## TODO: learn the right way to do this!
-    png(filename=file,height=8,width=8,units='in',res=200,pointsize=12);
-    dev=dev.cur();
-    figfun=pryr::subs(figfun);
-    ## figfun can be name or call
-    if (!(is.name(figfun)||is.call(figfun)))
-      stop("'figfun' must be a function or call, not ",class(figfun));
-    if (is.name(figfun)) {
-      figfun=eval(figfun,parent.env);     # must eval to function
-      if (!is.function(figfun)) stop("'figfun' must be function, not ",class(figfun));
-      wrapfun(figfun,...);                # draw the figure!
-    }
-    else eval(figfun,parent.env)          # draw the figure!
-    dev.off(dev);                         # close device
-    if (pjto) system(paste('pjto',file)); # copy to Mac if desired (usally is)
-    figinc();                             # increment figure info for next time
-    figname;
+dofig=function(figname,figfun,sect=param(sect),...) {
+  param(pjto);
+  parent.env=parent.frame(n=1);
+  file=filename_fig(figlabel(where='filename'),sect,figname);
+  ## png parameters found by trial and error. look reasonable
+  ## in any case, same as in plon
+  ## TODO: learn the right way to do this!
+  png(filename=file,height=8,width=8,units='in',res=200,pointsize=12);
+  dev=dev.cur();
+  figfun=pryr::subs(figfun);
+  ## figfun can be name or call
+  if (!(is.name(figfun)||is.call(figfun)))
+    stop("'figfun' must be a function or call, not ",class(figfun));
+  if (is.name(figfun)) {
+    figfun=eval(figfun,parent.env);     # must eval to function
+    if (!is.function(figfun)) stop("'figfun' must be function, not ",class(figfun));
+    wrapfun(figfun,...);                # draw the figure!
   }
-## save one or more tables.
-dotbl=
-  function(...,sect=param(sect),list=character(),obj.ok=F) {
-    dots=match.call(expand.dots=FALSE)$...;  # doesn't evaluate dots
-    parent.env=parent.frame(n=1);            # for empty name
-    if (length(dots) &&
-        !all(vapply(dots,function(x) is.atomic(x)||is.symbol(x)||is.character(x),
-                    NA,USE.NAMES=FALSE))) 
-      stop("... must contain atomic data like names or character strings");
-    tblname=vapply(dots,as.character,"");
-    if (length(tblname)==0L) tblname=character();
-    tblname=c(list,tblname);
-    ## make sure all table names valid
-    bad=which(sapply(tblname,function(tblname) !exists(tblname,envir=parent.env)));
-    if (any(bad)) stop(paste(sep=' ','Invalid table names(s):',paste(collapse=', ',names(bad))))
-    sapply(tblname,function(tblname) {
-      tbl=get(tblname,envir=parent.env);
-      file=filename_tbl(tbllabel(where='filename'),sect,tblname);
-      save_tbl(tbl,file,obj.ok);
-      tblinc()});
-    tblname;
+  else eval(figfun,parent.env)          # draw the figure!
+  dev.off(dev);                         # close device
+  if (pjto) system(paste('pjto',file)); # copy to Mac if desired (usally is)
+  figinc();                             # increment figure info for next time
+  figname;
+}
+##### NOT YET WORKING!!
+## save one table. tblfun can be a function or call
+dotbl=function(tblname,tblfun=NULL,sect=param(sect),...,OBJ.OK=TRUE) {
+  param(pjto);
+  parent.env=parent.frame(n=1);
+  base=basename_tbl(tbllabel(where='filename'),sect,tblname);
+  tblfun=pryr::subs(tblfun);
+  ## tblfun can be name or call
+  if (!(is.name(tblfun)||is.call(tblfun)))
+    stop("'tblfun' must be name or call, not ",class(tblfun));
+  if (is.name(tblfun)) {
+    tblfun=eval(tblfun,parent.env);     # get value
+    if (is.function(tblfun)) wrapfun(tblfun,base=base,...)                # generate table!
+    else save_tbl(tblfun,base)             # 'tblfun' is really tbl. just save it
   }
+  else {
+    tbl=eval(tblfun,parent.env)          # generate table!
+    save_tbl(tbl,base)
+  }
+  tblname;
+}
+
 ## construct figure title
 ## use CAP arg names to reduce conflicts with partial arg matching
 figtitle=function(TEXT=NULL,...,SEP=' ') {
