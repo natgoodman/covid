@@ -26,7 +26,7 @@ See [below](#caveats) for caveats and details. I originally posted updates on Mo
 
 Figures 1a-d show *case* counts per million for several Washington and non-Washington locations. The Washington locations are the entire state, the Seattle area where I live, and the adjacent counties to the north and south (Snohomish and Pierce, resp.). The non-Washington locations are Ann Arbor, Boston, San Diego, and Washington DC.
 
-Figures 1a-b (the top row) shows smoothed data (see details [below](#techdetails)); Figures 1c-d (the bottom row) overlay raw data onto the smoothed. The figures use data from Johns Hopkins Center for Systems Science and Engineering (JHU), described [below](#jhu). When comparing the Washington and non-Washington graphs, please note the difference in y-scale: the highest current Washington rate (about 1400 per million in Pierce) is similar to the rates in Ann Arbor and Washington DC, and somewhat below the rates in Boston and San Diego.
+Figures 1a-b (the top row) show smoothed data (see details [below](#techdetails)); Figures 1c-d (the bottom row) overlay raw data onto the smoothed. The figures use data from Johns Hopkins Center for Systems Science and Engineering (JHU), described [below](#jhu). When comparing the Washington and non-Washington graphs, please note the difference in y-scale: the highest current Washington rate (about 900 per million in Pierce) is slightly below the rates in Ann Arbor and Washington DC (about 1100 per million), and well below the rates in Boston and San Diego (1400-1800 per million).
 
 ```{r out.width="50%",echo=FALSE,fig.show='asis'}
 knitr::include_graphics(file.path(figdir,'figure_001a_cases_wa.png'));
@@ -35,9 +35,9 @@ knitr::include_graphics(file.path(figdir,'figure_001c_cases_wa_ragged.png'));
 knitr::include_graphics(file.path(figdir,'figure_001d_cases_nonwa_ragged.png'));
 ```
 
-The graphs for Washington (Figures 1a,c) suggest that cases have hit their peak and are heading down. Simple trend analysis (described [below](#techdetails)) supports this view except for Pierce (south of Seattle) where the data is too variable to be confident in the trend. The graphs for non-Washington locations (Figures 1b,d) suggest that cases everywhere except Ann Arbor have hit their peaks and are heading down, while Ann Arbor is flattening. Trend analysis concurs.
+The graphs for Washington (Figures 1a,c) suggest that cases have hit their peak and are heading down. Simple trend analysis (described [below](#techdetails)) supports this view for the state as a whole but is borderline for the individual counties; it's clear that counts now are lower than 4 weeks ago, but data for the last 3 weeks has ups and downs. The graphs for non-Washington locations (Figures 1b,d) are falling dramatically. Trend analysis concurs.
 
-Figures 2a-d show *deaths* per million for the same locations. When comparing the Washington and non-Washington graphs, again please note the difference in y-scale: the current Washington rates (15-30 per million) are similar to Ann Arbor (22 per million) and well below the other non-Washington rates (45-62 per million)
+Figures 2a-d show *deaths* per million for the same locations. When comparing the Washington and non-Washington graphs, again please note the difference in y-scale: the current Washington rates (10-20 per million) are similar to Ann Arbor and DC (14-21 per million) and well below the other non-Washington rates (32-54 per million)
 
 ```{r out.width="50%",echo=FALSE,fig.show='asis'}
 knitr::include_graphics(file.path(figdir,'figure_002a_deaths_wa.png'));
@@ -46,9 +46,9 @@ knitr::include_graphics(file.path(figdir,'figure_002c_deaths_wa_ragged.png'));
 knitr::include_graphics(file.path(figdir,'figure_002d_deaths_nonwa_ragged.png'));
 ```
 
-The smoothed Washington data (Figure 2a) shows three waves. The second peak was thankfully lower than the first; the third wave exceeded the first in all areas except Seattle (King County). The graphs are heading down now, but the raw data (Figure 2c) remains quite variable and trend analysis (described [below](#techdetails)) suggests the trends are weak except in Seattle (King County). The smoothed non-Washington data (Figure 2b) shows early peaks in most location, followed by a long trough, followed by a second wave starting in November. Last week the raw data suggested that rates were declining everywhere except Washington DC, although the trend analysis was weak. This week the raw data (Figure 2d) and trend analysis suggest rates are declining in San Diego but are basically flat everywhere else.
+The smoothed Washington data (Figure 2a) shows three waves. The second peak was thankfully lower than the first; the third wave exceeded the first in all areas except Seattle (King County). The graphs are heading down now, but the raw data (Figure 2c) remains quite variable and trend analysis (described [below](#techdetails)) suggests the data is too variable to be confident. The smoothed non-Washington data (Figure 2b) shows early peaks in most location, followed by a long trough, followed by a second wave starting in November. Last week the raw data and trend analysis suggested rates were declining in San Diego but were basically flat everywhere else. This week the raw data (Figure 2d) suggests rates are falling everywhere; trend analysis provides confidence in the San Diego and DC declines but indicates that the data for Ann Arbor and Boston are too variable to call.
 
-The next graphs show the Washington results broken down by age. This data is from Washington State Department of Health (DOH) weekly downloads, described [below](#doh). An important caveat is that the DOH download systematically undercounts events in recent weeks due to manual curation. I extrapolate data for late time points as discussed [below](#techdetails). In previous versions, I showed graphs for each Washington location. Here I only show the statewide graphs; the other locations are similar.
+The next graphs show the Washington results broken down by age. This data is from Washington State Department of Health (DOH) weekly downloads, described [below](#doh). An important caveat is that the DOH download systematically undercounts events in recent weeks due to manual curation. I extrapolate data for late time points as discussed [below](#techdetails). In versions before last week, I showed graphs for each Washington location. Here I only show the statewide graphs; the other locations are similar.
 
 Figure 3 is *cases* split into 20-year age ranges starting with 0-19, with a final group for 80+. Figure 4 is *deaths*; this graph aggregates 0-59 into a single group, since the death rate in these ages is near 0.
 
@@ -57,9 +57,20 @@ knitr::include_graphics(file.path(figdir,'figure_003_cases_state.png'));
 knitr::include_graphics(file.path(figdir,'figure_004_deaths_state.png'));
 ```
 
-Early on, the pandemic struck older age groups most heavily. Over time, *cases* spread into all age groups, even the young. During the second wave, older groups did better in most locations with young adults (20-39 years) becoming the most affected group. The third wave swept into all age groups with young and middle aged adults (20-39 and 40-59 years) leading the surge. As the wave has grown, the oldest people (80+) are again strongly affected. The curves are heading down in all age groups, but caution is in order because the decline we see in the Washington DOH data is more pronounced than in the JHU data shown in Figures 1a,c.
+```{r out.width="50%",echo=FALSE,fig.show='asis',include=FALSE}
+knitr::include_graphics(file.path(figdir,'figure_003a_cases_state.png'));
+knitr::include_graphics(file.path(figdir,'figure_003b_cases_King.png'));
+knitr::include_graphics(file.path(figdir,'figure_003c_cases_Snohomish.png'));
+knitr::include_graphics(file.path(figdir,'figure_003d_cases_Pierce.png'));
+knitr::include_graphics(file.path(figdir,'figure_004a_deaths_state.png'));
+knitr::include_graphics(file.path(figdir,'figure_004b_deaths_King.png'));
+knitr::include_graphics(file.path(figdir,'figure_004c_deaths_Snohomish.png'));
+knitr::include_graphics(file.path(figdir,'figure_004d_deaths_Pierce.png'));
+```
 
-The shocking devastation of the 80+ age group jumps off the page in Figure 4. The death rate in this age group shows three waves. The third wave seems to have reached its peak but again caution is in order: the decline we see here is much greater than in the JHU data shown in Figures 2a,c.
+Early on, the pandemic struck older age groups most heavily. Over time, *cases* spread into all age groups, even the young. During the second wave, older groups did better in most locations with young adults (20-39 years) becoming the most affected group. The third wave swept into all age groups with young and middle aged adults (20-39 and 40-59 years) leading the surge. As the wave has grown, the oldest people (80+) are again strongly affected. Now the curves are heading down in all age groups, but caution is in order because the data remains variable.
+
+The shocking devastation of the 80+ age group jumps off the page in Figure 4. The death rate in this age group shows three waves. The third wave seems to have reached its peak but again caution is in order because of the data variability.
 
 ## Caveats {#caveats}
 

@@ -15,7 +15,8 @@
 #################################################################################
 ## --- Generate Figures and Tables for updat Blog Post ---
 ## no sections.
-doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',transforms=NULL,...) {
+doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',figs.all=FALSE,
+                   transforms=NULL,...) {
   if (is.null(version)||version=='latest') version=max(sapply(cq(jhu,doh),latest_version));
   if (need.objs) {
     if (is.null(transforms))
@@ -45,7 +46,7 @@ doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',transforms=NUL
           title=figtitle("Weekly cases per million in non-Washington locations"),
           legends=list(labels=labels.nonwa)));
   ## recent WA raw data very ragged in versions >= 21-01-24. include figures showing this
-  if (version>='21-01-24') {
+  if (version>='21-01-24'||figs.all) {
     dofig('cases_wa_ragged',
           plot_finraw(
             datasrc='jhu',what='cases',places=places.wa,ages='all',per.capita=TRUE,lwd=2,
@@ -73,7 +74,7 @@ doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',transforms=NUL
           title=figtitle("Weekly deaths per million in non-Washington locations"),
           legend='top',legends=list(labels=labels.nonwa)));
   ## recent WA raw data very ragged in version 21-01-24. include figures showing this
-  if (version>='21-01-24') {
+  if (version>='21-01-24'||figs.all) {
     dofig('deaths_wa_ragged',
           plot_finraw(
             datasrc='jhu',what='deaths',places=places.wa,ages='all',per.capita=TRUE,lwd=2,
@@ -90,7 +91,7 @@ doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',transforms=NUL
   ## version 20-12-20: DOH update not available. hopefully temporary...
   if (version=='20-12-20') return();
   ## starting 21-02-14. I only show statewise by-age results. other place similar
-  if (version<'21-02-14') {
+  if (version<'21-02-14'||figs.all) {
     ## Figures 3a-d cases by age
     figblk_start();
     ages=c('0_19','20_39','40_59','60_79','80_');
@@ -124,6 +125,7 @@ doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',transforms=NUL
             title=figtitle(paste("Weekly cases per million by age in",labels.wa[place]))));
     ## Figure 4 statewide deaths by age
     ages=c('0_59','60_79','80_');
+    col=col[c(1,4,5)];
     dofig(paste(sep='_','deaths',place),
           plot_cvdat(
             doh.deaths,places=place,ages=ages,per.capita=TRUE,lwd=2,col=col,
