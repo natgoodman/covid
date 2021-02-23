@@ -19,9 +19,9 @@
 ##
 #################################################################################
 source('../util/R/source.R');        # source first to get 'cq' and 'source_all' functions
-SOURCE=cq(cvdat,dat,data_cvdat,doc,edit,extra,fit,import,import_doh,init,label,pal,pal_yarrr,
-          meta,plot_cvdat,plotm,series,transform,trend,workflow,
-          ## add in doc-specific files. not too many as yet
+SOURCE=cq(cvdat,dat,data_cvdat,distr_slct,doc,edit,extra,fit,import,import_doh,init,label,
+          pal,pal_yarrr,meta,plot_cvdat,plotm,series,transform,trend,workflow,
+          ## doc-specific files. not too many as yet
           doc_updat);
 UTIL=cq(apply,cqcl,dat,date,dev,file,fill,nv,param,parent,plot,rep,set,util,withrows);
 source_all(SOURCE,UTIL);
