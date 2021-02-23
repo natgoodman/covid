@@ -46,22 +46,26 @@ raw=function(what=cq(cases,admits,deaths),datasrc=param(datasrc),version='latest
 fit=function(obj,...) UseMethod('fit')
 fit.cvdat=function(obj,method='sspline',args=list(),fit.clamp=0,fit.unit=1,...) {
   args=cl(args,...);
-  dates=dates(obj);
+  dates.obj=dates(obj);
   counts=counts(obj);
-  fun=fitfun(x=as.numeric(dates),y=counts,method=method,args=args,clamp=fit.clamp);
-  dates=seq(min(dates),max(dates),by=fit.unit);
+  fun=fitfun(x=as.numeric(dates.obj),y=counts,method=method,args=args,clamp=fit.clamp);
+  dates=seq(min(dates.obj),max(dates.obj),by=fit.unit);
+  ## NG 21-02-23: extend dates to cover entire range. only an issue when fit.unit!=1
+  if (fit.unit!=1) dates=unique(c(dates,max(dates.obj)));
   ## do it this convoluted way, so R won't munge place names or dates. sigh...
   data=cbind(date=dates,as.data.frame(do.call(cbind,lapply(fun,function(f) f(dates)))));
   clc(obj,list(data=data,fit=method,fit.fun=fun,fit.args=args,fit.unit=fit.unit));
 }
 fit.cvdoh=function(obj,method='sspline',args=list(),fit.clamp=0,fit.unit=1,...) {
   args=cl(args,...);
-  dates=dates(obj);
+  dates.obj=dates(obj);
   ages=ages(obj);
-  x=as.numeric(dates);
+  x=as.numeric(dates.obj);
   fun=lapply(ages,function(age) 
     fitfun(x=x,y=counts(obj,age),method=method,args=args,clamp=fit.clamp));
-  dates=seq(min(dates),max(dates),by=fit.unit);
+  dates=seq(min(dates.obj),max(dates.obj),by=fit.unit);
+  ## NG 21-02-23: extend dates to cover entire range. only an issue when fit.unit!=1
+  if (fit.unit!=1) dates=unique(c(dates,max(dates.obj)));
   ## do it this convoluted way, so R won't munge place names or dates. sigh...
   data=lapply(fun,function(fun) 
     cbind(date=dates,as.data.frame(do.call(cbind,lapply(fun,function(f) f(dates))))));
