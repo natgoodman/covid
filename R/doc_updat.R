@@ -91,28 +91,42 @@ doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',figs.all=FALSE
   ## version 20-12-20: DOH update not available. hopefully temporary...
   if (version=='20-12-20') return();
   ## starting 21-02-14. I only show statewise by-age results. other place similar
-  if (version<'21-02-14'||figs.all) {
+  ## starting 21-02-28, I put back the per-county results
+  if (version<'21-02-14'||version>='21-02-28'||figs.all) {
+    fignum.sav=param(fignum);           # to restore after doing a-d figs
     ## Figures 3a-d cases by age
     figblk_start();
     ages=c('0_19','20_39','40_59','60_79','80_');
     ##  col=rev(col_brew(6,'viridis'))[-1];
+    if (version<'21-02-28') ylim=NULL
+    else {
+      data=data_cvdat(doh.cases,places=places.wa,ages=ages,per.capita=TRUE);
+      ylim=c(0,max(data[,-1]));
+    }
     col=col_brew(5,'d3');
-    sapply(cq(state,King,Snohomish,Pierce),function(place) 
+    sapply(places.wa,function(place) 
       dofig(paste(sep='_','cases',place),
             plot_cvdat(
-              doh.cases,places=place,ages=ages,per.capita=TRUE,lwd=2,col=col,
+              doh.cases,places=place,ages=ages,per.capita=TRUE,lwd=2,col=col,ylim=ylim,
               title=figtitle(paste("Weekly cases per million by age in",labels.wa[place])))));
     ## Figures 4a-d deaths
     figblk_start();
     ages=c('0_59','60_79','80_');
+   if (version<'21-02-28') ylim=NULL
+    else {
+      data=data_cvdat(doh.deaths,places=places.wa,ages=ages,per.capita=TRUE);
+      ylim=c(0,max(data[,-1]));
+    }
     col=col[c(1,4,5)];
-    sapply(cq(state,King,Snohomish,Pierce),function(place) 
+    sapply(places.wa,function(place) 
       dofig(paste(sep='_','deaths',place),
             plot_cvdat(
-              doh.deaths,places=place,ages=ages,per.capita=TRUE,lwd=2,col=col,
+              doh.deaths,places=place,ages=ages,per.capita=TRUE,lwd=2,col=col,ylim=ylim,
               title=figtitle(paste("Weekly deaths per million by age in",labels.wa[place])),
               legend='top')));
-  } else {
+    if (figs.all) param(fignum=fignum.sav);
+  }
+  if (version>='21-02-14'||figs.all) {
     figblk_end();
     ##  col=rev(col_brew(6,'viridis'))[-1];
     col=col_brew(5,'d3');
@@ -132,7 +146,7 @@ doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',figs.all=FALSE
             title=figtitle(paste("Weekly deaths per million by age in",labels.wa[place]))));
   }
   ## Figures 5a-b compare DOH, JHU.
-  ## Note: not used in versions after Dec 13. Will probably come back...
+  ## Note: not used in versions after Dec 13. might come back...
   figblk_start();
   if (version<='20-12-06') {
     dofig('cases_dohjhu',
@@ -165,33 +179,24 @@ doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',figs.all=FALSE
     dofig('deaths_dohjhu',plot_dohjhu('deaths'));
   }
   ## Tables 1-2 trend analysis. Tables 3-4 raw data counts. not used in document.
+  ## TODO: rewrite using dotbl when implemented!
+  ## NOTE: save_tbl in this file not dat.R where you might expect it
   if (version>='21-02-07') {
     if (param(verbose)) print(paste('+++ making tables'));
-    trend.cases=trend(jhu.cases.raw,places=c(places.wa,places.nonwa));
-    trend.deaths=trend(jhu.deaths.raw,places=c(places.wa,places.nonwa));
+    widths=if(version<'21-02-28') 4 else c(4,6,8);
+    trend.cases=trend(jhu.cases.raw,places=c(places.wa,places.nonwa),widths=widths);
+    trend.deaths=trend(jhu.deaths.raw,places=c(places.wa,places.nonwa),widths=widths);
     counts.cases=data_cvdat(jhu.cases.raw,places=c(places.wa,places.nonwa),per.capita=TRUE);
     counts.deaths=data_cvdat(jhu.deaths.raw,places=c(places.wa,places.nonwa),per.capita=TRUE);
-    ## TODO: rewrite using dotbl when implemented!
-    ## dotbl('trend_cases',emit_trend,data=trend.cases,title='Trend analysis for cases');
-    ## dotbl('trend_deaths',emit_trend,data=trend.deaths,title='Trend analysis for deaths');
-    param(tbldir,pjto);
-    ## Tables 1-2 trend analysis
-    file=file.path(tbldir,'table_001_trend_cases.txt');
-    write.table(trend.cases,file=file,sep='\t',quote=F,row.names=F);
-    if (pjto) system(paste('pjto',file));           # copy to Mac if desired (usally is)
-    file=file.path(tbldir,'table_002_trend_deaths.txt');
-    write.table(trend.deaths,file=file,sep='\t',quote=F,row.names=F);
-    if (pjto) system(paste('pjto',file));           # copy to Mac if desired (usally is)
-    ## Tables 3-4 raw data counts
-    file=file.path(tbldir,'table_003_counts_cases.txt');
-    write.table(counts.cases,file=file,sep='\t',quote=F,row.names=F);
-    if (pjto) system(paste('pjto',file));           # copy to Mac if desired (usally is)
-    file=file.path(tbldir,'table_003_counts_deaths.txt');
-    write.table(counts.deaths,file=file,sep='\t',quote=F,row.names=F);
-    if (pjto) system(paste('pjto',file));           # copy to Mac if desired (usally is)
+    save_tbl(trend.cases,1,'trend_cases');
+    save_tbl(trend.deaths,2,'trend_deaths');
+    save_tbl(counts.cases,3,'counts_cases');
+    save_tbl(counts.deaths,4,'counts_deaths');
+    assign_global(trend.cases,trend.deaths,counts.cases,counts.deaths);
   }
   invisible();
 }
+
 ## hack to plot final (processed) and raw data together
 ## used for jhu in Figures 1,2 version 21-01-24
 ## TODO: add this to plot_cvdat!
@@ -329,4 +334,16 @@ fit_updat_objs=function(obj,what) {
   ## use 1 day for cases, 10.5 days (1.5 weeks) for deaths
   fit.unit=if(what=='cases') 1 else 10.5;
   fit(obj,fit.unit=fit.unit);
+}
+
+  ## save table as txt file
+  ## TODO: rewrite using dotbl when implemented!
+save_tbl=function(tbl,tblnum,tblname,sfx=NULL) {
+  tblnum=sprintf('%03i',tblnum);
+  base=paste(sep='_','table',paste(collapse='',c(tblnum,sfx)),tblname);
+  file=filename(param(tbldir),base,suffix='txt')
+  write.table(tbl,file=file,sep='\t',quote=FALSE,row.names=FALSE);
+  if (param(pjto)) system(paste('pjto',file));           # copy to Mac if desired (usally is)
+  file;
+
 }
