@@ -23,7 +23,10 @@ doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',figs.all=FALSE
       transforms=if (version<'20-12-20') list(jhu=roll,doh=c(roll,extra))
                  else if (version=='20-12-20') list(jhu=roll)
                  else if (version<'21-02-07') list(jhu=fit_updat_objs,doh=c(extra,fit_updat_objs));
-    make_updat_objs(version=version,transforms=transforms);
+    ## version 20-12-20: DOH update not available. hopefully temporary...
+    ## version 21-03-07: DOH age data messed up. hopefully temporary...
+    datasrc=if(version%notin%c('20-12-20','21-03-07')) cq(doh,jhu) else 'jhu';
+    make_updat_objs(datasrc=datasrc,version=version,transforms=transforms);
   }
   if (need.init) init_doc(doc='updat',version=version,...);
   places.wa=cq(state,King,Snohomish,Pierce);
@@ -32,6 +35,22 @@ doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',figs.all=FALSE
                      places.wa);
   places.nonwa=cq('Ann Arbor',Boston,'San Diego',DC);
   labels.nonwa=setNames(c('Ann Arbor','Boston','San Diego','Washington DC'),places.nonwa);
+  if (version>='21-02-07') {
+    ## Tables 1-2 trend analysis. Tables 3-4 raw data counts. not used in document.
+    ## TODO: rewrite using dotbl when implemented!
+    ## NOTE: save_tbl in this file not dat.R where you might expect it
+    if (param(verbose)) print(paste('+++ making tables'));
+    widths=if(version<'21-02-28') 4 else c(4,6,8);
+    trend.cases=trend(jhu.cases.raw,places=c(places.wa,places.nonwa),widths=widths);
+    trend.deaths=trend(jhu.deaths.raw,places=c(places.wa,places.nonwa),widths=widths);
+    counts.cases=data_cvdat(jhu.cases.raw,places=c(places.wa,places.nonwa),per.capita=TRUE);
+    counts.deaths=data_cvdat(jhu.deaths.raw,places=c(places.wa,places.nonwa),per.capita=TRUE);
+    save_tbl(trend.cases,1,'trend_cases');
+    save_tbl(trend.deaths,2,'trend_deaths');
+    save_tbl(counts.cases,3,'counts_cases');
+    save_tbl(counts.deaths,4,'counts_deaths');
+    assign_global(trend.cases,trend.deaths,counts.cases,counts.deaths);
+  }
   if (param(verbose)) print(paste('+++ making figures'));
   ## Figures 1a-b cases
   figblk_start();
@@ -89,9 +108,11 @@ doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',figs.all=FALSE
             legends=list(labels=labels.nonwa)));
   }
   ## version 20-12-20: DOH update not available. hopefully temporary...
-  if (version=='20-12-20') return();
+  ## version 21-03-07: DOH age data messed up. hopefully temporary...
+  if (version%in%c('20-12-20','21-03-07')) return();
   ## starting 21-02-14. I only show statewise by-age results. other place similar
   ## starting 21-02-28, I put back the per-county results
+  ## version 21-03-07: DOH age data messed up. skip Figures 3,4
   if (version<'21-02-14'||version>='21-02-28'||figs.all) {
     fignum.sav=param(fignum);           # to restore after doing a-d figs
     ## Figures 3a-d cases by age
@@ -112,7 +133,7 @@ doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',figs.all=FALSE
     ## Figures 4a-d deaths
     figblk_start();
     ages=c('0_59','60_79','80_');
-   if (version<'21-02-28') ylim=NULL
+    if (version<'21-02-28') ylim=NULL
     else {
       data=data_cvdat(doh.deaths,places=places.wa,ages=ages,per.capita=TRUE);
       ylim=c(0,max(data[,-1]));
@@ -147,6 +168,7 @@ doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',figs.all=FALSE
   }
   ## Figures 5a-b compare DOH, JHU.
   ## Note: not used in versions after Dec 13. might come back...
+  if (version>'20-12-13') return();
   figblk_start();
   if (version<='20-12-06') {
     dofig('cases_dohjhu',
@@ -178,23 +200,7 @@ doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',figs.all=FALSE
     dofig('cases_dohjhu',plot_dohjhu('cases'));
     dofig('deaths_dohjhu',plot_dohjhu('deaths'));
   }
-  ## Tables 1-2 trend analysis. Tables 3-4 raw data counts. not used in document.
-  ## TODO: rewrite using dotbl when implemented!
-  ## NOTE: save_tbl in this file not dat.R where you might expect it
-  if (version>='21-02-07') {
-    if (param(verbose)) print(paste('+++ making tables'));
-    widths=if(version<'21-02-28') 4 else c(4,6,8);
-    trend.cases=trend(jhu.cases.raw,places=c(places.wa,places.nonwa),widths=widths);
-    trend.deaths=trend(jhu.deaths.raw,places=c(places.wa,places.nonwa),widths=widths);
-    counts.cases=data_cvdat(jhu.cases.raw,places=c(places.wa,places.nonwa),per.capita=TRUE);
-    counts.deaths=data_cvdat(jhu.deaths.raw,places=c(places.wa,places.nonwa),per.capita=TRUE);
-    save_tbl(trend.cases,1,'trend_cases');
-    save_tbl(trend.deaths,2,'trend_deaths');
-    save_tbl(counts.cases,3,'counts_cases');
-    save_tbl(counts.deaths,4,'counts_deaths');
-    assign_global(trend.cases,trend.deaths,counts.cases,counts.deaths);
-  }
-  invisible();
+  return();
 }
 
 ## hack to plot final (processed) and raw data together
