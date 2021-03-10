@@ -41,10 +41,13 @@ import_doh=function(file) {
     cols.age=grep('^Age',colnames(data));
     cols.data=c(1,2,col.all,cols.age,col.noage);
     ## for sanity, make sure 'all' matches individual groups
-    bad=which(data[,col.all]!=rowSums(data[,c(cols.age,col.noage)]))
-    if (length(bad)>0)
-      stop(paste('doh version',version,"'all' does not equal sum of 'ages' in these rows:",
-                 paste(collapse=', ',bad)));
+    ## in version 21-03-07, age data messed up. row sums don't match. sigh...
+    if (version!='21-03-07') {
+      bad=which(data[,col.all]!=rowSums(data[,c(cols.age,col.noage)]))
+      if (length(bad)>0)
+        stop(paste('doh version',version,"'all' does not equal sum of 'ages' in these rows:",
+                   paste(collapse=', ',bad)));
+    }
     ## convert age colnames to my internal age labels
     names.age=colnames(data)[cols.age];
     names.age=sub('\\+','_',sub('-','_',sub('Age ','',names.age)));
