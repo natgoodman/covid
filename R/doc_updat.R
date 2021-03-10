@@ -5,7 +5,7 @@
 ##          from misig/doc_confi.R created 19-07-16
 ##          from misig/confi.R created 19-07-04
 ##
-## Copyright (C) 2019 Nat Goodman.
+## Copyright (C) 2019-2021 Nat Goodman.
 ## 
 ## Generate figures and tables for updat (weekly data update) document
 ##
