@@ -24,7 +24,7 @@ urlcolor: blue
 
 Figures 1a-d show *case* counts per million for several Washington and non-Washington locations. The Washington locations are the entire state, the Seattle area where I live, and the adjacent counties to the north and south (Snohomish and Pierce, resp.). The non-Washington locations are Ann Arbor, Boston, San Diego, and Washington DC.
 
-Figures 1a-b (the top row) show smoothed data (see details [below](#techdetails)); Figures 1c-d (the bottom row) overlay raw data onto the smoothed. The figures use data from Johns Hopkins Center for Systems Science and Engineering (JHU), described [below](#jhu). When comparing the Washington and non-Washington graphs, please note the difference in y-scale: the highest current Washington rate (just under 900 per million in Pierce) is above the Ann Arbor rate (about 700 per million) and below the rates in the other non-Washington locations (about 900-1700 per million).
+Figures 1a-b (the top row) show smoothed data (see details [below](#techdetails)); Figures 1c-d (the bottom row) overlay raw data onto the smoothed. The figures use data from Johns Hopkins Center for Systems Science and Engineering (JHU), described [below](#jhu). When comparing the Washington and non-Washington graphs, please note the difference in y-scale: the highest current Washington rate (just over 900 per million in Pierce) is above the Ann Arbor and San Diego rates (about 750-850 per million) and below the rates in Boston and Washington DC (about 1550-1650 per million).
 
 ```{r out.width="50%",echo=FALSE,fig.show='asis'}
 knitr::include_graphics(file.path(figdir,'figure_001a_cases_wa.png'));
@@ -33,9 +33,9 @@ knitr::include_graphics(file.path(figdir,'figure_001c_cases_wa_ragged.png'));
 knitr::include_graphics(file.path(figdir,'figure_001d_cases_nonwa_ragged.png'));
 ```
 
-The smoothed graphs for Washington (Figure 1a) show that rates continue to decline; the rates are far below their recent peaks and have finally dropped below the Summer 2020 peaks except in Pierce. The raw data ((Figure 1c) and simple trend analysis (described [below](#techdetails)) indicate that the the decline is real. The graphs for non-Washington locations (Figures 1b,d) are also falling dramatically. Trend analysis concurs.
+The smoothed graphs for Washington (Figure 1a) show that rates continue to decline with a hint of flattening in Seattle (King County); the rates are far below their recent peaks and have finally dropped below the Summer 2020 peaks except in Pierce. The raw data (Figure 1c) and simple trend analysis (described [below](#techdetails)) indicate that the long-run decline is real, but the most recent data may be ticking back up. The rates for non-Washington locations (Figures 1b,d) have also fallen dramatically from their peaks but with recent upward movement in Washington DC. Trend analysis concurs.
 
-Figures 2a-d show *deaths* per million for the same locations. When comparing the Washington and non-Washington graphs, again please note the difference in y-scale: the current Washington rates are 2-13 per million; the non-Washington rates are 5-34 per million.
+Figures 2a-d show *deaths* per million for the same locations. When comparing the Washington and non-Washington graphs, again please note the difference in y-scale: the current Washington rates are 6-23 per million; the non-Washington rates are 0-36 per million.
 
 ```{r out.width="50%",echo=FALSE,fig.show='asis'}
 knitr::include_graphics(file.path(figdir,'figure_002a_deaths_wa.png'));
@@ -44,11 +44,11 @@ knitr::include_graphics(file.path(figdir,'figure_002c_deaths_wa_ragged.png'));
 knitr::include_graphics(file.path(figdir,'figure_002d_deaths_nonwa_ragged.png'));
 ```
 
-The smoothed Washington data (Figure 2a) shows three waves. The second peak was thankfully lower than the first; the third wave exceeded the first in all areas except Seattle (King County). The graphs are well down from their recent peaks and are finally down to the level of the second peak in most locations. The raw data (Figure 2c) remains quite variable; trend analysis (described [below](#techdetails)) indicates that looking back 8 weeks, the decline is clear.
+The smoothed Washington data (Figure 2a) shows three waves. The second peak was thankfully lower than the first; the third wave exceeded the first in all areas except Seattle (King County). The graphs are well down from their recent peaks and are finally down to the level of the second peak in most locations. The raw data (Figure 2c) remains quite variable; trend analysis (described [below](#techdetails)) indicates that looking back 8 weeks, the decline is clear except in Pierce where the trend is almost flat.
 
-The smoothed non-Washington data (Figure 2b) shows early peaks in most locations, followed by a long trough, followed by a second wave starting in November. The graphs are well down from their recent peaks and seem to be continuing down. The raw data, though variable, broadly supports this view;  trend analysis (described [below](#techdetails)) indicates that looking back 8 weeks, the decline is clear.
+The smoothed non-Washington data (Figure 2b) shows early peaks in most locations, followed by a long trough, followed by a second wave starting in November. The graphs are well down from their recent peaks and seem to be continuing down. The raw data, though variable, broadly supports this view;  trend analysis (described [below](#techdetails)) indicates that looking back 8 weeks, the decline is clear is all locations except Ann Arbor; for Ann Arbor the rates for the past 3 weeks are quite low (0-5), but the variability looking back 4-8 weeks overwhelms the trend.
 
-In most previous versions of the document, I presented Washington results broken down by age using data from Washington State Department of Health (DOH) weekly downloads, described [below](#doh). I omit this here because the current DOH download has incorrect age data (most entries are zero).
+In most previous versions of the document, I presented Washington results broken down by age using data from Washington State Department of Health (DOH) weekly downloads, described [below](#doh). I'm unable to use this data at present, because DOH changed its age groups; this change breaks my code in ways big and small and it may be several weeks before I'm able to incorporate the age data again.
 
 ## Caveats {#caveats}
 
@@ -82,7 +82,7 @@ DOH provides three COVID data streams.
 
 3. Weekly data downloads (available from the [Data Dashboard](https://www.doh.wa.gov/Emergencies/COVID19/DataDashboard) web page) of data curated by DOH staff. The curation corrects errors in the daily feed, such as, duplicate reports, multiple test results for the same incident (e.g., initial and confirmation tests for the same individual), incorrect reporting dates, incorrect county assignments (e.g., when an individual crosses county lines to get tested). 
 
-Usually, the weekly DOH download reports data by age group: 20-year ranges starting with 0-19, with a final group for 80+. The current download has incorrect age data (most entries are zero) and I omit these results from this version of the document.
+The weekly DOH download reports data by age group. In past, the groups were 20-year ranges starting with 0-19, with a final group for 80+. As of March 14, 2021, they changed the groups to an initial 20-year range (0-19), then several 15 year ranges (20-34, 35-49, 50-64, 65-79), with a final group for 80+. My code cannot yet handle this change.
 
 ### Johns Hopkins Center for Systems Science and Engineering (JHU) {#jhu}
 
@@ -96,7 +96,7 @@ I use two other COVID data sources in my project although not in this document.
 
 - [New York Times COVID Repository](https://github.com/nytimes/covid-19-data). The file I download is [us-counties.csv](https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv). Like Washington DOH and JHU, NYT has county-level data. Unlike these, it includes "probable" as well as "confirmed" cases and deaths; I see no way to separate the two categories.
 
-- [COVID Tracking Project](https://covidtracking.com). This project reports a wide range of interesting statistics (negative test counts, for example), but I only use the *case* and *death* data. It does not provide county-level data so is not useful for the non-Washington locations I show. The file I download is https://covidtracking.com/data/download/washington-history.csv. I use this only as a check on the state-level Washington data from the other sources.
+- [COVID Tracking Project](https://covidtracking.com). This project reports a wide range of interesting statistics (negative test counts, for example), but I only use the *case* and *death* data. It does not provide county-level data so is not useful for the non-Washington locations I show. The file I download is https://covidtracking.com/data/download/washington-history.csv. I use this only as a check on the state-level Washington data from the other sources. As of March 7, 2021, the project ended its data collection efforts.
 
 The population data used for the per capita calculations is from [Census Reporter](https://censusreporter.org). The file connecting Census Reporter *geoids* to counties is the [Census Bureau Gazetteer](https://www.census.gov/geographies/reference-files/time-series/geo/gazetteer-files.html).
 
