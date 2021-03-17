@@ -25,7 +25,8 @@ doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',figs.all=FALSE
                  else if (version<'21-02-07') list(jhu=fit_updat_objs,doh=c(extra,fit_updat_objs));
     ## version 20-12-20: DOH update not available. hopefully temporary...
     ## version 21-03-07: DOH age data messed up. hopefully temporary...
-    datasrc=if(version%notin%c('20-12-20','21-03-07')) cq(doh,jhu) else 'jhu';
+    ## version 21-03-14: DOH changed age ranges! sigh... code can't handle it yet
+    datasrc=if(version%notin%c('20-12-20','21-03-07','21-03-14')) cq(doh,jhu) else 'jhu';
     make_updat_objs(datasrc=datasrc,version=version,transforms=transforms);
   }
   if (need.init) init_doc(doc='updat',version=version,...);
@@ -109,7 +110,8 @@ doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',figs.all=FALSE
   }
   ## version 20-12-20: DOH update not available. hopefully temporary...
   ## version 21-03-07: DOH age data messed up. hopefully temporary...
-  if (version%in%c('20-12-20','21-03-07')) return();
+  ## version 21-03-14: DOH changed age ranges! sigh... code can't handle it yet
+  if (version%in%c('20-12-20','21-03-07','21-03-14')) return();
   ## starting 21-02-14. I only show statewise by-age results. other place similar
   ## starting 21-02-28, I put back the per-county results
   ## version 21-03-07: DOH age data messed up. skip Figures 3,4

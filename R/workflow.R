@@ -21,6 +21,8 @@ do_dlim=function(datasrc=cq(doh,jhu,nyt,trk),version=NULL,
                  do.download=TRUE,do.import=TRUE,do.pjto=TRUE) {
   datasrc=match.arg(datasrc,several.ok=TRUE);
   if (is.null(version)) version=dl_version(force.sunday=force.sunday,monday.only=monday.only);
+  ## trk ended 21-03-07. see covidtracking.com
+  if (version>'21-03-07') datasrc=datasrc%-%'trk'; 
   if (do.pjto) {
     ok=system('pjtest')==0;
     if (!ok) stop('Reverse tunnel not running; stopping before download');
@@ -37,6 +39,8 @@ do_download=function(datasrc=cq(doh,jhu,nyt,trk),version=NULL,
                      force.sunday=TRUE,monday.only=!force.sunday,cmp.prev=force.sunday,
                      url=param(download.url)) {
   if (is.null(version)) version=dl_version(force.sunday=force.sunday,monday.only=monday.only);
+  ## trk ended 21-03-07. see covidtracking.com
+  if (version>'21-03-07') datasrc=datasrc%-%'trk'; 
   if (param(verbose)) print(paste('+++ running download: version',version));
   filename=dl_filenames(datasrc,version);
   sapply(datasrc,function(datasrc) {
@@ -53,6 +57,8 @@ do_download=function(datasrc=cq(doh,jhu,nyt,trk),version=NULL,
 }
 do_import=function(datasrc=cq(doh,jhu,nyt,trk),version=NULL) {
   if (is.null(version)||version=='latest') version=latest_version(datasrc[1],dir=indir);
+  ## trk ended 21-03-07. see covidtracking.com
+  if (version>'21-03-07') datasrc=datasrc%-%'trk'; 
   if (param(verbose)) print(paste('+++ running import: version',version));
   sapply(datasrc,function(datasrc) {
     if (param(verbose)) print(paste('+++ importing',datasrc));
@@ -82,6 +88,8 @@ cmp_files=function(file1,file2) {
 }
 pjto=function(datasrc=cq(doh,jhu,nyt,trk),version=NULL) {
   if (is.null(version)||version=='latest') version=latest_version(datasrc[1],dir=indir);
+  ## trk ended 21-03-07. see covidtracking.com
+  if (version>'21-03-07') datasrc=datasrc%-%'trk'; 
   sapply(datasrc,function(datasrc) {
     dir=indir(datasrc);
     cmd=paste('pjto',
@@ -126,6 +134,9 @@ dl_filenames=function(datasrc,version) {
 ## NG 20-12-14: fixed longstanding bug. have to do 'extra' before 'edit' else objects
 ##   will be incompatible. bug in 'extra' caused error to be missed and results of edited
 ##   places and ages to be 0!
+## NG 21-03-14: I don't use this any more
+##   doh 'extra' broken because they changed age groups
+##   trk finished as of 21-03-07
 do_objs=function(what=cq(cases,admits,deaths),datasrc=cq(doh,jhu,nyt,trk),version='latest') {
   cases=expand.grid(what=what,datasrc=datasrc,stringsAsFactors=FALSE);
   ## only 'doh' has 'admits'. prune others
