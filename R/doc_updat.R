@@ -26,7 +26,8 @@ doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',figs.all=FALSE
     ## version 20-12-20: DOH update not available. hopefully temporary...
     ## version 21-03-07: DOH age data messed up. hopefully temporary...
     ## version 21-03-14: DOH changed age ranges! sigh... code can't handle it yet
-    datasrc=if(version%notin%c('20-12-20','21-03-07','21-03-14')) cq(doh,jhu) else 'jhu';
+    ## datasrc=if(version%notin%c('20-12-20','21-03-07','21-03-14')) cq(doh,jhu) else 'jhu';
+    datasrc=if((version=='20-12-20')||(version>='21-03-07')) 'jhu' else cq(doh,jhu);
     make_updat_objs(datasrc=datasrc,version=version,transforms=transforms);
   }
   if (need.init) init_doc(doc='updat',version=version,...);
@@ -111,7 +112,8 @@ doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',figs.all=FALSE
   ## version 20-12-20: DOH update not available. hopefully temporary...
   ## version 21-03-07: DOH age data messed up. hopefully temporary...
   ## version 21-03-14: DOH changed age ranges! sigh... code can't handle it yet
-  if (version%in%c('20-12-20','21-03-07','21-03-14')) return();
+  ## if (version%in%c('20-12-20','21-03-07','21-03-14')) return();
+  if ('doh'%notin%datasrc) return();
   ## starting 21-02-14. I only show statewise by-age results. other place similar
   ## starting 21-02-28, I put back the per-county results
   ## version 21-03-07: DOH age data messed up. skip Figures 3,4
@@ -344,8 +346,8 @@ fit_updat_objs=function(obj,what) {
   fit(obj,fit.unit=fit.unit);
 }
 
-  ## save table as txt file
-  ## TODO: rewrite using dotbl when implemented!
+## save table as txt file
+## TODO: rewrite using dotbl when implemented!
 save_tbl=function(tbl,tblnum,tblname,sfx=NULL) {
   tblnum=sprintf('%03i',tblnum);
   base=paste(sep='_','table',paste(collapse='',c(tblnum,sfx)),tblname);
@@ -353,5 +355,59 @@ save_tbl=function(tbl,tblnum,tblname,sfx=NULL) {
   write.table(tbl,file=file,sep='\t',quote=FALSE,row.names=FALSE);
   if (param(pjto)) system(paste('pjto',file));           # copy to Mac if desired (usally is)
   file;
-
 }
+
+## show trend results in convenient format. for interactive use
+show_trend=
+  function(cases=parent(trend.cases),deaths=parent(trend.deaths),pval.cutoff=0.15,do.print=TRUE) {
+    if (!is.na(pval.cutoff)) {
+      cases=cases[cases$pval<=pval.cutoff,];
+      deaths=deaths[deaths$pval<=pval.cutoff,];
+    }
+    cases$pval=round(cases$pval,digits=3);
+    deaths$pval=round(deaths$pval,digits=3);
+    cases.bywidth=split(cases,cases$width);
+    deaths.bywidth=split(deaths,deaths$width);
+    assign_global(cases.bywidth,deaths.bywidth);
+    if (do.print) {
+      print('cases');
+      print(cases.bywidth);
+      print('----------');
+      print('deaths');
+      print(deaths.bywidth);
+    }
+    invisible(list(cases=cases.bywidth,deaths=deaths.bywidth));
+  }
+## show counts results in convenient format. for interactive use
+show_counts=
+  function(cases=parent(counts.cases),deaths=parent(counts.deaths),
+           places.wa=parent(places.wa),places.nonwa=parent(places.nonwa),
+           peak.cases.wa=c('2020-06-21','2020-08-16'), peak.deaths.wa=c('2020-06-21','2020-09-06'),
+           do.print=TRUE) {
+    cases.wa=cases[,c('date',places.wa)];
+    deaths.wa=deaths[,c('date',places.wa)];
+    cases.nonwa=cases[,c('date',places.nonwa)];
+    deaths.nonwa=deaths[,c('date',places.nonwa)];
+    assign_global(cases.wa,deaths.wa,cases.nonwa,deaths.nonwa);
+    if (do.print) {
+      print('cases.wa summer peak');
+      print(subset(cases.wa,subset=btwn_cc(date,peak.cases.wa[1],peak.cases.wa[2])));
+      print('cases.wa now');
+      print(tail(cases.wa));
+      print('----------');
+      print('deaths.wa summer peak');
+      print(subset(deaths.wa,subset=btwn_cc(date,peak.deaths.wa[1],peak.deaths.wa[2])));
+      print('deaths.wa now');
+      print(tail(deaths.wa));
+      print('----------');
+      print('cases.nonwa now');
+      print(tail(cases.nonwa));
+      print('deaths.nonwa now');
+      print(tail(deaths.nonwa));
+    }
+    invisible(list(cases.wa=cases.wa,deaths.wa=deaths.wa,
+                   cases.nonwa=cases.nonwa,deaths.nonwa=deaths.nonwa));
+  }
+
+
+  
