@@ -246,13 +246,14 @@ extra.cvdat=function(obj,fun=NULL,objs=NULL,versions=NULL,incompatible.ok=param(
 extra.cvdoh=
   function(obj,fun=NULL,objs=NULL,versions=NULL,method='lm',args=list(fmla=param(extra.fmla)),
            err.type=param(extra.errtype),wmax=param(extra.wmax),mulmax=param(extra.mulmax),
-           incompatible.ok=param(incompatible.ok),...) {
+           mdl.ages=NULL,incompatible.ok=param(incompatible.ok),...) {
     args=cl(args,...);
     err.type=match.arg(err.type);
     err.type=switch(err.type,multiplicative='*',additive='+',err.type);
     places=places(obj);
     ages=ages(obj);
     vdate=vdate(obj);
+    if (is.null(mdl.ages)) mdl.ages=if(vdate<'2021-03-07') ages else 'all';
     if (is.null(fun)) {
       if (is.null(objs)) {
         ## read objects
@@ -264,10 +265,10 @@ extra.cvdoh=
         objs=lapply(versions,function(version) raw(what,'doh',version));
       }
       ## check whether edited objects are compatible
-      cmp_pops(c(list(obj),objs),places=places,ages=ages,incompatible.ok=incompatible.ok);
+      cmp_pops(c(list(obj),objs),places=places,ages=mdl.ages,incompatible.ok=incompatible.ok);
       ## compute models
-      fun=extrafun(obj,objs,places,ages,method,args,err.type,wmax,mulmax);
-  }
+      fun=extrafun(obj,objs,places,ages=mdl.ages,method,args,err.type,wmax,mulmax);
+    }
     data=extraadj(obj,fun,places,ages,err.type,wmax,mulmax)
     clc(obj,list(data=data,extra=method,extra.fun=fun,extra.args=args,extra.errtype=err.type));
   }

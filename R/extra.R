@@ -98,7 +98,7 @@ extraadj=function(obj,fun,places,ages,err.type,wmax,mulmax) {
     data2=data[data$date>=d.first,];
     dates2=data2$date;
     counts2=do.call(cbind,sapply(places,simplify=FALSE,function(place) {
-      fun=fun[[age]][[place]];
+      fun=if(age%in%names(fun)) fun[[age]][[place]] else fun[['all']][[place]];
       pred=fun(d.pred,w.pred);
       extraadj1(pred,data2[,place],err.type,mulmax);
     }));
