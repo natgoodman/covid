@@ -61,10 +61,9 @@ init=function(
          cq(Omaha,NE,Douglas),
          cq(Austin,TX,Travis),
          cq(Fairbury,IL,Livingston)),
-  ages.all=c("all","0_19","20_39","40_59","60_79","80_"),
   ## outdir=c(datadir,figdir,tbldir,tmpdir),  # top level output dirs
   ## cached data
-  pop=NULL,                      # pop by place, age. set by load_pop, read_pop
+  pop=NULL,                      # base pop by place, age. set by load_pop, read_pop
   geo=NULL,                      # geoids and place names. set by load_geo, read_geo
   stateid=NULL,                  # map state names to IDs. set by load_stateid, read_stateid
   pal.info=NULL,                 # color palette info. set in pal/init_pal
@@ -78,6 +77,10 @@ init=function(
   extra.errtype=cq('*','+',multiplicative,additive),  # error type for models
   extra.wmax=6,                  # max weeks for computing models
   extra.mulmax=4,                # max multiplicative error. larger values expand counts too much
+  extra.ages=NULL,               # ages used to compute models
+                                 #   default: ages(obj) if version<=21-03-07 else 'all'
+  extra.places='state',          # places used to compute models. default is fast and close enough
+                                 #   places(obj) also sensible choice
   incompatible.ok=FALSE,         # require edited objects to be compatible
 
   age.label=list(),              # labels for custom ages. each entry is vector of labels for fmts
