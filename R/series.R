@@ -51,17 +51,15 @@ ct_attrs=function(series,attrs=cq(unit,cumulative,what,datasrc,version,id,fit,ro
   mv.attrs=attrs[count>1];
   list(xattr=xattr,sv.attrs=sv.attrs,mv.attrs=mv.attrs);
 }
-series_percap=function(series,pop0=param(pop)) {
+series_percap=function(series) {
   xattr=series$xattr;
   objs=series$objs;
-  if (is.null(pop0)) pop0=load_pop();
   ## if ('age' %notin% colnames(xattr)) xattr$age='all';
   if ('age' %notin% colnames(xattr)) age='all';
   data=series$series;
   series=withrows(xattr,row,{
     data=data[[series]];
-    pop=objs[[obj]]$pop;
-    if (is.null(pop)) pop=pop0;
+    pop=pop(objs[[obj]]);
     pop=pop[age,place];
     if (is.null(pop)) pop=NA;
     data.frame(date=data$date,y=round(1e6*data$y/pop));
