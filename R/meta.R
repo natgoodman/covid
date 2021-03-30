@@ -33,20 +33,20 @@ download_place=function(geoid,place,placedir=param(placedir)) {
   if (param(verbose)) print(wget);
   system(wget);
 } 
-import_pop=function(places=NULL,base=param(pop.file),placedir=param(placedir),
-                    metafile=param(acsmeta),ages.all=param(ages.all)) {
-  places.all=sub('.json','',list.files(placedir,pattern='.json',full.names=FALSE));
-  if (is.null(places)) places=places.all
-  else {
-    bad=places%notin%places.all;
-    if (any(bad)) stop('Invalid places(s): ',paste(collapse=', ',places[bad]));
+import_pop=
+  function(places=NULL,base=param(pop.file),placedir=param(placedir),metafile=param(acsmeta)) {
+   places.all=sub('.json','',list.files(placedir,pattern='.json',full.names=FALSE));
+    if (is.null(places)) places=places.all
+    else {
+      bad=places%notin%places.all;
+      if (any(bad)) stop('Invalid places(s): ',paste(collapse=', ',places[bad]));
+    }
+   metanames=meta_names(metafile);
+   pop=do.call(cbind,lapply(places,function(place) import_pop1(placedir,place,metanames)));
+   colnames(pop)=places;
+   save_pop(pop,base=base);
   }
-  metanames=meta_names(metafile);
-  pop=do.call(cbind,lapply(places,function(place) import_pop1(placedir,place,metanames,ages.all)));
-  colnames(pop)=places;
-  save_pop(pop,base=base);
-}
-import_pop1=function(placedir,place,metanames=NULL,ages.all=param(ages.all)) {
+import_pop1=function(placedir,place,metanames=NULL) {
   if (is.null(metanames)) metanames=meta_names(param(acsmeta));
   file=filename(placedir,place,suffix='.json');
   if (param(verbose)) print(paste('>>> importing pop',file));
@@ -68,16 +68,32 @@ import_pop1=function(placedir,place,metanames=NULL,ages.all=param(ages.all)) {
     stop("Bad news: female total != sum of female values");
   if (data.all!=sum(data.both))
     stop("Bad news: data.all != sum of combined male + female values");
-  ## combine columns into age groups of interest
-  names=names(data.both);
-  ages=strsplit(names,'_');
-  ages=apply(do.call(rbind,ages),2,as.integer);
-  cats=cut(ages[,1],c(0,20,40,60,80,100),right=F,labels=ages.all[-1]);
-  groups=split(names,cats);
-  pop=c(data.all,sapply(groups,function(j) sum(data.both[j])));
-  pop=data.frame(pop);
+  pop=data.frame(pop=c(data.all,data.both));
   pop;
 }
+age_starts=function(ages) as.integer(sapply(strsplit(ages,'_'),function(ages) ages[1]));
+## create pop for object
+obj_pop=function(obj) {
+  pop=param(pop);
+  if (is.null(pop)) pop=load_pop();
+  places.pop=colnames(pop);
+  places.obj=places(obj)%-%c('Unassigned','Out of WA')
+  bad=places.obj%-%places.pop;
+  if (length(bad)) stop("Bad news: object contains unknown place(s): ",paste(sep=', ',bad));
+  pop=pop[,places.obj];
+  ages.pop=rownames(pop)%-%'all';
+  ages.obj=ages(obj)%-%'all';
+  if (length(ages.obj)) {
+    starts.pop=age_starts(ages.pop);
+    starts.obj=age_starts(ages.obj);
+    cats=cut(starts.pop,c(starts.obj,100),right=F,labels=ages.obj);
+    groups=split(ages.pop,cats);
+  } else groups=NULL;
+  pop.obj=rbind(pop['all',], t(sapply(groups,function(i) colSums(pop[i,]))));
+  ## colnames(pop.obj)=places.obj;
+  pop.obj;
+}
+
 ## process censusreport metadata file
 meta_names=function(metafile=param(acsmeta)) {
   json=fromJSON(file = metafile);
@@ -136,13 +152,8 @@ filter_pop=function(pop,places=NULL,ages=NULL) {
 cmp_pops=function(objs,places=NULL,ages=NULL,pop=param(pop),
                   incompatible.ok=param(incompatible.ok)) {
   if (length(objs)<=1) return(TRUE);    # trivial case - just one object
-  pops=lapply(objs,function(obj) obj$pop);
-  orig=sapply(pops,is.null);
-  if (all(orig)) return(TRUE);          # all objects 'original', so perforce equal
-  ## some objects edited. have to do merge & compare these vs original pop and each other
-  pops=pops[!orig];
-  if (any(orig)) pops=c(list(load_pop()),pops); # include original pop in list to be merged
-  ## tack 'age' onto each pop, filter, and order by age (for testing equality later)
+  pops=lapply(objs,function(obj) pop(obj)); # CAUTION: use pop(obj) form to avoid scope problem
+  ## filter, and order by age (for testing equality later)
   pops=lapply(pops,function(pop) {
     pop=filter_pop(pop,places,ages);
     pop=cbind(age=rownames(pop),pop);
@@ -182,10 +193,10 @@ places_other=function(geo=param(geo)) {
   if (is.null(geo)) geo=load_geo();
   geo$place[geo$state!='WA'];
 }
-ages_all=function(pop=param(pop)) {
-  if (is.null(pop)) pop=load_pop();
-  rownames(pop);
-}
+## ages_all used for error message and label
+## no easy way to get the correct value. fudge it by hardcoding all ages in uses circa Mar 2021
+ages_all=function() c('all','0_19','20_39','40_59','60_79','20_34','35_49','50_64','65_79','80_')
+
 state_name2id=function(name,stateid=param(stateid)) {
   if (is.null(stateid)) stateid=load_stateid();
   sapply(name,function(name) stateid$id[stateid$name==name]);
