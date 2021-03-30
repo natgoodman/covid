@@ -29,7 +29,7 @@ raw=function(what=cq(cases,admits,deaths),datasrc=param(datasrc),version='latest
   if (!is.null(version)&&version=='latest') version=latest_version(datasrc,what);
   data=load_data(whatv=what,datasrc=datasrc,version=version);
   newobj=if(datasrc!='doh') cvdat else cvdoh;
-  obj=newobj(data=data,datasrc=datasrc,what=what,version=version,pop=pop,
+  obj=newobj(data=data,datasrc=datasrc,what=what,version=version,
              id=FALSE,fit=FALSE,roll=FALSE,extra=FALSE,edit=FALSE);
   obj$pop=obj_pop(obj);
   clc(obj,switch(datasrc,
