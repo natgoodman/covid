@@ -29,8 +29,9 @@ raw=function(what=cq(cases,admits,deaths),datasrc=param(datasrc),version='latest
   if (!is.null(version)&&version=='latest') version=latest_version(datasrc,what);
   data=load_data(whatv=what,datasrc=datasrc,version=version);
   newobj=if(datasrc!='doh') cvdat else cvdoh;
-  obj=newobj(data=data,datasrc=datasrc,what=what,version=version,
+  obj=newobj(data=data,datasrc=datasrc,what=what,version=version,pop=pop,
              id=FALSE,fit=FALSE,roll=FALSE,extra=FALSE,edit=FALSE);
+  obj$pop=obj_pop(obj);
   clc(obj,switch(datasrc,
                   doh=list(unit=7,start.on='Sunday',center=FALSE,cumulative=FALSE),
                   ihme=list(unit=1,cumulative=FALSE),
@@ -241,19 +242,23 @@ cntr1=function(data,inc) {
 ##   current object in check for compatibility
 ## TODO: refactor using lessons from 'xper_wmat' et al
 extra=function(obj,...) UseMethod('extra')
-extra.cvdat=function(obj,fun=NULL,objs=NULL,versions=NULL,incompatible.ok=param(incompatible.ok))
+extra.cvdat=function(obj,...)
   stop("'extra' transform only makes sense for 'doh' objects, not ",obj$datasrc," objects")
 extra.cvdoh=
   function(obj,fun=NULL,objs=NULL,versions=NULL,method='lm',args=list(fmla=param(extra.fmla)),
            err.type=param(extra.errtype),wmax=param(extra.wmax),mulmax=param(extra.mulmax),
-           mdl.ages=NULL,incompatible.ok=param(incompatible.ok),...) {
+           mdl.ages=param(extra.ages),mdl.places=param(extra.places),
+           incompatible.ok=param(incompatible.ok),...) {
     args=cl(args,...);
     err.type=match.arg(err.type);
     err.type=switch(err.type,multiplicative='*',additive='+',err.type);
     places=places(obj);
     ages=ages(obj);
     vdate=vdate(obj);
-    if (is.null(mdl.ages)) mdl.ages=if(vdate<'2021-03-07') ages else 'all';
+    if (is.null(mdl.ages)) mdl.ages=if(vdate<='2021-03-07') ages else 'all';
+    if (!length(mdl.ages%&%ages)) stop("ages does not contain mdl.ages: ",nv(mdl.ages));
+    if (is.null(mdl.places)) mdl.places=places(obj);
+    if (!length(mdl.places%&%places)) stop("places does not contain mdl.places: ",nv(mdl.places));
     if (is.null(fun)) {
       if (is.null(objs)) {
         ## read objects
@@ -265,9 +270,9 @@ extra.cvdoh=
         objs=lapply(versions,function(version) raw(what,'doh',version));
       }
       ## check whether edited objects are compatible
-      cmp_pops(c(list(obj),objs),places=places,ages=mdl.ages,incompatible.ok=incompatible.ok);
+      cmp_pops(c(list(obj),objs),places=mdl.places,ages=mdl.ages,incompatible.ok=incompatible.ok);
       ## compute models
-      fun=extrafun(obj,objs,places,ages=mdl.ages,method,args,err.type,wmax,mulmax);
+      fun=extrafun(obj,objs,places=mdl.places,ages=mdl.ages,method,args,err.type,wmax,mulmax);
     }
     data=extraadj(obj,fun,places,ages,err.type,wmax,mulmax)
     clc(obj,list(data=data,extra=method,extra.fun=fun,extra.args=args,extra.errtype=err.type));
