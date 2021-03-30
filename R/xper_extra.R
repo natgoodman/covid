@@ -15,24 +15,40 @@
 ###################################################################################
 ## Make base objects.
 ## vsn.min default is min version with enough earlier versions for 'extra'
+## vsn.max default is max version with original age groups
 xper_objs=
-  function(vsn.min='20-05-31',
-           idx=list(xadd=TRUE,xmul=TRUE,xadw=TRUE,xmdw=TRUE,xmed=TRUE,rx=FALSE,xr=FALSE)) {
+  function(vsn.min='20-05-31',vsn.max='21-02-28',
+           places=cq(state,King,Snohomish,Pierce,Adams,'San Juan'),ages=NULL,
+           idx=list(xorig=TRUE,xa=TRUE,xas=TRUE,xs=TRUE,
+                    xadd=FALSE,xmul=FALSE,xadw=FALSE,xmdw=FALSE,xmed=FALSE,rx=FALSE,xr=FALSE,
+                    end=FALSE         # placeholder for last idx
+                    )) {
     vsn=list_versions('doh','cases');
-    vsn.obj=vsn[vsn>=vsn.min];    # these have enough versions for extra
+    vsn.obj=btwn_vsn(vsn,vsn.min,vsn.max);
     idx=names(idx[idx==TRUE]);
     param(verbose);
     if (verbose) print('raw');
     objs.raw=lapply(vsn.obj,function(vsn) raw('cases','doh',vsn));
     if (verbose) print('edit');
-    objs.edit=lapply(objs.raw,function(obj) edit(obj,state,King,all));
-    if (verbose) print('roll');
-    objs.roll=lapply(objs.edit,function(obj) roll(obj));
+    keep=c(places,ages);
+    objs.edit=lapply(objs.raw,function(obj) edit(obj,KEEP=keep));
+    ## if (verbose) print('roll');
+    ## objs.roll=lapply(objs.edit,function(obj) roll(obj));
     env=environment();
     sapply(idx,function(id) {
       if (verbose) print(paste0('extra (',id,')'));
       objs=
         switch(id,
+               xorig=lapply(objs.edit,function(obj)
+                 extra(obj,versions=vsn[vsn<=version(obj)],
+                       mdl.ages=ages(obj),mdl.places=places(obj))),
+               xa=lapply(objs.edit,function(obj)
+                 extra(obj,versions=vsn[vsn<=version(obj)],mdl.ages='all')),
+               xas=lapply(objs.edit,function(obj)
+                 extra(obj,versions=vsn[vsn<=version(obj)],mdl.ages='all',mdl.places='state')),
+               xs=lapply(objs.edit,function(obj)
+                 extra(obj,versions=vsn[vsn<=version(obj)],mdl.places='state')),
+               ##########
                xadd=lapply(objs.edit,function(obj)
                  extra(obj,versions=vsn[vsn<=version(obj)],err.type='+',args=list(fmla='y~w'))),
                xmul=lapply(objs.edit, function(obj)
@@ -45,7 +61,10 @@ xper_objs=
                        args=list(fmla='y~date:w+w'))),
                xmed=lapply(objs.edit,function(obj)
                  extra(obj,versions=vsn[vsn<=version(obj)],err.type='+',method='wfun')),
-               rx=lapply(objs.roll,function(obj) extra(obj,versions=vsn[vsn<=version(obj)])),
+               rx=lapply(objs.edit,function(obj) {
+                 obj=roll(obj);
+                 extra(obj,versions=vsn[vsn<=version(obj)]);
+               }),
                xr={
                  name=paste0('objs.',idx[1]);
                  objs.extra=get(name);
@@ -79,8 +98,8 @@ xper_pick=function(objs,i.pick=NULL,n.pick=NULL,vsn.pick=NULL) {
 ## lty, lwd used for object lists
 ## TODO: design is backwards. xper_data should be central, plot added on top. maybe someday
 xper_plotdata=
-  function(objs=list(objs.raw,objs.roll,objs.extra),i.pick=NULL,n.pick=NULL,vsn.pick=NULL,
-           places='state',do.data=FALSE,do.plot=!do.data,
+  function(objs=list(objs.raw,objs.xorig,objs.xa,objs.xas),i.pick=NULL,n.pick=NULL,vsn.pick=NULL,
+           places='state',ages='all',do.data=FALSE,do.plot=!do.data,
            cex.legend=NULL,labels=NULL,pal='inferno',...) {
     objs=xper_pick(objs,i.pick,n.pick,vsn.pick);
     nl=length(objs);
@@ -98,12 +117,12 @@ xper_plotdata=
       ok=system('pjtest')==0;
       if (!ok) stop('Cannot copy to Mac: reverse tunnel not running. Stopping before plot');
       plon();
-      plot_cvdat(objs,places=places,ages='all',col=col,lty=lty,lwd=lwd,
+      plot_cvdat(objs,places=places,ages=ages,col=col,lty=lty,lwd=lwd,
                  cex.legend=cex.legend,legends=legends,...);
       ploff();
     }
     if (do.data) {
-      data=data_cvdat(objs,places=places,ages='all');
+      data=data_cvdat(objs,places=places,ages=ages);
       colnames(data)=c('date',sub(' ','.',labels));
       invisible(data)
     }
@@ -131,4 +150,14 @@ xper_global=function(ids) {
     assign(name,objs,globalenv())});
   invisible();
 }
+## between allowing missing endpoint
+btwn_vsn=function(vsn,vsn.min=NULL,vsn.max=NULL) {
+  want=if(is.null(vsn.min)&&is.null(vsn.max)) vsn
+       else if (is.null(vsn.min)) vsn<=vsn.max
+       else if (is.null(vsn.max)) vsn>=vsn.min
+       else btwn_cc(vsn,vsn.min,vsn.max);
+  vsn[want];
+}
+
+  
 
