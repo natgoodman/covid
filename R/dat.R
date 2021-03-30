@@ -46,7 +46,7 @@ load_data=function(what,datasrc,version='latest',file=NULL,whatv=NULL,SIMPLIFY=T
     files=list.files(datadir(datasrc),pattern=pattern,full.names=TRUE);
   }
   if (length(files)==0)
-    stop(paste('No files found for',nv(what,datarsc,version,file,SEP=', ')));
+    stop(paste('No files found for',nv(what,datasrc,version,file,SEP=', ')));
   files=sort(decreasing=TRUE,
              unique(resuffix(files,old.suffix=cq(RData,txt),suffix='RData',keep.dir=TRUE)));
   data=lapply(files,function(file) load_(file=file));
