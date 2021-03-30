@@ -187,8 +187,14 @@ edit_split=function(EXPR=list(),KEEP=NULL,DROP=NULL,places=NULL,ages=NULL) {
     });
     expr.split=split(EXPR,targs);
   } else expr.split=list();
-  keep.split=if(!is.null(KEEP)) split(KEEP,sapply(KEEP,var_targ)) else list();
-  drop.split=if(!is.null(DROP)) split(DROP,sapply(DROP,var_targ)) else list();
+  #### keep.split=if(!is.null(KEEP)) split(KEEP,sapply(KEEP,var_targ)) else list();
+  #### drop.split=if(!is.null(DROP)) split(DROP,sapply(DROP,var_targ)) else list();
+  keep.split=
+    if(!is.null(KEEP))
+      split(KEEP,sapply(KEEP,function(var) var_targ(var,places.all,ages.all))) else list();
+  drop.split=
+    if(!is.null(DROP))
+      split(DROP,sapply(DROP,function(var) var_targ(var,places.all,ages.all))) else list();
   ## assign ARGS.<targ> in parent
   parent=parent.frame(n=1);
   args.targ=sapply(cq(places,ages),function(targ) {
