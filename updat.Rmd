@@ -24,7 +24,7 @@ urlcolor: blue
 
 Figures 1a-d show *case* counts per million for several Washington and non-Washington locations. The Washington locations are the entire state, the Seattle area where I live, and the adjacent counties to the north and south (Snohomish and Pierce, resp.). The non-Washington locations are Ann Arbor, Boston, San Diego, and Washington DC.
 
-Figures 1a-b (the top row) show smoothed data (see details [below](#techdetails)); Figures 1c-d (the bottom row) overlay raw data onto the smoothed. The figures use data from Johns Hopkins Center for Systems Science and Engineering (JHU), described [below](#jhu). When comparing the Washington and non-Washington graphs, please note the difference in y-scale: the highest current Washington rate (about 1100 per million in Pierce) is above the rate in San Diego (about 700 per million), similar to the rates in Ann Arbor and Washington DC (also about 1100 per million), and below the rate in Boston (about 1700 per million).
+Figures 1a-b (the top row) show smoothed data (see details [below](#techdetails)); Figures 1c-d (the bottom row) overlay raw data onto the smoothed. The figures use data from Johns Hopkins Center for Systems Science and Engineering (JHU), described [below](#jhu). When comparing the Washington and non-Washington graphs, please note the difference in y-scale: the current Washington rates (about 600-1300 per million in Pierce) are above the rate in San Diego (about 500 per million), overlap the rate in Washington DC (about 1200 per million), and are below the rates in Ann Arbor and Boston (about 2000 per million).
 
 ```{r out.width="50%",echo=FALSE,fig.show='asis'}
 knitr::include_graphics(file.path(figdir,'figure_001a_cases_wa.png'));
@@ -33,9 +33,11 @@ knitr::include_graphics(file.path(figdir,'figure_001c_cases_wa_ragged.png'));
 knitr::include_graphics(file.path(figdir,'figure_001d_cases_nonwa_ragged.png'));
 ```
 
-The smoothed graphs for Washington (Figure 1a) show that rates though well below their recent peaks are starting to climb again in Seattle (King County) and Pierce, and are best flattening in the state as a whole and Snohomish. The raw data (Figure 1c) and simple trend analysis (described [below](#techdetails)) indicate that the increase in Seattle and Pierce may be an artifact but the flattening is real. The rates for non-Washington locations (Figures 1b,d) have also fallen dramatically from their peaks but are at best flattening everywhere except San Diego. Trend analysis concurs.
+The smoothed graphs for Washington (Figure 1a) show that rates, though well below their recent peaks, are starting to climb again in all locations. The raw data (Figure 1c) and simple trend analysis (described [below](#techdetails)) indicate that the increase is clear in all locations except Snohomish where the increase is not yet definitive. The rate for the state has almost reached its summer peak, while rates for all other locations are well above their summer peaks. Going forward, we can only hope that vaccination of the most vulnerable people will prevent a consequent increase in deaths.
 
-Figures 2a-d show *deaths* per million for the same locations. When comparing the Washington and non-Washington graphs, again please note the difference in y-scale: the current Washington rates are 4-14 per million; the non-Washington rates are 3-20 per million.
+The rates for non-Washington locations (Figures 1b,d) have also fallen dramatically from their peaks but are now heading up in Ann Arbor and Boston, flat in Washington DC, and continuing to decline in San Diego. Trend analysis indicates that the increase in Ann Arbor and decrease in San Diego are real, but the data for Boston and Washington DC are too variable to be confident in the direction.
+
+Figures 2a-d show *deaths* per million for the same locations. When comparing the Washington and non-Washington graphs, again please note the difference in y-scale: the current Washington rates are 4-7 per million; the non-Washington rates are 5-22 per million.
 
 ```{r out.width="50%",echo=FALSE,fig.show='asis'}
 knitr::include_graphics(file.path(figdir,'figure_002a_deaths_wa.png'));
@@ -44,11 +46,24 @@ knitr::include_graphics(file.path(figdir,'figure_002c_deaths_wa_ragged.png'));
 knitr::include_graphics(file.path(figdir,'figure_002d_deaths_nonwa_ragged.png'));
 ```
 
-The smoothed Washington data (Figure 2a) shows three waves. The second peak was thankfully lower than the first; the third wave exceeded the first in all areas except Seattle (King County). The graphs are well down from their recent peaks and are finally down to the level of the second peak in most locations. The raw data (Figure 2c) remains quite variable; trend analysis (described [below](#techdetails)) indicates that looking back 6-8 weeks, the decline is clear except in Pierce where the trend is almost flat.
+The smoothed Washington data (Figure 2a) shows three waves. The second peak was thankfully lower than the first; the third wave exceeded the first in all areas except Seattle (King County). The graphs are well down from the third peaks and are finally below the second peaks. The raw data (Figure 2c) remains quite variable; trend analysis (described [below](#techdetails)) indicates that looking back 6 weeks, the decline is clear.
 
-The smoothed non-Washington data (Figure 2b) shows early peaks in most locations, followed by a long trough, followed by a second wave starting in November. The graphs are well down from their recent peaks and seem to be continuing down. The raw data, though variable, broadly supports this view;  trend analysis (described [below](#techdetails)) indicates that looking back 6 weeks, the decline is clear in all locations; going back 8 weeks, the decline is strong everywhere except Ann Arbor. For Ann Arbor the rates for the past 4 weeks are quite low (0-5), but too variable to be confident in the direction.
+The smoothed non-Washington data (Figure 2b) shows early peaks in most locations, followed by a long trough, followed by a second wave starting in November. The graphs are well down from their recent peaks and seem to be continuing down. The raw data, though variable, broadly supports this view;  trend analysis (described [below](#techdetails)) indicates that looking back 6-8 weeks, the decline is clear.
 
-In most previous versions of the document before March 17, 2021, I presented Washington results broken down by age using data from Washington State Department of Health (DOH) weekly downloads, described [below](#doh). I'm unable to use this data at present, because DOH changed its age groups; this change breaks my code in ways big and small and it may be several weeks before I'm able to incorporate the age data again.
+The next graphs show the Washington results broken down by age. This data is from Washington State Department of Health (DOH) weekly downloads, described [below](#doh). An important caveat is that the DOH download systematically undercounts events in recent weeks due to manual curation. I extrapolate data for late time points as discussed [below](#techdetails). 
+
+In most versions before March 17, 2021, I showed these graphs for each Washington location. Here I only show the statewide graphs: the other locations are similar. In past, DOH reported results in 20 year age groups starting with 0-19, with a final group for 80+. As of the March 14, 2021 data release (corresponding to document version March 17), DOH changed age groups. The new groups are 0-19, followed by 15 year ranges (20-34, 35-49, 50-64, 65-79) with a final group for 80+.
+
+Figure 3 is *cases*. Figure 4 is *deaths*; this graph aggregates 0-64 into a single group, since the death rate in these ages is near 0.
+
+```{r out.width="50%",echo=FALSE,fig.show='asis',include=TRUE}
+knitr::include_graphics(file.path(figdir,'figure_003_cases_state.png'));
+knitr::include_graphics(file.path(figdir,'figure_004_deaths_state.png'));
+```
+
+Early on, the pandemic struck older age groups most heavily. Over time, *cases* spread into all age groups, even the young. During the second wave, older groups did better in most locations with young adults and middle aged adults (20-34 and 35-49 years) becoming the most affected groups. The third wave swept into all age groups. As the wave grew, the oldest people (80+) were again strongly affected. The curves are now heading back up in all age groups, but thankfully the oldest groups (65-79 and 80+) seem to be less affected. 
+
+The shocking devastation of the 80+ age group jumps off the page in Figure 4. The death rate in this age group shows three waves. The third wave seems to have reached its peak but caution is in order because the DOH death seems to be lagging JHU.
 
 ## Caveats {#caveats}
 
@@ -68,7 +83,9 @@ In most previous versions of the document before March 17, 2021, I presented Was
 
 1. I smooth the graphs using a smoothing spline (R's `smooth.spline`) for visual appeal. This is especially important for the *deaths* graphs where the counts are so low that unsmoothed week-to-week variation makes the graphs hard to read.
 
-2. The trend analysis computes a linear regression (using R's `lm`) over the most recent four, six, or eight weeks of data and reports the computed slope and the p-value for the slope. In essence, this compares the trend to the null hypothesis that the true counts are constant and the observed points are randomly selected from a normal distribution. After looking at trend results across the entire time series, I determined that p-values below 0.1 indicate convincing trends; this cutoff is arbitrary, of course.
+2. The Washington DOH data (used in Figures 3 and 4 to show counts broken down by age) systematically undercounts events in recent weeks due to manual curation. I attempt to correct this undercount through a linear extrapolation function (using R's `lm`). I have tweaked the extrapolation repeatedly, even turning it off for a few weeks. The current version uses a model that combines date and recentness effects. In past, I created models for each Washington location and age group but had to change when DOH changed its age groups on March 14, 2021 (see [below](#doh)). I now create a single model for the state as a whole and all age groups summed together, then blithely apply that model to all locations and ages.
+
+3. The trend analysis computes a linear regression (using R's `lm`) over the most recent four, six, or eight weeks of data and reports the computed slope and the p-value for the slope. In essence, this compares the trend to the null hypothesis that the true counts are constant and the observed points are randomly selected from a normal distribution. After looking at trend results across the entire time series, I determined that p-values below 0.1 indicate convincing trends; this cutoff is arbitrary, of course.
 
 ## Data Sources
 
