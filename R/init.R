@@ -97,9 +97,9 @@ init=function(
     trk='https://covidtracking.com/data/download/washington-history.csv'),
 
   ## program control
-  verbose=F,                     # print progress messages
+  verbose=FALSE,                 # print progress messages
   debug=FALSE,                   # call debug code
-  must.exist=F,                  # must all sub-inits succeed?
+  must.exist=FALSE,              # must all sub-inits succeed?
   save=NA,                       # shorthand for other save params 
                                  #   NA means save unless file exists
                                  #   T, F mean always or never save
@@ -110,17 +110,17 @@ init=function(
                                  #   F for all but top level data
   save.txt.data=is.na(save.txt)|save.txt, # save txt top level results. default T
   save.txt.meta=is.na(save.txt)|save.txt, # save txt metadata. default T
-  save.out=T,                    # save outputs - figures and tables - when called via dofig
+  save.out=TRUE,                 # save outputs - figures and tables - when called via dofig
   ## NG 20-11-14: save.fig, save.tbl moved to init_doc
   ## save.fig=save.out,             # save figures (when called via dofig)
   ## save.tbl=save.out,             # save tables (when called via dotbl)
   ## save.txt.tbl=T,                # save txt tables. default T
                                  #    
   ## clean=switch(docx,readme=T,F), # remove everything and start fresh
-  clean=F,                       # remove everything and start fresh
+  clean=FALSE,                   # remove everything and start fresh
   clean.data=clean,              # remove datadir
-  clean.sim=F,                   # clean simulations. default F
-  clean.top=F,                   # clean top level data. default F
+  clean.sim=FALSE,               # clean simulations. default F
+  clean.top=FALSE,               # clean top level data. default F
   clean.type=NULL,               # specific data types to clean. see clean_type
   clean.out=clean,               # remove outputs - figures and tables
   clean.fig=clean.out,           # remove figdir
@@ -182,7 +182,7 @@ init_doc=function(
   ## output modifiers
   outpfx=NULL,                  # prefix before figure or table number - NOT USED
   outsfx=letters,               # suffix in figure and table blocks
-  sectpfx=F,                    # add section number to prefix eg, S1 - NOT USED
+  sectpfx=FALSE,                # add section number to prefix eg, S1
   sectnum=1,                    # section number. usually set in docs
   sect=NULL,
   ## figures
@@ -213,7 +213,7 @@ init_doc=function(
   ## plot control
   figscreen=FALSE,               # plot figures on screen - disabled due to X11 issues
   fignew=figscreen,              # plot each figure in new window
-  figextra=F,                    # plot extra figures
+  figextra=FALSE,                # plot extra figures
   ## doc generation function
   docfun=get(paste(collapse='',c('doc_',param(doc),subdoc))),
   docsect=NULL,                  # all document sections. set by docfun
@@ -236,7 +236,7 @@ init_doc=function(
 clean_type=function(what,cleandir=T) {
   param(datadir);
   ## delete top level files if exist
-  files=list.files(datadir,full.names=T,pattern=paste(sep='','^',what,'\\.(RData|txt)'));
+  files=list.files(datadir,full.names=TRUE,pattern=paste(sep='','^',what,'\\.(RData|txt)'));
   unlink(files);
   if (cleandir) {
     whatdir=paste(sep='',what,'dir');
