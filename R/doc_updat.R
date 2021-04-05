@@ -19,8 +19,8 @@
 ## Previous versions are available in GitHub, of course.
 ## no sections.
 doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',figs.all=FALSE,...) {
-  if (is.null(version)||version=='latest') version=max(sapply(cq(jhu,doh),latest_version));
   datasrc=cq(doh,jhu);
+  if (is.null(version)||version=='latest') version=max(sapply(datasrc,latest_version));
   if (need.objs) make_updat_objs(datasrc=datasrc,version=version);
   if (need.init) init_doc(doc='updat',version=version,...);
   places.wa=cq(state,King,Snohomish,Pierce);
@@ -127,7 +127,7 @@ doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',figs.all=FALSE
 ## used for jhu in Figures 1,2 version 21-01-24
 ## TODO: add this to plot_cvdat!
 plot_finraw=
-  function(datasrc=cq(doh,jhu,nyt,trk),what=cq(cases,deaths),title,legends,
+  function(datasrc=cq(doh,jhu,nyt),what=cq(cases,deaths),title,legends,
            raw.plot=cq(lines,points),
            places,ages='all',per.capita=TRUE,
            lwd=2,lwd.fin=lwd,lwd.raw=0.375*lwd.fin,lty.fin='solid',lty.raw='dotted',pch=20) {
