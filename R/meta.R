@@ -77,7 +77,7 @@ obj_pop=function(obj) {
   pop=param(pop);
   if (is.null(pop)) pop=load_pop();
   places.pop=colnames(pop);
-  places.obj=places(obj)%-%c('Unassigned','Out of WA')
+  places.obj=places(obj)%-%c('Unassigned','Out of WA','Unknown')
   bad=places.obj%-%places.pop;
   if (length(bad)) stop("Bad news: object contains unknown place(s): ",paste(sep=', ',bad));
   pop=pop[,places.obj];
@@ -136,6 +136,16 @@ import_stateid=function(infile=param(stateid.infile),base=param(stateid.file)) {
   stateid=read.delim(infile,stringsAsFactors=FALSE);
   colnames(stateid)=tolower(colnames(stateid));
   save_stateid(stateid,base=base);
+}
+## convenience function to get WA counties
+counties_wa=function(geo=param(geo)) {
+  if (is.null(geo)) geo=load_geo();
+  geo[geo$state=='WA'&geo$place!='state','place'];
+}
+## convenience function to get WA county populations for 'all'
+pop_wa=function(pop=param(pop),geo=param(geo),ages=NULL) {
+  counties.wa=counties_wa(geo);
+  pop['all',counties.wa];
 }
 
 ## ---- Filter, compare, format population metadata ----
