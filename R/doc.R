@@ -163,8 +163,8 @@ sect_start=function(sect,sect.all) {
   sectnum=which(sect==sect.all)[1];
   ## reset fignum if we're doing section-specific numbering else set to sectnum
   if (param(sectpfx)) fignum=1 else fignum=sectnum;
-  ## each section is a block
-  param(sect=sect,sectnum=sectnum,fignum=fignum,figblk=1,tblblk=1,xfigblk=1);
+  ## each section starts new blocks
+  param(sect=sect,sectnum=sectnum,fignum=fignum,figblk=NULL,tblblk=NULL,xfigblk=NULL);
 }
 figinc=function(extra=FALSE)
   if (extra) {
