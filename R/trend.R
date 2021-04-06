@@ -32,7 +32,8 @@ trend1=function(obj,width=4,place='state',age='all',end.date=NA,do.plot=TRUE) {
     plotm(data,legend='bottomleft');
     ploff();
   }
-  setNames(summary(mdl)$coefficients[2,c(1,4)],cq(slope,pval));
+  ## suppress warning 'essentially perfect fit'
+  suppressWarnings(setNames(summary(mdl)$coefficients[2,c(1,4)],cq(slope,pval)));
 }
 ########## code below here experimental
 
