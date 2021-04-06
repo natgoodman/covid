@@ -20,35 +20,39 @@ citecolor: green
 urlcolor: blue
 ---
 
-*Counts of cases and deaths are key metrics of COVID-19 prevalence and burden, and are the basis for model-based estimates and predictions of these statistics. I present here graphs showing these metrics over time in Washington state and a few other USA locations of interest to me. I update the graphs and this write-up weekly. Previous versions are [here](https://natgoodman.github.io/covid/updatvsn.html). See [below](#caveats) for caveats and details.*
+*Counts of cases and deaths are key metrics of COVID-19 prevalence and burden, and are the basis for model-based estimates and predictions of these statistics. I present here graphs showing these metrics over time in Washington state and a few other USA locations of interest to me. I update the graphs and this write-up weekly. Previous versions are [here](https://natgoodman.github.io/covid/updatvsn.html). See below for [caveats](#caveats) and [technical details](#techdetails).*
 
-Figures 1a-d show *case* counts per million for several Washington and non-Washington locations. The Washington locations are the entire state, the Seattle area where I live, and the adjacent counties to the north and south (Snohomish and Pierce, resp.). The non-Washington locations are Ann Arbor, Boston, San Diego, and Washington DC.
+Figures 1a-b show smoothed *case* counts per million for several Washington and non-Washington locations. The Washington locations are the entire state, the Seattle area where I live, and the adjacent counties to the north and south (Snohomish and Pierce, resp.). The non-Washington locations are Ann Arbor, Boston, San Diego, and Washington DC. 
 
-Figures 1a-b (the top row) show smoothed data (see details [below](#techdetails)); Figures 1c-d (the bottom row) overlay raw data onto the smoothed. The figures use data from Johns Hopkins Center for Systems Science and Engineering (JHU), described [below](#jhu). When comparing the Washington and non-Washington graphs, please note the difference in y-scale: the current Washington rates (about 600-1300 per million in Pierce) are above the rate in San Diego (about 500 per million), overlap the rate in Washington DC (about 1200 per million), and are below the rates in Ann Arbor and Boston (about 2000 per million).
+The figures use data from Johns Hopkins Center for Systems Science and Engineering (JHU), described [below](#jhu). When comparing the Washington and non-Washington graphs, please note the difference in y-scale: the highest current Washington rates (about 1450 per million in Pierce) is below the rates in Ann Arbor and Boston (about 2700 and 2500 per million resp.) and slightly above the rate in Washington DC (about 1250 per million).
 
-```{r out.width="50%",echo=FALSE,fig.show='asis'}
+```{r out.width="50%",echo=FALSE,fig.show='asis',include=TRUE}
 knitr::include_graphics(file.path(figdir,'figure_001a_cases_wa.png'));
 knitr::include_graphics(file.path(figdir,'figure_001b_cases_nonwa.png'));
+```
+```{r out.width="50%",echo=FALSE,fig.show='asis',include=FALSE}
 knitr::include_graphics(file.path(figdir,'figure_001c_cases_wa_ragged.png'));
 knitr::include_graphics(file.path(figdir,'figure_001d_cases_nonwa_ragged.png'));
 ```
 
-The smoothed graphs for Washington (Figure 1a) show that rates, though well below their recent peaks, are starting to climb again in all locations. The raw data (Figure 1c) and simple trend analysis (described [below](#techdetails)) indicate that the increase is clear in all locations except Snohomish where the increase is not yet definitive. The rate for the state has almost reached its summer peak, while rates for all other locations are well above their summer peaks. Going forward, we can only hope that vaccination of the most vulnerable people will prevent a consequent increase in deaths.
+The graph for Washington (Figure 1a) show that rates, though well below their recent peaks, are climbing again in all locations. Simple trend analysis indicates that the increase is clear. Rates in all locations have exceeded their summer peaks. The increase statewide is slight but is nearly twofold for the individual counties. Going forward, we can only hope that vaccination of the most vulnerable people will prevent a large increase in deaths.
 
-The rates for non-Washington locations (Figures 1b,d) have also fallen dramatically from their peaks but are now heading up in Ann Arbor and Boston, flat in Washington DC, and continuing to decline in San Diego. Trend analysis indicates that the increase in Ann Arbor and decrease in San Diego are real, but the data for Boston and Washington DC are too variable to be confident in the direction.
+The rates for non-Washington locations (Figure 1b) have also fallen dramatically from their peaks but are now heading up in Ann Arbor and Boston, flat in Washington DC, and continuing to decline in San Diego. Trend analysis indicates that these trends are real.
 
-Figures 2a-d show *deaths* per million for the same locations. When comparing the Washington and non-Washington graphs, again please note the difference in y-scale: the current Washington rates are 4-7 per million; the non-Washington rates are 5-22 per million.
+Figures 2a-b show *deaths* per million for the same locations. When comparing the Washington and non-Washington graphs, again please note the difference in y-scale: the current Washington rates are 5-11 per million; the non-Washington rates are 8-20 per million.
 
-```{r out.width="50%",echo=FALSE,fig.show='asis'}
+```{r out.width="50%",echo=FALSE,fig.show='asis',include=TRUE}
 knitr::include_graphics(file.path(figdir,'figure_002a_deaths_wa.png'));
 knitr::include_graphics(file.path(figdir,'figure_002b_deaths_nonwa.png'));
+```
+```{r out.width="50%",echo=FALSE,fig.show='asis',include=FALSE}
 knitr::include_graphics(file.path(figdir,'figure_002c_deaths_wa_ragged.png'));
 knitr::include_graphics(file.path(figdir,'figure_002d_deaths_nonwa_ragged.png'));
 ```
 
-The smoothed Washington data (Figure 2a) shows three waves. The second peak was thankfully lower than the first; the third wave exceeded the first in all areas except Seattle (King County). The graphs are well down from the third peaks and are finally below the second peaks. The raw data (Figure 2c) remains quite variable; trend analysis (described [below](#techdetails)) indicates that looking back 6 weeks, the decline is clear.
+The Washington data (Figure 2a) shows three waves. The second peak was thankfully lower than the first; the third wave exceeded the first in all areas except Seattle (King County). The graphs are well down from the third peaks and are finally below the second peaks. Trend analysis indicates that looking back 6-8 weeks, the decline is clear in all locations, but the decline may be bottoming out.
 
-The smoothed non-Washington data (Figure 2b) shows early peaks in most locations, followed by a long trough, followed by a second wave starting in November. The graphs are well down from their recent peaks and seem to be continuing down. The raw data, though variable, broadly supports this view;  trend analysis (described [below](#techdetails)) indicates that looking back 6-8 weeks, the decline is clear.
+The non-Washington data (Figure 2b) shows early peaks in most locations, followed by a long trough, followed by a second wave starting in November. The graphs are well down from their recent peaks and seem to be continuing down everywhere except Ann Arbor. In Ann Arbor, the trend is flat or slightly up. Trend analysis supports these interpretations.
 
 The next graphs show the Washington results broken down by age. This data is from Washington State Department of Health (DOH) weekly downloads, described [below](#doh). An important caveat is that the DOH download systematically undercounts events in recent weeks due to manual curation. I extrapolate data for late time points as discussed [below](#techdetails). 
 
@@ -59,6 +63,17 @@ Figure 3 is *cases*. Figure 4 is *deaths*; this graph aggregates 0-64 into a sin
 ```{r out.width="50%",echo=FALSE,fig.show='asis',include=TRUE}
 knitr::include_graphics(file.path(figdir,'figure_003_cases_state.png'));
 knitr::include_graphics(file.path(figdir,'figure_004_deaths_state.png'));
+```
+
+```{r out.width="50%",echo=FALSE,fig.show='asis',include=FALSE}
+knitr::include_graphics(file.path(figdir,'figure_003a_cases_state.png'));
+knitr::include_graphics(file.path(figdir,'figure_003b_cases_King.png'));
+knitr::include_graphics(file.path(figdir,'figure_003c_cases_Snohomish.png'));
+knitr::include_graphics(file.path(figdir,'figure_003d_cases_Pierce.png'));
+knitr::include_graphics(file.path(figdir,'figure_004a_deaths_state.png'));
+knitr::include_graphics(file.path(figdir,'figure_004b_deaths_King.png'));
+knitr::include_graphics(file.path(figdir,'figure_004c_deaths_Snohomish.png'));
+knitr::include_graphics(file.path(figdir,'figure_004d_deaths_Pierce.png'));
 ```
 
 Early on, the pandemic struck older age groups most heavily. Over time, *cases* spread into all age groups, even the young. During the second wave, older groups did better in most locations with young adults and middle aged adults (20-34 and 35-49 years) becoming the most affected groups. The third wave swept into all age groups. As the wave grew, the oldest people (80+) were again strongly affected. The curves are now heading back up in all age groups, but thankfully the oldest groups (65-79 and 80+) seem to be less affected. 
@@ -78,6 +93,8 @@ The shocking devastation of the 80+ age group jumps off the page in Figure 4. Th
 5. The date granularity in the graphs is weekly. The underlying JHU data is daily; I sum the data by week before graphing.
 
 6. I truncate the data to the last full week prior to the week reported here.
+
+7. In previous versions of the document, I've shown plots that overlay raw *case* and *death* counts onto the smoothed graphs in Figures 1 and 2. Recent data is much less variable than in past making these plots superfluous.
 
 ## Technical Details {#techdetails}
 
@@ -108,12 +125,6 @@ The weekly DOH download reports data by age group. In past, the groups were 20-y
 JHU updates the data daily. I download the data the same day as the DOH data (now Tuesdays) for operational convenience. 
 
 ### Other Data Sources {#other_sources}
-
-I use two other COVID data sources in my project although not in this document.
-
-- [New York Times COVID Repository](https://github.com/nytimes/covid-19-data). The file I download is [us-counties.csv](https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv). Like Washington DOH and JHU, NYT has county-level data. Unlike these, it includes "probable" as well as "confirmed" cases and deaths; I see no way to separate the two categories.
-
-- [COVID Tracking Project](https://covidtracking.com). This project reports a wide range of interesting statistics (negative test counts, for example), but I only use the *case* and *death* data. It does not provide county-level data so is not useful for the non-Washington locations I show. The file I download is https://covidtracking.com/data/download/washington-history.csv. I use this only as a check on the state-level Washington data from the other sources. As of March 7, 2021, the project ended its data collection efforts.
 
 The population data used for the per capita calculations is from [Census Reporter](https://censusreporter.org). The file connecting Census Reporter *geoids* to counties is the [Census Bureau Gazetteer](https://www.census.gov/geographies/reference-files/time-series/geo/gazetteer-files.html).
 
