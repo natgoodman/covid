@@ -18,9 +18,10 @@
 ## Starting with this version, I only have for the current version.
 ## Previous versions are available in GitHub, of course.
 ## no sections.
-doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',figs.all=FALSE,...) {
+doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',figs.all=TRUE,...) {
   datasrc=cq(doh,jhu);
   if (is.null(version)||version=='latest') version=max(sapply(datasrc,latest_version));
+  if (param(verbose)) print(paste('+++ doc_update',nv(version)));
   if (need.objs) make_updat_objs(datasrc=datasrc,version=version);
   if (need.init) init_doc(doc='updat',version=version,...);
   places.wa=cq(state,King,Snohomish,Pierce);
@@ -96,31 +97,59 @@ doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',figs.all=FALSE
             "Weekly deaths per million in non-Washington locations showing raw data"),
           legends=list(labels=labels.nonwa)));
   if ('doh'%notin%datasrc) return();
+  ## Figures 3,4  WA DOH cases, deaths by age
+  ages.cases=sort(ages(doh.cases)%-%'all');
+  col.cases=col_brew(length(ages.cases),'d3');
+  ages.deaths=sort(ages(doh.deaths)%-%'all');
+  ## select col to better match cases (Figure 3). use 1st and last 2
+  col.deaths=c(col.cases[1],tail(col.cases,n=2));
+  if (figs.all) {
+    ## Figures 3a-d, 4a-d WA DOH cases, deaths by age for all locations
+    ## not always in document, but do 'em so I can check to decide whether to include
+    fignum.sav=param(fignum);           # to restore after doing a-d figs
+    ## Figures 3a-d cases by age
+    figblk_start();
+    data=data_cvdat(doh.cases,places=places.wa,ages=ages.cases,per.capita=TRUE);
+    ylim=c(0,max(data[,-1]));
+    sapply(places.wa,function(place) 
+      dofig(paste(sep='_','cases',place),
+            plot_cvdat(
+              doh.cases,places=place,ages=ages.cases,col=col.cases,
+              per.capita=TRUE,lwd=2,ylim=ylim,
+              title=figtitle(paste("Weekly cases per million by age in",labels.wa[place])))));
+    ## Figures 4a-d deaths by age
+    figblk_start();
+    data=data_cvdat(doh.deaths,places=places.wa,ages=ages.deaths,per.capita=TRUE);
+    ylim=c(0,max(data[,-1]));
+    sapply(places.wa,function(place) 
+      dofig(paste(sep='_','deaths',place),
+            plot_cvdat(
+              doh.deaths,places=place,ages=ages.deaths,col=col.deaths,
+              per.capita=TRUE,lwd=2,ylim=ylim,legend='top',
+              title=figtitle(paste("Weekly deaths per million by age in",labels.wa[place])))));
+    param(fignum=fignum.sav);           # restore fignum after a-d figs
+  }
   ## Figures 3 WA DOH cases by age for state
   figblk_end();
-  ages.wa=sort(ages(doh.cases)%-%'all');
-  col=col_brew(length(ages.wa),'d3');
   place='state';
   dofig(paste(sep='_','cases',place),
         plot_cvdat(
-          doh.cases,places=place,ages=ages.wa,per.capita=TRUE,lwd=2,col=col,
+          doh.cases,places=place,ages=ages.cases,col=col.cases,per.capita=TRUE,lwd=2,
           title=figtitle(paste("Weekly cases per million by age in",labels.wa[place]))));
   ## Figures 4 WA DOH deaths by age for state
-  ages.wa=sort(ages(doh.deaths)%-%'all');
-  ## select col to better match cases (Figure 3). use 1st and last 2
-  col=col[c(1,length(col)-1,length(col))];
   dofig(paste(sep='_','deaths',place),
         plot_cvdat(
-          doh.deaths,places=place,ages=ages.wa,per.capita=TRUE,lwd=2,col=col,
-          title=figtitle(paste("Weekly deaths per million by age in",labels.wa[place])),
-          legend='top'));
+          doh.deaths,places=place,ages=ages.deaths,col=col.deaths,per.capita=TRUE,lwd=2,
+          legend='top',
+          title=figtitle(paste("Weekly deaths per million by age in",labels.wa[place]))));
   ## Figures 5a-b compare DOH, JHU.
   ## Note: not used in versions after Dec 13. might come back...
-  if (!figs.all) return();
-  figblk_start();
-  dofig('cases_dohjhu',plot_dohjhu('cases'));
-  dofig('deaths_dohjhu',plot_dohjhu('deaths'));
-  return();
+  if (figs.all) {
+    figblk_start();
+    dofig('cases_dohjhu',plot_dohjhu('cases'));
+    dofig('deaths_dohjhu',plot_dohjhu('deaths'));
+  }
+  version;
 }
 
 ## hack to plot final (processed) and raw data together
