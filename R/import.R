@@ -79,9 +79,9 @@ import_jhu=function(file) {
   save_data(what,'jhu',version,data=data);
 }
 ## import non-Washington places
-data_jhu_other=function(data,places.other=param(places.other)) {
-  places.other$state=state_id2name(places.other$state)
-  data_other=merge(data,places.other,by.x=cq(Province_State,Admin2),by.y=cq(state,county));
+data_jhu_other=function(data,places.nonwa=param(places.nonwa)) {
+  places.nonwa$state=state_id2name(places.nonwa$state)
+  data_other=merge(data,places.nonwa,by.x=cq(Province_State,Admin2),by.y=cq(state,county));
   data_other$Admin2=data_other$place;
   data_other;
 }
@@ -141,9 +141,9 @@ import_nyt=function(file) {
   });
 }
 ## import non-Washington places
-data_nyt_other=function(data,places.other=param(places.other)) {
-  places.other$state=state_id2name(places.other$state)
-  data_other=merge(data,places.other);
+data_nyt_other=function(data,places.nonwa=param(places.nonwa)) {
+  places.nonwa$state=state_id2name(places.nonwa$state)
+  data_other=merge(data,places.nonwa);
   data_other$county=data_other$place;
   data_other[,colnames(data)];
 }
