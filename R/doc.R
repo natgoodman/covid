@@ -80,7 +80,7 @@ dofig=function(figname,figfun,sect=param(sect),...) {
 dotbl=function(tblname,tblfun=NULL,sect=param(sect),...,OBJ.OK=TRUE) {
   param(pjto);
   parent.env=parent.frame(n=1);
-  base=basename_tbl(tbllabel(where='filename'),sect,tblname);
+  base=filename_tbl(tbllabel(where='filename'),sect,tblname);
   tblfun=pryr::subs(tblfun);
   ## tblfun can be name or call
   if (!(is.name(tblfun)||is.call(tblfun)))
@@ -101,7 +101,7 @@ dotbl=function(tblname,tblfun=NULL,sect=param(sect),...,OBJ.OK=TRUE) {
 ## use CAP arg names to reduce conflicts with partial arg matching
 figtitle=function(TEXT=NULL,...,SEP=' ') {
   dots=unlist(list(...));
-  fig=paste(sep='','Figure ',figlabel());
+  fig=if(param(figlabel)) paste(sep='','Figure ',figlabel()) else NULL;
   TEXT=paste(collapse=SEP,TEXT);
   if (!is.null(dots)) {
     dots=paste(collapse=', ',sapply(names(dots),function(name) paste(sep='=',name,dots[name])));
@@ -111,6 +111,7 @@ figtitle=function(TEXT=NULL,...,SEP=' ') {
 }
 ## construct figure label, eg, S1-2c
 figlabel=function(extra=FALSE,where=cq(content,filename)) {
+  if (!param(figlabel)) return('');
   where=match.arg(where);
   param(figextra,sectpfx,sectnum,figpfx,fignum,figsfx,figblk);
   if (figextra) {
@@ -132,6 +133,7 @@ figlabel=function(extra=FALSE,where=cq(content,filename)) {
 }
 ## construct table label, eg, S1-2c
 tbllabel=function(where=cq(content,filename)) {
+  if (!param(tbllabel)) return('');
   where=match.arg(where);
   param(tblpfx,sectpfx,sectnum,tblnum,tblsfx,tblblk);
   if (where=='filename') {
@@ -302,7 +304,13 @@ figdev_label=function() {
 }
 
 ## figure and table filenames
-filename_fig=function(figlabel,sect,figname,suffix='png')
-  filename(param(figdir),paste(collapse='_',c('figure',figlabel,sect,figname)),suffix=suffix);
-filename_tbl=function(tbllabel,sect,tblname,suffix='RData')
-  filename(param(tbldir),paste(collapse='_',c('table',tbllabel,sect,tblname)),suffix=suffix);
+filename_fig=function(figlabel,sect=NULL,figname,suffix='png') {
+  base=paste(collapse='_',c(sect,figname));
+  if (param(figlabel)) base=paste(collapse='_',c('figure',figlabel,base));
+  filename(param(figdir),base,suffix=suffix);
+}
+filename_tbl=function(tbllabel,sect=NULL,tblname,suffix='RData') {
+  base=paste(collapse='_',c(sect,tblname));
+  if (param(tbllabel)) base=paste(collapse='_',c('table',tbllabel,base));
+  filename(param(tbldir),base,suffix=suffix);
+}
