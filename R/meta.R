@@ -79,7 +79,7 @@ obj_pop=function(obj) {
   places.pop=colnames(pop);
   places.obj=places(obj)%-%c('Unassigned','Out of WA','Unknown')
   bad=places.obj%-%places.pop;
-  if (length(bad)) stop("Bad news: object contains unknown place(s): ",paste(sep=', ',bad));
+  if (length(bad)) stop("Bad news: object contains unknown place(s): ",paste(collapse=', ',bad));
   pop=pop[,places.obj];
   ages.pop=rownames(pop)%-%'all';
   ages.obj=ages(obj)%-%'all';
@@ -123,11 +123,11 @@ import_geo=function(infile=param(geo.infile),base=param(geo.file)) {
   geo.wa=subset(geo,subset=state=='WA');
   colnames(geo.wa)[3]='place';
   geo.wa=rbind(geo.wa,cq(WA,'04000US53',state)); # add entry for WA state
-  ## get 'other' entries
-  places.other=param(places.other);
-  geo.other=merge(geo,places.other);             # join on state, county
-  geo.other=geo.other[,cq(state,geoid,place)];   # rename and reorder columns to match WA
-  geo=rbind(geo.wa,geo.other)
+  ## get 'nonwa' entries
+  places.nonwa=param(places.nonwa);
+  geo.nonwa=merge(geo,places.nonwa);             # join on state, county
+  geo.nonwa=geo.nonwa[,cq(state,geoid,place)];   # rename and reorder columns to match WA
+  geo=rbind(geo.wa,geo.nonwa)
   save_geo(geo,base=base);
 }
 ## stateid - just convert colnames to lower case, store in meta directory
@@ -136,25 +136,6 @@ import_stateid=function(infile=param(stateid.infile),base=param(stateid.file)) {
   stateid=read.delim(infile,stringsAsFactors=FALSE);
   colnames(stateid)=tolower(colnames(stateid));
   save_stateid(stateid,base=base);
-}
-## convenience function to get WA counties
-counties_wa=function(geo=param(geo)) {
-  if (is.null(geo)) geo=load_geo();
-  geo[geo$state=='WA'&geo$place!='state','place'];
-}
-## convenience function to get WA county populations for 'all'
-pop_wa=function(pop=param(pop),geo=param(geo),ages=NULL) {
-  counties.wa=counties_wa(geo);
-  pop['all',counties.wa];
-}
-
-## ---- Filter, compare, format population metadata ----
-filter_pop=function(pop,places=NULL,ages=NULL) {
-  places=places%&%colnames(pop);
-  ages=ages%&%rownames(pop);
-  if (!is.null(places)) pop=pop[,places,drop=FALSE];
-  if (!is.null(ages)) pop=pop[ages,,drop=FALSE];
-  pop;
 }
 ## compare pops from multiple, possibly edited, objects
 ## returns whether pops all equal
@@ -190,6 +171,15 @@ per_capita=function(data,pop,places='state',ages='all') {
   data.frame(date=data$date,round(1e6*data[,-1]/pop),check.names=FALSE);
 }
 
+## ---- Filter, compare, format population metadata ----
+filter_pop=function(pop,places=NULL,ages=NULL) {
+  places=places%&%colnames(pop);
+  ages=ages%&%rownames(pop);
+  if (!is.null(places)) pop=pop[,places,drop=FALSE];
+  if (!is.null(ages)) pop=pop[ages,,drop=FALSE];
+  pop;
+}
+
 ## ---- Access metadata ----
 places_all=function(geo=param(geo)) {
   if (is.null(geo)) geo=load_geo();
@@ -199,9 +189,19 @@ places_wa=function(geo=param(geo)) {
   if (is.null(geo)) geo=load_geo();
   geo$place[geo$state=='WA'];
 }
-places_other=function(geo=param(geo)) {
+places_nonwa=function(geo=param(geo)) {
   if (is.null(geo)) geo=load_geo();
   geo$place[geo$state!='WA'];
+}
+## convenience function to get WA counties
+counties_wa=function(geo=param(geo)) {
+  if (is.null(geo)) geo=load_geo();
+  geo[geo$state=='WA'&geo$place!='state','place'];
+}
+## convenience function to get WA county populations for 'all'
+pop_wa=function(pop=param(pop),geo=param(geo),ages=NULL) {
+  counties.wa=counties_wa(geo);
+  pop['all',counties.wa];
 }
 ## ages_all used for error message and label
 ## no easy way to get the correct value. fudge it by hardcoding all ages in uses circa Mar 2021
