@@ -53,14 +53,17 @@ init=function(
   stateid.file=filename(metadir,'stateid'), # map state names to IDs
   ## descriptors for non-WA places of interest
   ## entries are place, state, county. converted to data frame in code below
-  places.other=
-    list(c('Ann Arbor','MI','Washtenaw'),
-         c('DC','DC','District of Columbia'),
+  places.nonwa=
+    list(cq('Ann Arbor',MI,Washtenaw),
+         cq(DC,DC,'District of Columbia'),
          cq(Boston,MA,Suffolk),
-         c('San Diego','CA','San Diego'),
+         cq('San Diego',CA,'San Diego'),
          cq(Omaha,NE,Douglas),
          cq(Austin,TX,Travis),
-         cq(Fairbury,IL,Livingston)),
+         cq(Fairbury,IL,Livingston),
+         cq('Mackinac Island',MI,Mackinac),
+         cq('Big Island',HI,Hawaii),
+         cq('Cape Cod',MA,Barnstable)),
   ## outdir=c(datadir,figdir,tbldir,tmpdir),  # top level output dirs
   ## cached data
   pop=NULL,                      # base pop by place, age. set by load_pop, read_pop
@@ -160,11 +163,11 @@ init=function(
   ## create output directories. nop if already exist
   sapply(outdirs,function(dir) dir.create(dir,recursive=TRUE,showWarnings=FALSE));
   ## init_doc();
-  ## convert places.other list into data frame
-  places.other=do.call(
-    rbind,lapply(places.other,function(row) 
+  ## convert places.nonwa list into data frame
+  places.nonwa=do.call(
+    rbind,lapply(places.nonwa,function(row) 
       data.frame(place=row[1],state=row[2],county=row[3],stringsAsFactors=FALSE)));
-  param(places.other=places.other);
+  param(places.nonwa=places.nonwa);
  invisible();
 }
 ## initialize doc parameters
@@ -176,23 +179,26 @@ init_doc=function(
   version='latest',
   versionx=if(version=='latest') latest_version('doh') else version,
   ## output directories. filename function ignores subdoc if NULL
-  vsndir=if(doc=='updat') versionx else NULL,
+  vsndir=if(doc%in% cq(updat,updatsupp)) versionx else NULL,
   figdir=filename('figure',param(doc),subdoc,param(run.id),vsndir), # directory for figures
   tbldir=filename('table',param(doc),subdoc,param(run.id),vsndir),  # directory for tables
   ## output modifiers
   outpfx=NULL,                  # prefix before figure or table number - NOT USED
   outsfx=letters,               # suffix in figure and table blocks
   sectpfx=FALSE,                # add section number to prefix eg, S1
+  outlabel=TRUE,                # use label, eg, Figure nnn. updatsupp sets to FALSE
   sectnum=1,                    # section number. usually set in docs
   sect=NULL,
   ## figures
   figpfx=outpfx,
   figsfx=outsfx,
+  figlabel=outlabel,
   fignum=1,
   figblk=NULL,                  # index into figsfx if in figure block
   ## tables
   tblpfx=outpfx,
   tblsfx=outsfx,
+  tbllabel=outlabel,
   tblnum=1,
   tblblk=NULL,                  # index into tblsfx if in table block
   ##
