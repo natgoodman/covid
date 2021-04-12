@@ -156,7 +156,7 @@ doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',figs.all=TRUE,
 ## used for jhu in Figures 1,2 version 21-01-24
 ## TODO: add this to plot_cvdat!
 plot_finraw=
-  function(datasrc=cq(doh,jhu,nyt),what=cq(cases,deaths),title,legends,
+  function(datasrc=cq(doh,jhu,nyt),what=cq(cases,admits,deaths),title,legends,
            raw.plot=cq(lines,points),
            places,ages='all',per.capita=TRUE,
            lwd=2,lwd.fin=lwd,lwd.raw=0.375*lwd.fin,lty.fin='solid',lty.raw='dotted',pch=20) {
