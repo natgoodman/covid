@@ -90,7 +90,8 @@ save_pop=function(pop,base=param(pop.file),suffix=cq(txt,RData)) {
   save_(pop,base=base,save=save.meta,save.txt=FALSE,suffix=suffix);
   if (save.txt.meta) {
     ## want explicit age column in text file
-    pop=data.frame(age=rownames(pop),pop);
+    ## NG 21-04-12: use 'cbind' instead of 'data.frame' so R won't munge column names. sigh...
+    pop=cbind(age=rownames(pop),pop);
     file=resuffix(base,old.suffix=suffix,suffix='txt');
     write.table(pop,file=file,sep='\t',quote=F,row.names=F);
   }
@@ -103,7 +104,7 @@ read_pop=function(base=param(pop.file)) {
   pop=read_(base=base,row.names='age');
   param(pop=pop);
 }
-## geo - geoids and place names - eg, for places_wa, places_other functions
+## geo - geoids and place names - eg, for places_wa, places_nonwa functions
 save_geo=function(geo,base=param(geo.file),suffix=cq(txt,RData))
   save_(geo,base=base,save=param(save.meta),save.txt=param(save.txt.meta),suffix=suffix)
 load_geo=function(base=param(geo.file)) {
