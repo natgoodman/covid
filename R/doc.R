@@ -304,13 +304,13 @@ figdev_label=function() {
 }
 
 ## figure and table filenames
-filename_fig=function(figlabel,sect=NULL,figname,suffix='png') {
+filename_fig=function(figlbl,sect=NULL,figname,suffix='png') {
   base=paste(collapse='_',c(sect,figname));
-  if (param(figlabel)) base=paste(collapse='_',c('figure',figlabel,base));
+  if (param(figlabel)) base=paste(collapse='_',c('figure',figlbl,base));
   filename(param(figdir),base,suffix=suffix);
 }
-filename_tbl=function(tbllabel,sect=NULL,tblname,suffix='RData') {
+filename_tbl=function(tbltbl,sect=NULL,tblname,suffix='RData') {
   base=paste(collapse='_',c(sect,tblname));
-  if (param(tbllabel)) base=paste(collapse='_',c('table',tbllabel,base));
+  if (param(tbllabel)) base=paste(collapse='_',c('table',tbltbl,base));
   filename(param(tbldir),base,suffix=suffix);
 }
