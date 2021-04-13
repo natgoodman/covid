@@ -24,11 +24,11 @@ doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',figs.all=TRUE,
   if (param(verbose)) print(paste('+++ doc_update',nv(version)));
   if (need.objs) make_updat_objs(datasrc=datasrc,version=version);
   if (need.init) init_doc(doc='updat',version=version,...);
-  places.wa=cq(state,King,Snohomish,Pierce);
+  places.wa<<-cq(state,King,Snohomish,Pierce);
   labels.wa=setNames(c('Washington state','Seattle (King County)',
                        'Snohomish (North of Seattle)','Pierce (South of Seattle)'),
                      places.wa);
-  places.nonwa=cq('Ann Arbor',Boston,'San Diego',DC);
+  places.nonwa<<-cq('Ann Arbor',Boston,'San Diego',DC);
   labels.nonwa=setNames(c('Ann Arbor','Boston','San Diego','Washington DC'),places.nonwa);
   ## Tables 1-2 trend analysis. Tables 3-4 raw data counts. not used in document.
   ## TODO: rewrite using dotbl when implemented!
