@@ -110,7 +110,7 @@ edit_label=Vectorize(function(edit,fmt=cq(title,legend,ylab)) {
 ##   }
 ##   label},
 ##   vectorize.args='age');
-age_label=function(age,fmt=cq(title,legend,ylab)) {
+age_label=function(age,fmt=cq(title,legend,ylab,short)) {
   fmt=match.arg(fmt);
   ages.all=ages_all();
   age.label=param(age.label);
@@ -134,7 +134,7 @@ age_label=function(age,fmt=cq(title,legend,ylab)) {
         ##                        '80_'='old seniors'),
         ##                 ')')
         ##        else 'yrs';
-        label=paste(label,suffix)
+        label=paste(label,suffix);
       }
       label;
     } else {
