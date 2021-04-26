@@ -220,8 +220,9 @@ init_doc=function(
   figscreen=FALSE,               # plot figures on screen - disabled due to X11 issues
   fignew=figscreen,              # plot each figure in new window
   figextra=FALSE,                # plot extra figures
+  ## NG 21-04-25: docfun no longer used and messes up doc='xper'
   ## doc generation function
-  docfun=get(paste(collapse='',c('doc_',param(doc),subdoc))),
+  ## docfun=get(paste(collapse='',c('doc_',param(doc),subdoc))),
   docsect=NULL,                  # all document sections. set by docfun
   end=NULL                       # placeholder for last parameter
   ) {
