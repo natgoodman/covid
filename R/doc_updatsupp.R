@@ -12,14 +12,12 @@
 ## Copyright (C) 2019-2021 Nat Goodman.
 ## 
 ## Generate figures and tables for updat (weekly data update) supplement
-## At present, just a place to put code that extends updat
 ##
 ## This software is open source, distributed under the MIT License. See LICENSE
 ## file at https://github.com/natgoodman/NewPro/FDR/LICENSE 
 ##
 #################################################################################
 ## --- Generate Figures and Tables for updat suplement ---
-## TODO: not yet ported
 doc_updatsupp=function(sect=NULL,need.objs=TRUE,need.init=TRUE,
                        what=cq(cases,admits,deaths),datasrc=cq(doh,jhu,nyt),version='latest',
                        figs.all=FALSE,...) {
@@ -27,9 +25,8 @@ doc_updatsupp=function(sect=NULL,need.objs=TRUE,need.init=TRUE,
   if (need.objs) make_updatsupp_objs(what=what,datasrc=datasrc,version=version);
   ## if (need.init) init_doc(doc='updatsupp',version=version,sectpfx=TRUE,...);
   if (need.init) init_doc(doc='updatsupp',version=version,figlabel=FALSE,...);
-  sect.all=cq(base.wa,age.wa,base.nonwa,cmp.wa,cmp.nonwa);
+  sect.all=cq(base.wa,age.wa,base.nonwa,ages,cmp.wa,cmp.nonwa);
   if (is.null(sect)) sect=sect.all else sect=pmatch_choice(sect,sect.all,start=FALSE);
-  ## TEMPORARY
   places.wa1=cq(state,King,Snohomish,Pierce);
   labels.wa1=setNames(c('Washington state','Seattle (King County)',
                        'Snohomish (North of Seattle)','Pierce (South of Seattle)'),
@@ -38,10 +35,14 @@ doc_updatsupp=function(sect=NULL,need.objs=TRUE,need.init=TRUE,
   labels.wa2=setNames(c('Seattle Metro (SKP)','North of SKP','South of SKP',
                         'West of SKP','East of SKP (except Yakima)'),
                       places.wa2);
+  places.wa=c(places.wa1,places.wa2);
+  labels.wa=c(labels.wa1,labels.wa2);
   places.nonwa1=cq('Ann Arbor',Boston,'San Diego',DC);
   labels.nonwa1=setNames(c('Ann Arbor','Boston','San Diego','Washington DC'),places.nonwa1);
   places.nonwa2=cq('Big Island',Fairbury,'Cape Cod','Mackinac Island',Omaha,Austin);
   labels.nonwa2=setNames(places.nonwa2,places.nonwa2);
+  places.nonwa=c(places.nonwa1,places.nonwa2);
+  labels.nonwa=c(labels.nonwa1,labels.nonwa2);
 
   sapply(sect,function(sect) {
     ## base wa
@@ -103,120 +104,59 @@ doc_updatsupp=function(sect=NULL,need.objs=TRUE,need.init=TRUE,
         dofig(paste(sep='_',pfx,'nonwa1','ragged'),
               plot_finraw(
                 datasrc=datasrc,what=what,places=places.nonwa1,ages='all',per.capita=TRUE,lwd=2,
-                title=figtitle(paste(title.pfx,"in core non-Washington locations showing raw data")),
+                title=
+                  figtitle(paste(title.pfx,"in core non-Washington locations showing raw data")),
                 legends=list(labels=labels.nonwa1)));
         dofig(paste(sep='_',pfx,'nonwa2','ragged'),
               plot_finraw(
                 datasrc=datasrc,what=what,places=places.nonwa2,ages='all',per.capita=TRUE,lwd=2,
-                title=figtitle(paste(title.pfx,"in supp non-Washington locations showing raw data")),
+                title=
+                  figtitle(paste(title.pfx,"in supp non-Washington locations showing raw data")),
                 legends=list(labels=labels.nonwa2)));
       });
     }
+    if (sect=='ages') {
+      if ('doh'%notin%datasrc) stop("datasrc must contain 'doh' to generate age figures");
+      datasrc='doh';
+      ages=sort(ages(doh.cases)%-%'all');
+      col=col_ages(ages=ages);
+      places=places.wa;
+      sapply(what,function(what) {
+        if (param(verbose)) print(paste('+++ plotting','ages',what));
+        pfx=paste(sep='_',what,'ages');
+        obj=get(paste(sep='.',datasrc,what),envir=globalenv());
+        title.pfx=paste("Weekly",what,"per million by age in");
+        data=data_cvdat(obj,places=places,ages=ages,per.capita=TRUE);
+        ymax=max(data[,-1],na.rm=TRUE);
+        figblk_start();
+        sapply(places,function(place) {
+          dofig(paste(sep='_',pfx,place),
+                plot_cvdat(
+                  obj,places=place,ages=ages,col=col,per.capita=TRUE,lwd=2,ymax=ymax,
+                  title=figtitle(paste(title.pfx,labels.wa[place]))));
+        });
+      });
+      if (all(cq(admits,deaths)%in%what)) {
+        ## plots admits, deaths together
+        if (param(verbose)) print('+++ plotting ages admits and death together');
+        pfx='admdea_ages';
+        title.pfx="Weekly admits and deaths per million by age in";
+        data=data_cvdat(list(doh.admits,doh.deaths),places=places,ages=ages,per.capita=TRUE);
+        ymax=max(data[,-1],na.rm=TRUE);
+        sapply(places,function(place) {
+          dofig(paste(sep='_',pfx,place),
+                plot_admdea(places=place,ages=ages,col=col,per.capita=TRUE,ymax=ymax,
+                            title=figtitle(paste(title.pfx,labels.wa[place]))));
+        });
+      }
+    }
+    if (sect=='cmp.wa') {
     
   })
 }
   
 
-NOT_PORTED=function() {
-  places.wa=cq(state,King,Snohomish,Pierce);
-  labels.wa=setNames(c('Washington state','Seattle (King County)',
-                       'Snohomish (North of Seattle)','Pierce (South of Seattle)'),
-                     places.wa);
-  places.nonwa=cq('Ann Arbor',Boston,'San Diego',DC);
-  labels.nonwa=setNames(c('Ann Arbor','Boston','San Diego','Washington DC'),places.nonwa);
-  ## Tables 1-2 trend analysis. Tables 3-4 raw data counts. not used in document.
-  ## TODO: rewrite using dotbl when implemented!
-  ## NOTE: save_tbl in this file not dat.R where you might expect it
-  if (param(verbose)) print(paste('+++ making tables'));
-  widths=if(version<'21-02-28') 4 else c(4,6,8);
-  trend.cases=trend(jhu.cases.raw,places=c(places.wa,places.nonwa),widths=widths);
-  trend.deaths=trend(jhu.deaths.raw,places=c(places.wa,places.nonwa),widths=widths);
-  counts.cases=data_cvdat(jhu.cases.raw,places=c(places.wa,places.nonwa),per.capita=TRUE);
-  counts.deaths=data_cvdat(jhu.deaths.raw,places=c(places.wa,places.nonwa),per.capita=TRUE);
-  save_tbl(trend.cases,1,'trend_cases');
-  save_tbl(trend.deaths,2,'trend_deaths');
-  save_tbl(counts.cases,3,'counts_cases');
-  save_tbl(counts.deaths,4,'counts_deaths');
-  assign_global(trend.cases,trend.deaths,counts.cases,counts.deaths);
-  if (param(verbose)) print(paste('+++ making figures'));
-  ## Figures 1a-b cases
-  figblk_start();
-  dofig('cases_wa',
-        plot_cvdat(
-          jhu.cases,places=places.wa,ages='all',per.capita=TRUE,lwd=2,
-          title=figtitle("Weekly cases per million in Washington locations"),
-          legends=list(labels=labels.wa)));
-  dofig('cases_nonwa',
-        plot_cvdat(
-          jhu.cases,places=places.nonwa,ages='all',per.capita=TRUE,lwd=2,
-          title=figtitle("Weekly cases per million in non-Washington locations"),
-          legends=list(labels=labels.nonwa)));
-  ## recent WA raw data very ragged in versions >= 21-01-24. include figures showing this
-  dofig('cases_wa_ragged',
-        plot_finraw(
-          datasrc='jhu',what='cases',places=places.wa,ages='all',per.capita=TRUE,lwd=2,
-          title=figtitle(
-            "Weekly cases per million in Washington locations showing raw data"),
-          legends=list(labels=labels.wa)));
-  dofig('cases_nonwa_ragged',
-        plot_finraw(
-          datasrc='jhu',what='cases',places=places.nonwa,ages='all',per.capita=TRUE,lwd=2,
-          title=figtitle(
-            "Weekly cases per million in non-Washington locations showing raw data"),
-          legends=list(labels=labels.nonwa)));
-  ## Figures 2a-b deaths
-  figblk_start();
-  dofig('deaths_wa',
-        plot_cvdat(
-          jhu.deaths,places=places.wa,ages='all',per.capita=TRUE,lwd=2,
-          title=figtitle("Weekly deaths per million in Washington locations"),
-          legend='top',legends=list(labels=labels.wa)));
-  dofig('deaths_nonwa',
-        plot_cvdat(
-          jhu.deaths,places=places.nonwa,
-          ages='all',per.capita=TRUE,lwd=2,
-          title=figtitle("Weekly deaths per million in non-Washington locations"),
-          legend='top',legends=list(labels=labels.nonwa)));
-  ## recent WA raw data very ragged in version 21-01-24. include figures showing this
-  dofig('deaths_wa_ragged',
-        plot_finraw(
-          datasrc='jhu',what='deaths',places=places.wa,ages='all',per.capita=TRUE,lwd=2,
-          title=figtitle(
-            "Weekly deaths per million in Washington locations showing raw data"),
-          legends=list(labels=labels.wa)));
-  dofig('deaths_nonwa_ragged',
-        plot_finraw(
-          datasrc='jhu',what='deaths',places=places.nonwa,ages='all',per.capita=TRUE,lwd=2,
-          title=figtitle(
-            "Weekly deaths per million in non-Washington locations showing raw data"),
-          legends=list(labels=labels.nonwa)));
-  if ('doh'%notin%datasrc) return();
-  ## Figures 3 WA DOH cases by age for state
-  figblk_end();
-  ages.wa=sort(ages(doh.cases)%-%'all');
-  col=col_brew(length(ages.wa),'d3');
-  place='state';
-  dofig(paste(sep='_','cases',place),
-        plot_cvdat(
-          doh.cases,places=place,ages=ages.wa,per.capita=TRUE,lwd=2,col=col,
-          title=figtitle(paste("Weekly cases per million by age in",labels.wa[place]))));
-  ## Figures 4 WA DOH deaths by age for state
-  ages.wa=sort(ages(doh.deaths)%-%'all');
-  ## select col to better match cases (Figure 3). use 1st and last 2
-  col=col[c(1,length(col)-1,length(col))];
-  dofig(paste(sep='_','deaths',place),
-        plot_cvdat(
-          doh.deaths,places=place,ages=ages.wa,per.capita=TRUE,lwd=2,col=col,
-          title=figtitle(paste("Weekly deaths per million by age in",labels.wa[place])),
-          legend='top'));
-  ## Figures 5a-b compare DOH, JHU.
-  ## Note: not used in versions after Dec 13. might come back...
-  if (!figs.all) return();
-  figblk_start();
-  dofig('cases_dohjhu',plot_dohjhu('cases'));
-  dofig('deaths_dohjhu',plot_dohjhu('deaths'));
-  return();
-}
+
 ## make objs doc_updatsupp needs
 ## from workflow.R do_objs
 make_updatsupp_objs=
@@ -246,12 +186,13 @@ make_updatsupp_objs=
                     SUM=list(Top5=top5,Bottom10=bottom10),
                     NEG=list(notKing='King',notSKP='SKP',notTop5='Top5',notBottom10='Bottom10'));
       ## BREAKPOINT('make_updatsupp_objs: in withrows after edit')
-      if (datasrc=='doh')
-        obj.edit=if(version(obj.src)<='21-03-07')
-                   ## original ages
-                   edit(obj.edit,kids='0_19',young='20_39'+'40_59',old='60_79'+'80_')
-                 else ## new ages
-                   edit(obj.edit,kids='0_19',young='20_34'+'35_49'+'50_64',old='65_79'+'80_');
+      ## if (datasrc=='doh')
+      ##   ## TODO: not sure I like these age groups. also want labels to include age ranges
+      ##   obj.edit=if(version(obj.src)<='21-03-07')
+      ##              ## original ages
+      ##              edit(obj.edit,kids='0_19',young='20_39'+'40_59',old='60_79'+'80_')
+      ##            else ## new ages
+      ##              edit(obj.edit,kids='0_19',young='20_34'+'35_49'+'50_64',old='65_79'+'80_');
       ## 'raw' really means 'editted', 'weekly, incremental'
       obj.raw=if(datasrc=='doh') obj.edit else weekly(incremental(obj.edit));
       ## 'cum'. convert jhu, nyt to weekly so dates will match doh
@@ -284,28 +225,25 @@ make_updatsupp_objs=
   }
 ## remove superflous objects - either because they were created by mistake or to start clean
 ## if id is set, only removes those objects, else all that fit the pattern
-rm_updatsupp_objs=
-  function(what=cq(cases,admits,deaths),datasrc=cq(doh,jhu,nyt),
-           id=NULL,rm.std=is.null(id)) {
-    what=match.arg(what,several.ok=TRUE);
-    datasrc=match.arg(datasrc,several.ok=TRUE);
-    if (length(what)==0||length(datasrc)==0) invisible(NULL); # nothing to remove
-    names.all=ls(globalenv());
+rm_updatsupp_objs=function(what=cq(cases,admits,deaths),datasrc=cq(doh,jhu,nyt),
+                           id=NULL,rm.std=is.null(id)) {
+  what=match.arg(what,several.ok=TRUE);
+  datasrc=match.arg(datasrc,several.ok=TRUE);
+  if (length(what)==0||length(datasrc)==0) invisible(NULL); # nothing to remove
+  names.all=ls(globalenv());
+  pat=paste0('^(',paste(collapse='|',datasrc),')','\\.',
+             '(',paste(collapse='|',what),')','\\.',
+             '(',paste(collapse='|',id),')');
+  names1=grep(pat,names.all,value=TRUE);
+  rm(list=names1,envir=globalenv());
+  if (rm.std) {
     pat=paste0('^(',paste(collapse='|',datasrc),')','\\.',
-               '(',paste(collapse='|',what),')','\\.',
-               '(',paste(collapse='|',id),')');
-    names1=grep(pat,names.all,value=TRUE);
-    BREAKPOINT('rm_updatsupp_objs: after id grep, before rm')
-    rm(list=names1,envir=globalenv());
-    if (rm.std) {
-      pat=paste0('^(',paste(collapse='|',datasrc),')','\\.',
-                  '(',paste(collapse='|',what),')$');
-      names2=grep(pat,names.all,value=TRUE);
-      BREAKPOINT('rm_updatsupp_objs: after rm.std grep, before rm')
-      rm(list=names2,envir=globalenv());
-      invisible(c(names1,names2));
-    } else invisible(names1);
-  }
+               '(',paste(collapse='|',what),')$');
+    names2=grep(pat,names.all,value=TRUE);
+    rm(list=names2,envir=globalenv());
+    invisible(c(names1,names2));
+  } else invisible(names1);
+}
 ## hack to plot pairs of objects together for same datasrc, typically processed and raw data 
 ## similar to plot_finraw in doc_updat.R
 ## datasrc, what, ids define obj pairs not explicitly given in objpairs
@@ -389,75 +327,3 @@ plot_pairs=
         type='p',pch=rep(pch,length(objs2)*length(places)*length(ages)));
     cases;
   }
-## ---- Standard plots ----
-## mostly a placeholder. expect it to change
-do_plots=function(datasrc=cq(doh,jhu,nyt,trk),objs=NULL,objs.noroll=NULL) {
-  ok=system('pjtest')==0;
-  if (!ok) stop('Reverse tunnel not running; stopping before doing plots');
-  if (is.null(objs)) {
-    objs=sapply(datasrc,function(datasrc) {
-      name=paste(sep='.',datasrc,'cases');
-      get(name,globalenv());
-    });
-  }
-  if (is.null(objs.noroll)) {
-    objs.noroll=sapply(datasrc,function(datasrc) {
-      name=paste(sep='.',datasrc,'cases.noroll');
-      get(name,globalenv());
-    });
-  }
-  objs.notrk=objs[sapply(objs,function(obj) datasrc(obj)!='trk')]
-  ## all sources 'state'
-  plon('all.state');
-  plot_cvdat(objs,places=cq(state),ages='all',per.capita=TRUE);
-  ploff();
-  ## all sources (except trk) 'King'
-  plon('all.King');
-  plot_cvdat(objs.notrk,places=cq(King),ages='all',per.capita=TRUE);
-  ploff();
-  ## all sources (except trk) 'San Juan'
-  plon('all.SanJuan');
-  plot_cvdat(objs.notrk,places=cq('San Juan'),ages='all',per.capita=FALSE);
-  ploff();
-  ## all sources (except trk) 'Okanogan'
-  plon('all.Okanogan');
-  plot_cvdat(objs.notrk,places=cq('Okanogan'),ages='all',per.capita=TRUE);
-  ploff();
-  if ('doh' %in% datasrc) {
-    ## doh several places
-    plon('doh.places');
-    plot_cvdat(doh.cases,places=cq(state,King,SKP,Top5,Top10),ages='all',per.capita=TRUE);
-    ploff();
-    ## doh several ages
-    plon('doh.ages');
-    plot_cvdat(doh.cases,places=cq(state),ages=NULL,per.capita=TRUE);
-    ploff();
-  }
-  if ('jhu' %in% datasrc) {
-    ## jhu King, kids
-    plon('jhu.kids');
-    plot_cvdat(jhu.cases,places=cq(King,'Ann Arbor',DC),ages=NULL,per.capita=TRUE);
-    ploff();
-    ## jhu King, nonwas
-    plon('jhu.nonwa');
-    plot_cvdat(jhu.cases,places=places_nonwa(),ages=NULL,per.capita=TRUE);
-    ploff();
-  }
-  if (cq(jhu,nyt) %<=% datasrc) {
-    ## jhu, nyt nonwa
-    plon('all.nonwa');
-    plot_cvdat(list(jhu.cases,nyt.cases),places=places_nonwa(),ages=NULL,per.capita=TRUE);
-    ploff();
-  }
-  ## all sources 'state', regular and noroll
-  n=length(objs.noroll);
-  plon('all.regnoroll');
-  plot_cvdat(c(objs,objs.noroll),places=cq(state),ages='all',per.capita=TRUE,
-             lty=c(rep('solid',n),rep('dotted',n)),col=rep(col_brew(n,'d3')));
-  ploff()
-  ## all sources 'state' noroll
-  plon('all.noroll');
-  plot_cvdat(objs.noroll,places=cq(state),ages='all',per.capita=TRUE);
-  ploff()
-}
-
