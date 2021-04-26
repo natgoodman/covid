@@ -98,50 +98,47 @@ doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',figs.all=TRUE,
           legends=list(labels=labels.nonwa)));
   if ('doh'%notin%datasrc) return();
   ## Figures 3,4  WA DOH cases, deaths by age
-  ages.cases=sort(ages(doh.cases)%-%'all');
-  col.cases=col_brew(length(ages.cases),'d3');
-  ages.deaths=sort(ages(doh.deaths)%-%'all');
-  ## select col to better match cases (Figure 3). use 1st and last 2
-  col.deaths=c(col.cases[1],tail(col.cases,n=2));
+  ages=sort(ages(doh.cases)%-%'all');
+  col=col_ages(ages=ages);
   if (figs.all) {
     ## Figures 3a-d, 4a-d WA DOH cases, deaths by age for all locations
     ## not always in document, but do 'em so I can check to decide whether to include
     fignum.sav=param(fignum);           # to restore after doing a-d figs
     ## Figures 3a-d cases by age
     figblk_start();
-    data=data_cvdat(doh.cases,places=places.wa,ages=ages.cases,per.capita=TRUE);
-    ylim=c(0,max(data[,-1]));
+    data=data_cvdat(doh.cases,places=places.wa,ages=ages,per.capita=TRUE);
+    ymax=max(data[,-1],na.rm=TRUE);
     sapply(places.wa,function(place) 
       dofig(paste(sep='_','cases',place),
             plot_cvdat(
-              doh.cases,places=place,ages=ages.cases,col=col.cases,
-              per.capita=TRUE,lwd=2,ylim=ylim,
+              doh.cases,places=place,ages=ages,col=col,
+              per.capita=TRUE,lwd=2,ymax=ymax,
               title=figtitle(paste("Weekly cases per million by age in",labels.wa[place])))));
-    ## Figures 4a-d deaths by age
+    ## Figures 4a-d admits, deaths by age
     figblk_start();
-    data=data_cvdat(doh.deaths,places=places.wa,ages=ages.deaths,per.capita=TRUE);
-    ylim=c(0,max(data[,-1]));
+    data=data_cvdat(list(doh.admits,doh.deaths),places=places.wa,ages=ages,per.capita=TRUE);
+    ymax=max(data[,-1],na.rm=TRUE);
     sapply(places.wa,function(place) 
-      dofig(paste(sep='_','deaths',place),
-            plot_cvdat(
-              doh.deaths,places=place,ages=ages.deaths,col=col.deaths,
-              per.capita=TRUE,lwd=2,ylim=ylim,legend='top',
-              title=figtitle(paste("Weekly deaths per million by age in",labels.wa[place])))));
-    param(fignum=fignum.sav);           # restore fignum after a-d figs
+      dofig(paste(sep='_','admits_deaths',place),
+            plot_admdea(
+              places=place,ages=ages,col=col,per.capita=TRUE,ymax=ymax,
+              title=figtitle(paste("Weekly admits and deaths per million by age in",
+                                   labels.wa[place])))));
+      param(fignum=fignum.sav);           # restore fignum after a-d figs
   }
   ## Figures 3 WA DOH cases by age for state
   figblk_end();
   place='state';
   dofig(paste(sep='_','cases',place),
         plot_cvdat(
-          doh.cases,places=place,ages=ages.cases,col=col.cases,per.capita=TRUE,lwd=2,
+          doh.cases,places=place,ages=ages,col=col,per.capita=TRUE,lwd=2,
           title=figtitle(paste("Weekly cases per million by age in",labels.wa[place]))));
-  ## Figures 4 WA DOH deaths by age for state
-  dofig(paste(sep='_','deaths',place),
-        plot_cvdat(
-          doh.deaths,places=place,ages=ages.deaths,col=col.deaths,per.capita=TRUE,lwd=2,
-          legend='top',
-          title=figtitle(paste("Weekly deaths per million by age in",labels.wa[place]))));
+  ## Figures 4 WA DOH admits and deaths by age for state
+  dofig(paste(sep='_','admits_deaths',place),
+        plot_admdea(
+          places=place,ages=ages,col=col,per.capita=TRUE,
+          title=figtitle(paste("Weekly admits and deaths per million by age in",
+                               labels.wa[place]))));
   ## Figures 5a-b compare DOH, JHU.
   ## Note: not used in versions after Dec 13. might come back...
   if (figs.all) {
@@ -151,7 +148,17 @@ doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',figs.all=TRUE,
   }
   version;
 }
-
+## make colors for doh ages. used in Figures 3,4 version 21-04-25 and later
+col_ages=
+  function(obj=doh.cases.raw,ages=NULL,
+           col1.pal='rainbow',skip.beg=2,skip.end=0,col2=cq(grey60,black),col2.n=length(col2)) {
+    if (is.null(ages)) ages=sort(ages(obj)%-%'all');
+    col2=setNames(col2,tail(ages,n=col2.n));
+    col1=col_brew(head(ages,n=-col2.n),col1.pal,skip.beg=skip.beg,skip.end=skip.end);
+    col=c(col1,col2);
+    ## col=rep(col,each=2);
+    col;
+  }
 ## hack to plot final (processed) and raw data together
 ## used for jhu in Figures 1,2 version 21-01-24
 ## TODO: add this to plot_cvdat!
@@ -177,7 +184,34 @@ plot_finraw=
         raw,places=places,ages=ages,per.capita=per.capita,add=TRUE,lwd=lwd.raw,lty=lty.raw,
         type='p',pch=rep(pch,length(places)*length(ages)))
   }
-
+## hack to plot admits and deaths data together
+## used for Figure 4 version 21-04-25 and later
+## TODO: add this to plot_cvdat!
+plot_admdea=
+  function(places='state',ages=NULL,per.capita=TRUE,title=NULL,ylab=NULL,ymax=NULL,
+           where.legend='topleft',
+           lwd.admits=2,lwd.deaths=3,lwd=c(lwd.admits,lwd.deaths),
+           lty.admits='dotted',lty.deaths='solid',lty=c(lty.admits,lty.deaths),
+           col=NULL,
+           col1.pal='rainbow',skip.beg=2,skip.end=0,col2=cq(grey60,black),col2.n=length(col2)) {
+    if (is.null(ages)) ages=ages(doh.cases.raw)%-%'all';
+    if (is.null(title)) 
+      title=paste(collapse=' ',
+                  c('Weekly admits and deaths',
+                    if(per.capita) 'per million' else NULL,
+                    'for',places));
+    if (is.null(ylab))
+      ylab=paste(collapse=' ',
+                 c('weekly admits and deaths',if(per.capita) 'per million' else NULL))
+    if (is.null(col))
+      col=col_ages(ages=ages,col1.pal=col1.pal,skip.beg=skip.beg,skip.end=skip.end,
+                   col2=col2,col2.n=col2.n);
+    plot_cvdat(list(doh.admits,doh.deaths),places=places,ages=ages,per.capita=per.capita,
+               title=title,ylab=ylab,ymax=ymax,where.legend=where.legend,
+               lty=lty,lwd=lwd,col=rep(col3,each=2),
+               legend=list(list(labels=cq(admits,deaths),lty=lty,lwd=lwd,col='black'),
+                           list(labels=age_label(ages,fmt='legend'),lty='solid',lwd=2,col=col)));
+  }
 ## hack to plot doh, jhu processed and raw data together. used in Figure 5
 ## TODO: add this to plot_cvdat!
 plot_dohjhu=function(what=cq(cases,deaths)) {
@@ -207,10 +241,11 @@ plot_dohjhu=function(what=cq(cases,deaths)) {
 ##   bug in 'extra' caused error to be missed and results of edited places and ages to be 0!
 ## as of 21-03-28, okay to fo 'edit' before 'extra'
 make_updat_objs=
-  function(what=cq(cases,deaths),datasrc=cq(doh,jhu),version='latest') {
+  function(what=cq(cases,admits,deaths),datasrc=cq(doh,jhu),version='latest') {
     datasrc=match.arg(datasrc,several.ok=TRUE);
     cases=expand.grid(what=what,datasrc=datasrc,stringsAsFactors=FALSE);
-    withrows(cases,case,{
+    cases=cases[(cases$what!='admits'|cases$datasrc%in%cq(doh)),]; # only 'doh' has 'admits'
+   withrows(cases,case,{
       if (param(verbose)) print(paste('+++ making',datasrc,what));
       ## start with raw. really 'weekly, incremental'
       obj=raw(what,datasrc,version);    # start with raw
@@ -219,8 +254,8 @@ make_updat_objs=
                  jhu=weekly(incremental(obj)));
       assign(paste(sep='.',datasrc,what,'raw'),obj,globalenv());  # save as 'raw'
       if (datasrc=='doh') {
-        if (what=='deaths') obj= edit(obj,'0_64'='0_19'+'20_34'+'35_49'+'50_64',
-                                      DROP=cq('0_19','20_34','35_49','50_64'));
+        ## if (what=='deaths') obj=edit(obj,'0_64'='0_19'+'20_34'+'35_49'+'50_64',
+        ##                               DROP=cq('0_19','20_34','35_49','50_64'));
         obj=extra(obj);
       }
       obj=fit_updat_obj(obj,what);
@@ -233,6 +268,30 @@ fit_updat_obj=function(obj,what) {
   fit.unit=if(what=='cases') 1 else 10.5;
   fit(obj,fit.unit=fit.unit);
 }
+## remove superflous objects - either because they were created by mistake or to start clean
+## if id is set, only removes those objects, else all that fit the pattern
+rm_updat_objs=function(what=cq(cases,admits,deaths),datasrc=cq(doh,jhu,nyt),
+                       id=NULL,rm.std=is.null(id)) {
+  what=match.arg(what,several.ok=TRUE);
+  datasrc=match.arg(datasrc,several.ok=TRUE);
+  if (length(what)==0||length(datasrc)==0) invisible(NULL); # nothing to remove
+  names.all=ls(globalenv());
+  pat=paste0('^(',paste(collapse='|',datasrc),')','\\.',
+             '(',paste(collapse='|',what),')','\\.',
+             '(',paste(collapse='|',id),')');
+  names1=grep(pat,names.all,value=TRUE);
+  rm(list=names1,envir=globalenv());
+  if (rm.std) {
+    pat=paste0('^(',paste(collapse='|',datasrc),')','\\.',
+               '(',paste(collapse='|',what),')$');
+    names2=grep(pat,names.all,value=TRUE);
+    rm(list=names2,envir=globalenv());
+    invisible(c(names1,names2));
+  } else invisible(names1);
+}
+
+
+
 ## save table as txt file
 ## TODO: rewrite using dotbl when implemented!
 save_tbl=function(tbl,tblnum,tblname,sfx=NULL) {
