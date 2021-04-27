@@ -152,6 +152,7 @@ doc_updatsupp=function(sect=NULL,need.objs=TRUE,need.init=TRUE,
     }
     if (sect=='cmp.wa') {
     
+    }
   })
 }
   
