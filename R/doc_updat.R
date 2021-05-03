@@ -208,7 +208,7 @@ plot_admdea=
                    col2=col2,col2.n=col2.n);
     plot_cvdat(list(doh.admits,doh.deaths),places=places,ages=ages,per.capita=per.capita,
                title=title,ylab=ylab,ymax=ymax,where.legend=where.legend,
-               lty=lty,lwd=lwd,col=rep(col3,each=2),
+               lty=lty,lwd=lwd,col=rep(col,each=2),
                legend=list(list(labels=cq(admits,deaths),lty=lty,lwd=lwd,col='black'),
                            list(labels=age_label(ages,fmt='legend'),lty='solid',lwd=2,col=col)));
   }
