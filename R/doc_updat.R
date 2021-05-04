@@ -37,12 +37,16 @@ doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',figs.all=TRUE,
   widths=if(version<'21-02-28') 4 else c(4,6,8);
   trend.cases=trend(jhu.cases.raw,places=c(places.wa,places.nonwa),widths=widths);
   trend.deaths=trend(jhu.deaths.raw,places=c(places.wa,places.nonwa),widths=widths);
-  counts.cases=data_cvdat(jhu.cases.raw,places=c(places.wa,places.nonwa),per.capita=TRUE);
-  counts.deaths=data_cvdat(jhu.deaths.raw,places=c(places.wa,places.nonwa),per.capita=TRUE);
+  counts.cases.raw=data_cvdat(jhu.cases.raw,places=c(places.wa,places.nonwa),per.capita=TRUE);
+  counts.deaths.raw=data_cvdat(jhu.deaths.raw,places=c(places.wa,places.nonwa),per.capita=TRUE);
+  counts.cases=data_cvdat(jhu.cases,places=c(places.wa,places.nonwa),per.capita=TRUE);
+  counts.deaths=data_cvdat(jhu.deaths,places=c(places.wa,places.nonwa),per.capita=TRUE);
   save_tbl(trend.cases,1,'trend_cases');
   save_tbl(trend.deaths,2,'trend_deaths');
-  save_tbl(counts.cases,3,'counts_cases');
-  save_tbl(counts.deaths,4,'counts_deaths');
+  save_tbl(counts.cases.raw,3,'counts_cases_raw',sfx='a');
+  save_tbl(counts.deaths.raw,4,'counts_deaths_raw',sfx='a');
+  save_tbl(counts.cases,3,'counts_cases',sfx='b');
+  save_tbl(counts.deaths,4,'counts_deaths',sfx='b');
   assign_global(trend.cases,trend.deaths,counts.cases,counts.deaths);
   if (param(verbose)) print(paste('+++ making figures'));
   ## Figures 1a-b cases
