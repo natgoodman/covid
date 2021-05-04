@@ -24,7 +24,7 @@ urlcolor: blue
 
 Figures 1a-b show smoothed *case* counts per million for several Washington and non-Washington locations. The Washington locations are the entire state, the Seattle area where I live, and the adjacent counties to the north and south (Snohomish and Pierce, resp.). The non-Washington locations are Ann Arbor, Boston, San Diego, and Washington DC. 
 
-The figures use data from Johns Hopkins Center for Systems Science and Engineering (JHU), described [below](#jhu). When comparing the Washington and non-Washington graphs, please note the difference in y-scale: the current Washington rates (about 1200-1950 per million) overlap the non-Washington rates (300-2150 per million).
+The figures use data from Johns Hopkins Center for Systems Science and Engineering (JHU), described [below](#jhu). When comparing the Washington and non-Washington graphs, please note the difference in y-scale: the current Washington rates (about 1300-1850 per million) overlap the non-Washington rates (200-2100 per million).
 
 ```{r out.width="50%",echo=FALSE,fig.show='asis',include=TRUE}
 knitr::include_graphics(file.path(figdir,'figure_001a_cases_wa.png'));
@@ -37,9 +37,9 @@ knitr::include_graphics(file.path(figdir,'figure_001d_cases_nonwa_ragged.png'));
 
 The Washington graph (Figure 1a) shows that rates, though still below their recent peaks, are climbing again in all locations and now greatly exceed their summer peaks. The increase statewide is about 50% and is more than twofold for the individual counties. Going forward, we can only hope that vaccination of the most vulnerable people will prevent a large increase in deaths. Trend analysis confirms the continued increase. 
 
-The picture for non-Washington locations (Figure 1b) is more optimistic. Cases seem to have plateaued in Ann Arbor after a large increase and are declining everywhere else. Trend analysis concurs, although the Ann Arbor data is too variable to be confident in the trend.
+The picture for non-Washington locations (Figure 1b) is far better with cases declining everywhere. Trend analysis concurs.
 
-Figures 2a-b show *deaths* per million for the same locations. When comparing the Washington and non-Washington graphs, again please note the difference in y-scale: the current Washington rates are 4-7 per million; the non-Washington rates are 4-11 per million.
+Figures 2a-b show *deaths* per million for the same locations. When comparing the Washington and non-Washington graphs, again please note the difference in y-scale: the current Washington rates are 5-11 per million; the non-Washington rates are 6-16 per million.
 
 ```{r out.width="50%",echo=FALSE,fig.show='asis',include=TRUE}
 knitr::include_graphics(file.path(figdir,'figure_002a_deaths_wa.png'));
@@ -50,9 +50,9 @@ knitr::include_graphics(file.path(figdir,'figure_002c_deaths_wa_ragged.png'));
 knitr::include_graphics(file.path(figdir,'figure_002d_deaths_nonwa_ragged.png'));
 ```
 
-The Washington data (Figure 2a) shows three waves. The second peak was thankfully lower than the first; the third wave exceeded the first in all areas except Seattle (King County). The graphs are well down from the third peaks and finally below the first and second peaks but are flattening out. Trend analysis concurs.
+The Washington data (Figure 2a) shows three waves. The second peak was thankfully lower than the first; the third wave exceeded the first in all areas except Seattle (King County). The graphs are well down from the first and third peaks, and remain below the second peak but are climbing in most locations. Trend analysis indicates that the state-wide increase is real, but the data for the individual counties is too variable to be confident.
 
-The non-Washington data (Figure 2b) shows early peaks in most locations, followed by a long trough, followed by a second wave starting in November. The graphs are well down from their recent peaks. Deaths are continuing down in Boston, increasing slightly (or possibly flat) in Ann Arbor, and flat in San Diego and Washington DC. Trend analysis concurs.
+The non-Washington data (Figure 2b) shows early peaks in most locations, followed by a long trough, followed by a second wave starting in November. The graphs are well down from their recent peaks. Deaths are increasing in Ann Arbor while continuing down elsewhere. Trend analysis indicates that the most recent data is too variable to be confident in the direction.
 
 The next graphs show the Washington results broken down by age. This data is from Washington State Department of Health (DOH) weekly downloads, described [below](#doh). An important caveat is that the DOH download systematically undercounts events in recent weeks due to manual curation. I extrapolate data for late time points as discussed [below](#techdetails). 
 
@@ -76,11 +76,11 @@ knitr::include_graphics(file.path(figdir,'figure_004d_admits_deaths_Pierce.png')
 
 Early on, the pandemic struck older age groups most heavily. Over time, *cases* spread into all age groups, even the young. During the second wave, older groups did better with young adults and middle aged adults (20-34 and 35-49 years) becoming the most affected groups. The third wave swept into all age groups. As the wave grew, the oldest people (80+) were again strongly affected. The curves are now heading back up in all age groups, but thankfully the oldest groups (65-79 and 80+) seem to be less affected. 
 
-The shocking death rate of the 80+ age group jumps off the page in Figure 4. The death rate in this age group shows three waves. The third wave reached its peak in December 2020 and is now flat at a level well below the peak. Throughout the pandemic, the death rate for the 80+ group has been much higher than for the 65-79 group; this discrepancy continues even as the rates flatten. 
+The shocking *death* rate of the 80+ age group jumps off the page in Figure 4. The *death* rate in this age group shows three waves. The third wave reached its peak in December 2020 and is now below the peak. Throughout the pandemic, the death rate for the 80+ group has been much higher than for the 65-79 group; this discrepancy continues even as the rates flatten. 
 
-The admit rate shows the same three waves, but like cases and unlike deaths is heading up again. It remains to be seen if this will lead to increasing deaths in the coming weeks. 
+The *admit* rate shows the same three waves, but like *cases* and unlike *deaths* is heading up again. It remains to be seen if this will lead to increasing deaths in the coming weeks. 
 
-In previous versions, Figure 4 only showed *deaths*, but the growing impact on young people combined with the high vaccination rate of the old, make admissions a useful indicator of pandemic status. Previous versions aggregated 0-64 years into a single group, since the death rate in these ages is near 0. Now that the graph includes *admits*, it's useful to keep the age groups separate.
+In versions before April 28, 2021, Figure 4 only showed *deaths*, but the growing impact on young people combined with the high vaccination rate of the old, make admissions a useful indicator of pandemic status. These earlier versions aggregated 0-64 years into a single group, since the *death* rate in these ages is near 0. Now that the graph includes *admits*, it's useful to keep the age groups separate.
 
 ```{r out.width="50%",echo=FALSE,fig.show='asis',include=FALSE}
 knitr::include_graphics(file.path(figdir,'figure_005a_cases_dohjhu.png'));
@@ -142,3 +142,9 @@ The population data used for the per capita calculations is from [Census Reporte
 ## Comments Please!
 
 Please post comments on [Twitter](https://twitter.com/gnatgoodman) or [Facebook](https://www.facebook.com/nathan.goodman.3367), or contact me by email [natg@shore.net](mailto:natg@shore.net).
+
+## Copyright & License
+
+Copyright (c) 2020-2021 Nathan Goodman
+
+The software is **open source and free**, released under the [MIT License](https://opensource.org/licenses/MIT). The documentation is **open access**, released under the [Creative Commons Attribution 4.0 International License](https://creativecommons.org/licenses/by/4.0).
