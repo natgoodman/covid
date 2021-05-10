@@ -153,7 +153,7 @@ auto_title=
 auto_lprop=
   function(series,blocks=NULL,ct=NULL,
            col=NULL,lty=NULL,lwd=NULL,col1='black',lty1='solid',lwd1=2,
-           col.pal='Dark2',lty.range=c(1,6),lwd.range=c(1,3),
+           col.pal='d3',lty.range=c(1,6),lwd.range=c(1,3),
            col.blocks=1,lty.blocks=1:2,lwd.blocks=2:3,
            blocks.order=cq(obj,place,age,objs,places,ages),
            attrs=cq(unit,cumulative,what,datasrc,version,fit,roll,extra)) {
