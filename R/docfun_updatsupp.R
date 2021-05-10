@@ -21,11 +21,17 @@
 ## --- Functions for updatsupp sections ---
 sect_base=
   function(where=cq(wa1,wa2,nonwa1,nonwa2,fav),
-           what=cq(cases,admits,deaths,admdea),datasrc=cq(doh,jhu,nyt),places=NULL) {
+           what=cq(cases,admits,deaths,admdea),datasrc=cq(doh,jhu,nyt),id=cq(std,cum,inc),
+           places=NULL) {
     where=match.arg(where);
     what=match.arg(what,several.ok=TRUE);
     what=what%-%'admdea';               # 'admdea' doesn't work here, so prune it
     datasrc=match.arg(datasrc,several.ok=TRUE);
+    if (missing(id)) id=cq(std)
+       else {
+         id=match.arg(id,several.ok=TRUE);
+         id=unique(ifelse(id=='inc','std',id));
+       }
     if (grepl('^wa',where)) where.label='Washington'
     else {
       ## non-Washington or not entirely Washington
@@ -37,35 +43,44 @@ sect_base=
                   ". Should have been caught earlier"));
     if (is.null(places)) places=get(paste(sep='.','places',where),envir=globalenv());
     labels=names(places);
-    cases=expand.grid(what=what,datasrc=datasrc,stringsAsFactors=FALSE);
+    cases=expand.grid(what=what,datasrc=datasrc,id=id,stringsAsFactors=FALSE);
     ## only 'doh' has 'admits'. prune others
     cases=cases[cases$what!='admits'|cases$datasrc%in%cq(doh),]
     withrows(cases,case,{
-      if (param(verbose)) print(paste('+++ plotting',datasrc,what,where.label));
-      pfx=paste(sep='_',what,datasrc);
-      obj=get(paste(sep='.',datasrc,what),envir=globalenv());
-      title.pfx=paste("Weekly",what,"per million from",toupper(datasrc));
+      id.label=if(id=='std') 'inc' else id;
+      id.title=if(id.label=='inc') 'Weekly' else 'Cumulative';
+      if (param(verbose)) print(paste('+++ plotting',datasrc,what,id.label,where.label));
+      pfx=paste(sep='_',what,id.label,datasrc);
+      obj=get(paste(sep='.',datasrc,what,id),envir=globalenv());
+      title.pfx=paste(id.title,what,"per million from",toupper(datasrc));
       figblk_start();
       dofig(paste(sep='_',pfx,where),
             plot_cvdat(
               obj,places=places,ages='all',per.capita=TRUE,lwd=2,
               title=figtitle(paste(title.pfx,"in",where.label,"locations")),
               legends=list(labels=labels)));
-      ## incude figures showing ragged raw data
-      dofig(paste(sep='_',pfx,where,'ragged'),
-            plot_finraw(
-              datasrc=datasrc,what=what,places=places,ages='all',per.capita=TRUE,lwd=2,
-              title=figtitle(paste(title.pfx,"in",where.label,"locations showing raw data")),
-              legends=list(labels=labels)));
+      if (id.label=='inc') {
+        ## incude figures showing ragged raw data
+        dofig(paste(sep='_',pfx,where,'ragged'),
+              plot_finraw(
+                datasrc=datasrc,what=what,places=places,ages='all',per.capita=TRUE,lwd=2,
+                title=figtitle(paste(title.pfx,"in",where.label,"locations showing raw data")),
+                legends=list(labels=labels)));
+      }
     });
     cases;
   }
 sect_byage=
-  function(aid=1,what=cq(cases,admits,deaths,admdea),datasrc=cq(doh),
+  function(aid=1,what=cq(cases,admits,deaths,admdea),datasrc=cq(doh),id=cq(std,cum,inc),
            places=NULL,ages=NULL,col=NULL) {
     aid=as.character(aid);
     what=match.arg(what,several.ok=TRUE);
     datasrc=match.arg(datasrc);
+   if (missing(id)) id=cq(std)
+       else {
+         id=match.arg(id,several.ok=TRUE);
+         id=unique(ifelse(id=='inc','std',id));
+       }
     if (is.null(places)) places=places.wa;
     if (is.null(ages)) {
       agevar=paste0('ages',aid);
@@ -77,36 +92,40 @@ sect_byage=
       }}
     if (is.null(col)) col=col_agesupp(ages=ages);
     labels=setNames(names(places),places);
-    sapply(what,function(what) {
-      if (what=='admdea') return();         # handled below
-      if (param(verbose)) print(paste('+++ plotting',what,'by age',nv(aid)));
-      pfx=paste(sep='_',what,'byage',aid);
-      obj=get(paste(sep='.',datasrc,what),envir=globalenv());
-      title.pfx=paste("Weekly",what,"per million by age in");
-      data=data_cvdat(obj,places=places,ages=ages,per.capita=TRUE);
-      ymax=max(data[,-1],na.rm=TRUE);
-      figblk_start();
-      sapply(places,function(place) {
-        dofig(paste(sep='_',pfx,place),
-              plot_cvdat(
-                obj,places=place,ages=ages,col=col,per.capita=TRUE,lwd=2,ymax=ymax,
-                title=figtitle(paste(title.pfx,labels[place]))));
-      });
+    cases=expand.grid(what=what,id=id,stringsAsFactors=FALSE);
+    withrows(cases,case,{
+      what.label=if(what=='admdea') 'admits and cases' else what;
+      id.label=if(id=='std') 'inc' else id;
+      id.title=if(id.label=='inc') 'Weekly' else 'Cumulative';
+      if (param(verbose)) print(paste('+++ plotting',what.label,id.label,'by age',nv(aid)));
+      pfx=paste(sep='_',what,id.label,'byage',aid);
+      title.pfx=paste(id.title,what.label,"per million by age in");
+      if (what!='admdea') {
+        obj=get(paste(sep='.',datasrc,what,id),envir=globalenv());
+        data=data_cvdat(obj,places=places,ages=ages,per.capita=TRUE);
+        ymax=max(data[,-1],na.rm=TRUE);
+        figblk_start();
+        sapply(places,function(place) {
+          dofig(paste(sep='_',pfx,place),
+                plot_cvdat(
+                  obj,places=place,ages=ages,col=col,per.capita=TRUE,lwd=2,ymax=ymax,
+                  title=figtitle(paste(title.pfx,labels[place]))));
+        });
+      } else {
+        ## plots admits, deaths together
+        objs=lapply(cq(admits,deaths),function(what)
+          get(paste(sep='.',datasrc,what,id),envir=globalenv()));
+        data=data_cvdat(objs,places=places,ages=ages,per.capita=TRUE);
+        ymax=max(data[,-1],na.rm=TRUE);
+        ylab=paste(tolower(id.title),"admits and deaths per million");
+        sapply(places,function(place) {
+          dofig(paste(sep='_',pfx,place),
+                plot_admdeasupp(objs,places=place,ages=ages,col=col,per.capita=TRUE,ymax=ymax,
+                                ylab=ylab,title=figtitle(paste(title.pfx,labels[place]))));
+        });
+      }
     });
-    if ('admdea'%in%what) {
-      ## plots admits, deaths together
-      if (param(verbose)) print('+++ plotting admits and death together by age');
-      pfx=paste(sep='_','admdea','byage',aid);
-      title.pfx="Weekly admits and deaths per million by age in";
-      data=data_cvdat(list(doh.admits,doh.deaths),places=places,ages=ages,per.capita=TRUE);
-      ymax=max(data[,-1],na.rm=TRUE);
-      sapply(places,function(place) {
-        dofig(paste(sep='_',pfx,place),
-              plot_admdeasupp(places=place,ages=ages,col=col,per.capita=TRUE,ymax=ymax,
-                          title=figtitle(paste(title.pfx,labels[place]))));
-      });
-    }
-    what;
+    cases;
   }
 sect_cmp=
   function(what=cq(cases,admits,deaths,admdea),datasrc=cq(doh,jhu,nyt),places=NULL,col.pal='d3') {
@@ -147,7 +166,7 @@ sect_cumcmp=
       labels=setNames(toupper(datasrc),datasrc);
       fname=paste(sep='_',what,'cumcmp',place);
       ftitle=
-        paste("Cumulative weekly",what,"per million from"
+        paste("Cumulative",what,"per million from"
              ,paste(collapse=", ",toupper(datasrc)),"in",place);
       figblk_start();
       dofig(fname,
@@ -204,7 +223,7 @@ make_updatsupp_objs=
                         '35_79'='35_49'+'50_64'+'65_79',
                         '50_79'='50_64'+'65_79',
                         '65_'='65_79'+'80_');
-      ## 'raw' really means 'editted', 'weekly, incremental'
+      ## 'raw' really means 'edited', 'weekly, incremental'
       obj.raw=if(datasrc=='doh') obj.edit else weekly(incremental(obj.edit));
       ## 'cum'. convert jhu, nyt to weekly so dates will match doh
       obj.cum=if(datasrc=='doh') cumulative(obj.edit) else weekly(obj.edit);
@@ -316,7 +335,8 @@ col_agesupp=
 ## --- Plot admits and deaths data together ---
 ## hack to plot admits and deaths data together. adapted from plot_admdea in doc_updat.R
 plot_admdeasupp=
-  function(places='state',ages=NULL,per.capita=TRUE,title=NULL,ylab=NULL,ymax=NULL,
+  function(objs=list(doh.admits,doh.deaths),
+           places='state',ages=NULL,per.capita=TRUE,title=NULL,ylab=NULL,ymax=NULL,
            where.legend='topleft',
            lwd.admits=2,lwd.deaths=3,lwd=c(lwd.admits,lwd.deaths),
            lty.admits='dotted',lty.deaths='solid',lty=c(lty.admits,lty.deaths),
@@ -331,7 +351,7 @@ plot_admdeasupp=
       ylab=paste(collapse=' ',
                  c('weekly admits and deaths',if(per.capita) 'per million' else NULL))
     if (is.null(col)) col=col_agesupp(ages=ages);
-    plot_cvdat(list(doh.admits,doh.deaths),places=places,ages=ages,per.capita=per.capita,
+    plot_cvdat(objs,places=places,ages=ages,per.capita=per.capita,
                title=title,ylab=ylab,ymax=ymax,where.legend=where.legend,
                lty=lty,lwd=lwd,col=rep(col,each=2),
                legend=list(list(labels=cq(admits,deaths),lty=lty,lwd=lwd,col='black'),
