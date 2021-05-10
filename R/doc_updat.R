@@ -294,8 +294,6 @@ rm_updat_objs=function(what=cq(cases,admits,deaths),datasrc=cq(doh,jhu,nyt),
   } else invisible(names1);
 }
 
-
-
 ## save table as txt file
 ## TODO: rewrite using dotbl when implemented!
 save_tbl=function(tbl,tblnum,tblname,sfx=NULL) {
