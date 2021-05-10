@@ -20,52 +20,43 @@
 #################################################################################
 ## --- Functions for updatsupp sections ---
 sect_base=
-  function(where=cq(wa,nonwa),what=cq(cases,admits,deaths,admdea),datasrc=cq(doh,jhu,nyt),
-           places1=NULL,places2=NULL) {
+  function(where=cq(wa1,wa2,nonwa1,nonwa2,fav),
+           what=cq(cases,admits,deaths,admdea),datasrc=cq(doh,jhu,nyt),places=NULL) {
     where=match.arg(where);
     what=match.arg(what,several.ok=TRUE);
+    what=what%-%'admdea';               # 'admdea' doesn't work here, so prune it
     datasrc=match.arg(datasrc,several.ok=TRUE);
-    where.label=if(where=='wa') 'Washington' else 'non-Washington';
-    if (where=='nonwa') datasrc=datasrc%-%'doh';
+    if (grepl('^wa',where)) where.label='Washington'
+    else {
+      ## non-Washington or not entirely Washington
+      datasrc=datasrc%-%'doh';
+      where.label=if(grepl('^nonwa',where)) 'non-Washington' else 'Favorite';
+    } 
     if (length(datasrc)==0)
       stop(paste0("Bad news: 'datasrc' empty after filtering for ",nv(where),
                   ". Should have been caught earlier"));
-    where.ids=paste0(where,1:2);
-    if (is.null(places1)) places1=get(paste(sep='.','places',where.ids[1]),envir=globalenv());
-    if (is.null(places2)) places2=get(paste(sep='.','places',where.ids[2]),envir=globalenv());
-    labels1=names(places1);
-    labels2=names(places2);
+    if (is.null(places)) places=get(paste(sep='.','places',where),envir=globalenv());
+    labels=names(places);
     cases=expand.grid(what=what,datasrc=datasrc,stringsAsFactors=FALSE);
-    ## only 'doh' has 'admits'. prune others. 'admdea' doesn't work here, yet, so prune it, oo
+    ## only 'doh' has 'admits'. prune others
     cases=cases[cases$what!='admits'|cases$datasrc%in%cq(doh),]
-    cases=cases[cases$what!='admdea',]
     withrows(cases,case,{
       if (param(verbose)) print(paste('+++ plotting',datasrc,what,where.label));
       pfx=paste(sep='_',what,datasrc);
       obj=get(paste(sep='.',datasrc,what),envir=globalenv());
       title.pfx=paste("Weekly",what,"per million from",toupper(datasrc));
       figblk_start();
-      dofig(paste(sep='_',pfx,where.ids[1]),
+      dofig(paste(sep='_',pfx,where),
             plot_cvdat(
-              obj,places=places1,ages='all',per.capita=TRUE,lwd=2,
-              title=figtitle(paste(title.pfx,"in core",where.label,"locations")),
-              legends=list(labels=labels1)));
-      dofig(paste(sep='_',pfx,where.ids[2]),
-            plot_cvdat(
-              obj,places=places2,ages='all',per.capita=TRUE,lwd=2,
-              title=figtitle(paste(title.pfx,"in supp",where.label,"locations")),
-              legends=list(labels=labels2)));
+              obj,places=places,ages='all',per.capita=TRUE,lwd=2,
+              title=figtitle(paste(title.pfx,"in",where.label,"locations")),
+              legends=list(labels=labels)));
       ## incude figures showing ragged raw data
-      dofig(paste(sep='_',pfx,where.ids[1],'ragged'),
+      dofig(paste(sep='_',pfx,where,'ragged'),
             plot_finraw(
-              datasrc=datasrc,what=what,places=places1,ages='all',per.capita=TRUE,lwd=2,
-              title=figtitle(paste(title.pfx,"in core",where.label,"locations showing raw data")),
-              legends=list(labels=labels1)));
-      dofig(paste(sep='_',pfx,'wa2','ragged'),
-            plot_finraw(
-              datasrc=datasrc,what=what,places=places.wa2,ages='all',per.capita=TRUE,lwd=2,
-              title=figtitle(paste(title.pfx,"in supp",where.label,"locations showing raw data")),
-              legends=list(labels=labels2)));
+              datasrc=datasrc,what=what,places=places,ages='all',per.capita=TRUE,lwd=2,
+              title=figtitle(paste(title.pfx,"in",where.label,"locations showing raw data")),
+              legends=list(labels=labels)));
     });
     cases;
   }
@@ -117,14 +108,66 @@ sect_byage=
     }
     what;
   }
+sect_cmp=
+  function(what=cq(cases,admits,deaths,admdea),datasrc=cq(doh,jhu,nyt),places=NULL,col.pal='d3') {
+    what=match.arg(what,several.ok=TRUE);
+    what=what%-%cq(admits,admdea); # only doh has these, so won't work when comparing sources
+    datasrc=match.arg(datasrc,several.ok=TRUE);
+    col=col_brew(datasrc,col.pal);
+    if (is.null(places)) places=get('places.all',envir=globalenv());
+    cases=expand.grid(what=what,place=places,stringsAsFactors=FALSE);
+    withrows(cases,case,{
+      if (param(verbose)) print(paste('+++ plotting',what,'cmp',place));
+      if (place%in%places.nonwall) datasrc=datasrc%-%'doh';
+      labels=setNames(toupper(datasrc),datasrc);
+      fname=paste(sep='_',what,'cmp',place);
+      ftitle=
+        paste("Weekly",what,"per million from",paste(collapse=", ",toupper(datasrc)),"in",place);
+      figblk_start();
+      dofig(fname,
+            plot_pairs(
+              places=place,datasrc=datasrc,per.capita=TRUE,title=figtitle(ftitle),col=col[datasrc],
+              legends=list(labels=labels)));
+    });
+    cases;
+  }
+sect_cumcmp=
+  function(what=cq(cases,admits,deaths,admdea),datasrc=cq(doh,jhu,nyt),places=NULL,col.pal='d3') {
+    what=match.arg(what,several.ok=TRUE);
+    what=what%-%cq(admits,admdea); # only doh has these, so won't work when comparing sources
+    datasrc=match.arg(datasrc,several.ok=TRUE);
+    col=col_brew(datasrc,col.pal);
+    if (is.null(places)) places=get('places.all',envir=globalenv());
+    cases=expand.grid(what=what,place=places,stringsAsFactors=FALSE);
+    withrows(cases,case,{
+      if (param(verbose)) print(paste('+++ plotting',what,'cumcmp',place));
+      if (place%in%places.nonwall) datasrc=datasrc%-%'doh';
+      objs=lapply(datasrc,function(datasrc)
+        get(paste(sep='.',datasrc,what,'cum'),envir=globalenv()));
+      labels=setNames(toupper(datasrc),datasrc);
+      fname=paste(sep='_',what,'cumcmp',place);
+      ftitle=
+        paste("Cumulative weekly",what,"per million from"
+             ,paste(collapse=", ",toupper(datasrc)),"in",place);
+      figblk_start();
+      dofig(fname,
+            plot_cvdat(objs,places=place,per.capita=TRUE,title=figtitle(ftitle),col=col[datasrc],
+                       legends=list(labels=labels)));
+    });
+    cases;
+  }
 ## --- Manage updatsupp objects and places ---
 ## make standard objects for doc_updatsupp and assign to global
 ## from workflow.R do_objs
 make_updatsupp_objs=
-  function(what=cq(cases,admits,deaths),datasrc=cq(doh,jhu,nyt),version='latest') {
+  function(what=cq(cases,admits,deaths,admdea),datasrc=cq(doh,jhu,nyt),version='latest') {
+    what=match.arg(what,several.ok=TRUE);
+    datasrc=match.arg(datasrc,several.ok=TRUE);
     cases=expand.grid(what=what,datasrc=datasrc,stringsAsFactors=FALSE);
     ## only 'doh' has 'admits'. prune others
     cases=cases[(cases$what!='admits'|cases$datasrc%in%cq(doh)),]
+    ## only 'doh' has 'admits'. prune others. 'admdea' irrelevant here, so prune it, oo
+    cases=cases[(cases$what!='admits'|cases$datasrc%in%cq(doh))&(cases$what!='admdea'),]
     ## sorted county populations and names
     pop.wa=sort(pop_wa(),decreasing=TRUE);
     counties.wa=colnames(pop.wa);
@@ -193,9 +236,10 @@ make_updatsupp_objs=
   }
 ## remove superflous objects - either because they were created by mistake or to start clean
 ## if id is set, only removes those objects, else all that fit the pattern
-rm_updatsupp_objs=function(what=cq(cases,admits,deaths),datasrc=cq(doh,jhu,nyt),
+rm_updatsupp_objs=function(what=cq(cases,admits,deaths,admea),datasrc=cq(doh,jhu,nyt),
                            id=NULL,rm.std=is.null(id)) {
   what=match.arg(what,several.ok=TRUE);
+  what=what%-%'admdea';           # admea irrelevant here, so prune it
   datasrc=match.arg(datasrc,several.ok=TRUE);
   if (length(what)==0||length(datasrc)==0) invisible(NULL); # nothing to remove
   names.all=ls(globalenv());
@@ -217,17 +261,25 @@ make_updatsupp_places=function() {
  places.wa1=setNames(cq(state,King,Snohomish,Pierce),
                       c('Washington state','Seattle (King County)',
                        'Snohomish (North of Seattle)','Pierce (South of Seattle)'));
-  places.wa2=setNames(cq(SKP,North,South,West,EastNotYakima),
+ places.wa2=setNames(cq(SKP,North,South,West,EastNotYakima),
                       c('Seattle Metro (SKP)','North of SKP','South of SKP',
                         'West of SKP','East of SKP (except Yakima)'));
-  places.wa=c(places.wa1,places.wa2);
+ places.wa=c(places.wa1,places.wa2);
 
-  places.nonwa1=setNames(cq('Ann Arbor',Boston,'San Diego',DC),
-                         cq('Ann Arbor','Boston','San Diego','Washington DC'));
-  places.nonwa2=setNames(cq('Big Island',Fairbury,'Cape Cod','Mackinac Island',Omaha,Austin),
-                         cq('Big Island',Fairbury,'Cape Cod','Mackinac Island',Omaha,Austin));
+ places.nonwa1=setNames(cq('Ann Arbor',Boston,'San Diego',DC),
+                        cq('Ann Arbor','Boston','San Diego','Washington DC'));
+ places.nonwa2=setNames(cq('Big Island',Fairbury,'Cape Cod','Mackinac Island',Omaha,Austin),
+                        cq('Big Island',Fairbury,'Cape Cod','Mackinac Island',Omaha,Austin));
  places.nonwa=c(places.nonwa1,places.nonwa2);
- assign_global(places.wa1,places.wa2,places.wa,places.nonwa1,places.nonwa2,places.nonwa);
+
+ places.all=c(places.wa,places.nonwa);
+ places.fav=cq(King,'San Juan','Ann Arbor','Mackinac Island',DC,Fairbury);
+ places.wall=places(doh.cases);
+ places.nonwall=places(jhu.cases)%-%places.wall;
+
+ assign_global();                       # assign all locals to global
+ ## assign_global(places.wa1,places.wa2,places.wa,places.nonwa1,places.nonwa2,places.nonwa,
+ ##               places.fav);
 }
 ## make standard age lists for doc_updatsupp and assign to global
 make_updatsupp_ages=function() {
@@ -293,8 +345,8 @@ plot_admdeasupp=
 ## objpairs is list of object pairs: overrides choices from previous args
 ## TODO: add this to plot_cvdat!
 plot_pairs=
-  function(what=cq(cases,deaths),datasrc=cq(doh,jhu,nyt),
-           id=cq(src,edit,raw,cum,roll,fit,extra,fitx),
+  function(what=cq(cases,admits,deaths,admdea),datasrc=cq(doh,jhu,nyt),
+           id=cq(src,edit,raw,cum,roll,fit,extra,fitx,std),
            objpairs=list(),
            places='state',ages='all',per.capita=TRUE,
            type2=cq(lines,points),
@@ -306,6 +358,7 @@ plot_pairs=
                        stringsAsFactors=FALSE);
     } else {
       what=if(missing(what)) 'cases' else match.arg(what,several.ok=TRUE);
+      what=what%-%'admdea';           # admea irrelevant here, so prune it
       datasrc=if(missing(datasrc)) 'jhu' else match.arg(datasrc,several.ok=TRUE);
       id=if(missing(id)) cq(std,raw) else unique(match.arg(id,several.ok=TRUE));
       if (length(id)!=2) stop ("'id' must have two elements, not ",length(id),
@@ -363,10 +416,10 @@ plot_pairs=
                lwd=lwd1,lty=lty1,...);
     if ('lines'%in%type2)
       plot_cvdat(
-        objs2,places=places,ages=ages,per.capita=per.capita,add=TRUE,lwd=lwd2,lty=lty2);
+        objs2,places=places,ages=ages,per.capita=per.capita,add=TRUE,lwd=lwd2,lty=lty2,...);
     if ('points'%in%type2)
       plot_cvdat(
         objs2,places=places,ages=ages,per.capita=per.capita,add=TRUE,lwd=lwd2,lty=lty2,
-        type='p',pch=rep(pch,length(objs2)*length(places)*length(ages)));
+        type='p',pch=rep(pch,length(objs2)*length(places)*length(ages)),...);
     cases;
   }

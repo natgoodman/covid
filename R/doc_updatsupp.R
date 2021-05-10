@@ -30,17 +30,31 @@ doc_updatsupp=
     if (need.ages) make_updatsupp_ages();
     ## if (need.init) init_doc(doc='updatsupp',version=version,sectpfx=TRUE,...);
     if (need.init) init_doc(doc=doc,version=version,figlabel=FALSE,...);
-    sect.all=cq(base.wa,base.nonwa,byage,cmp.wa,cmp.nonwa);
+    sect.all=cq(base.wa1,base.wa2,base.nonwa1,base.nonwa2,base.fav,byage,
+                cmp.wa1,cmp.wa2,cmp.nonwa1,cmp.nonwa2,
+                cumcmp.wa1,cumcmp.wa2,cumcmp.nonwa1,cumcmp.nonwa2);
     if (is.null(sect)) sect=sect.all else sect=pmatch_choice(sect,sect.all,start=FALSE);
     if ('byage'%in%sect&&'doh'%notin%datasrc)
       stop("datasrc must contain 'doh' to run 'byage' section");
-    if ('base.nonwa'%in%sect&&!(cq(jhu,nyt)%<=%datasrc))
+    if ('base.nonwa'%in%sect&&is_empty(cq(jhu,nyt)%&%datasrc))
       stop("datasrc must contain 'jhu' or 'nyt' to run 'base.nonwa' section");
     sapply(sect,function(sect) {
-      ## base wa
-      if (sect=='base.wa') sect_base(where='wa',what=what,datasrc='doh');
-      if (sect=='base.nowa') sect_base(where='nonwa',what=what,datasrc=datasrc%-%'doh');
+      if (sect=='base.wa1') sect_base(where='wa1',what=what,datasrc=datasrc);
+      if (sect=='base.wa2') sect_base(where='wa2',what=what,datasrc=datasrc);
+      if (sect=='base.nonwa1') sect_base(where='nonwa1',what=what,datasrc=datasrc%-%'doh');
+      if (sect=='base.nonwa2') sect_base(where='nonwa2',what=what,datasrc=datasrc%-%'doh');
+      if (sect=='base.fav') sect_base(where='fav',what=what,datasrc=datasrc%-%'doh');
       if (sect=='byage') sapply(ageids,function(aid) sect_byage(aid=aid,what=what,datasrc='doh'));
-    });
+      if (sect=='cmp.wa1') sect_cmp(places=places.wa1,what=what,datasrc=datasrc);
+      if (sect=='cmp.wa2') sect_cmp(places=places.wa2,what=what,datasrc=datasrc);
+      if (sect=='cmp.nonwa1') sect_cmp(places=places.nonwa1,what=what,datasrc=datasrc%-%'doh');
+      if (sect=='cmp.nonwa2') sect_cmp(places=places.nonwa2,what=what,datasrc=datasrc%-%'doh');
+      if (sect=='cumcmp.wa1') sect_cumcmp(places=places.wa1,what=what,datasrc=datasrc);
+      if (sect=='cumcmp.wa2') sect_cumcmp(places=places.wa2,what=what,datasrc=datasrc);
+      if (sect=='cumcmp.nonwa1')
+        sect_cumcmp(places=places.nonwa1,what=what,datasrc=datasrc%-%'doh');
+      if (sect=='cumcmp.nonwa2')
+        sect_cumcmp(places=places.nonwa2,what=what,datasrc=datasrc%-%'doh');
+   });
     sect;
   }
