@@ -24,6 +24,7 @@
 ##   time unit - weekly or daily
 ##   cumulative vs incremental
 time_label=Vectorize(function(unit=cq(1,7,daily,weekly)) {
+  if (unit==FALSE) return(NA);
   unit=as.character(unit);
   unit=match.arg(unit);
   switch(unit,'1'='daily','7'='weekly',unit);

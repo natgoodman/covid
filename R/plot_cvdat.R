@@ -141,6 +141,7 @@ auto_title=
     ## attrs=ct$sv.attrs[ct$sv.attrs!='obj'];    # don't want 'obj' in title
     attrs=ct$sv.attrs %-% cq(obj,series);     # don't want 'obj' or 'series' in title
     xattr=unique(series$xattr[,attrs]);
+    if (xattr$cumulative) xattr$unit=FALSE; # unit doesn't matter for cum
     vals=sapply(attrs,function(attr) name_label(attr,xattr[[attr]],fmt='title'),simplify=FALSE);
     if (per.capita&&'what'%in%attrs) {
       ## add per capita label to what
@@ -253,6 +254,7 @@ auto_ylab=function(series,attrs=cq(unit,cumulative,what),per.capita=FALSE,SEP='&
   xattr=series$xattr;
   attrs=attrs %&% colnames(xattr);
   xattr=unique(xattr[,attrs]);
+  if (xattr$cumulative) xattr$unit=FALSE; # unit doesn't matter for cum
   vals=sapply(attrs,function(attr) name_label(attr,xattr[[attr]],fmt='ylab'),simplify=FALSE);
   if (per.capita&&'what'%in%attrs) {
     ## add per capita label to what
