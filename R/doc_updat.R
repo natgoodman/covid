@@ -306,25 +306,31 @@ save_tbl=function(tbl,tblnum,tblname,sfx=NULL) {
 }
 
 ## show trend results in convenient format. for interactive use
-show_trend=
-  function(cases=parent(trend.cases),deaths=parent(trend.deaths),pval.cutoff=0.15,do.print=TRUE) {
+show_trend=show_trends=
+  function(cases=parent(trend.cases),deaths=parent(trend.deaths),pval.cutoff=NA,do.print=TRUE) {
     if (!is.na(pval.cutoff)) {
       cases=cases[cases$pval<=pval.cutoff,];
       deaths=deaths[deaths$pval<=pval.cutoff,];
     }
     cases$pval=round(cases$pval,digits=3);
     deaths$pval=round(deaths$pval,digits=3);
-    cases.bywidth=split(cases,cases$width);
-    deaths.bywidth=split(deaths,deaths$width);
-    assign_global(cases.bywidth,deaths.bywidth);
+    cases.byplace=split(cases,cases$place);
+    deaths.byplace=split(deaths,deaths$place);
+    assign_global(cases.byplace,deaths.byplace);
     if (do.print) {
-      print('cases');
-      print(cases.bywidth);
+      print('cases.wa');
+      print(cases.byplace[places.wa]);
       print('----------');
-      print('deaths');
-      print(deaths.bywidth);
+      print('cases.nonwa');
+      print(cases.byplace[places.nonwa]);
+      print('----------');
+      print('deaths.wa');
+      print(deaths.byplace[places.wa]);
+      print('----------');
+      print('deaths.nonwa');
+      print(deaths.byplace[places.nonwa]);
     }
-    invisible(list(cases=cases.bywidth,deaths=deaths.bywidth));
+    invisible(list(cases=cases.byplace,deaths=deaths.byplace));
   }
 ## show counts results in convenient format. for interactive use
 show_counts=
@@ -339,19 +345,31 @@ show_counts=
     assign_global(cases.wa,deaths.wa,cases.nonwa,deaths.nonwa);
     if (do.print) {
       print('cases.wa summer peak');
-      print(subset(cases.wa,subset=btwn_cc(date,peak.cases.wa[1],peak.cases.wa[2])));
+      ## print(subset(cases.wa,subset=btwn_cc(date,peak.cases.wa[1],peak.cases.wa[2])));
+      peak=subset(cases.wa,subset=btwn_cc(date,peak.cases.wa[1],peak.cases.wa[2]));
+      i=capply(peak[,-1],which.max);
+      peak=peak[i,];
+      smax=capply(peak[,-1],max);
+      peak=rbind(peak,data.frame(date=NA,smax))
+      print(peak);
       print('cases.wa now');
-      print(tail(cases.wa));
+      print(tail(cases.wa[weekdays(cases.wa$date)=='Sunday',],n=3));        # Sundays
       print('----------');
       print('deaths.wa summer peak');
-      print(subset(deaths.wa,subset=btwn_cc(date,peak.deaths.wa[1],peak.deaths.wa[2])));
+      ## print(subset(deaths.wa,subset=btwn_cc(date,peak.deaths.wa[1],peak.deaths.wa[2])));
+      peak=subset(deaths.wa,subset=btwn_cc(date,peak.deaths.wa[1],peak.deaths.wa[2]));
+      i=capply(peak[,-1],which.max);
+      peak=peak[i,];
+      smax=capply(peak[,-1],max);
+      peak=rbind(peak,data.frame(date=NA,smax))
+      print(peak);
       print('deaths.wa now');
-      print(tail(deaths.wa));
+      print(tail(deaths.wa[weekdays(deaths.wa$date)=='Sunday',],n=3));      # Sundays
       print('----------');
       print('cases.nonwa now');
-      print(tail(cases.nonwa));
+      print(tail(cases.nonwa[weekdays(cases.nonwa$date)=='Sunday',],n=3));   # Sundays
       print('deaths.nonwa now');
-      print(tail(deaths.nonwa));
+      print(tail(deaths.nonwa[weekdays(deaths.nonwa$date)=='Sunday',],n=3)); # Sundays
     }
     invisible(list(cases.wa=cases.wa,deaths.wa=deaths.wa,
                    cases.nonwa=cases.nonwa,deaths.nonwa=deaths.nonwa));
