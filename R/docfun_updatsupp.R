@@ -19,7 +19,7 @@
 ##
 #################################################################################
 ## --- Functions for updatsupp sections ---
-sect_base=
+sect_byplace=
   function(where=cq(wa1,wa2,nonwa1,nonwa2,fav),
            what=cq(cases,admits,deaths,admdea),datasrc=cq(doh,jhu,nyt),id=cq(std,cum,inc),
            places=NULL) {
@@ -118,6 +118,7 @@ sect_byage=
         data=data_cvdat(objs,places=places,ages=ages,per.capita=TRUE);
         ymax=max(data[,-1],na.rm=TRUE);
         ylab=paste(tolower(id.title),"admits and deaths per million");
+        figblk_start();
         sapply(places,function(place) {
           dofig(paste(sep='_',pfx,place),
                 plot_admdeasupp(objs,places=place,ages=ages,col=col,per.capita=TRUE,ymax=ymax,
@@ -127,54 +128,71 @@ sect_byage=
     });
     cases;
   }
-sect_cmp=
-  function(what=cq(cases,admits,deaths,admdea),datasrc=cq(doh,jhu,nyt),places=NULL,col.pal='d3') {
+sect_bysrc=
+  function(what=cq(cases,admits,deaths,admdea),datasrc=cq(doh,jhu,nyt),id=cq(std,cum,inc),
+           places=NULL,col.pal='d3') {
     what=match.arg(what,several.ok=TRUE);
     what=what%-%cq(admits,admdea); # only doh has these, so won't work when comparing sources
     datasrc=match.arg(datasrc,several.ok=TRUE);
+    datasrc.title=paste(collapse=", ",toupper(datasrc));
+    if (missing(id)) id=cq(std)
+       else {
+         id=match.arg(id,several.ok=TRUE);
+         id=unique(ifelse(id=='inc','std',id));
+       }
     col=col_brew(datasrc,col.pal);
     if (is.null(places)) places=get('places.all',envir=globalenv());
-    cases=expand.grid(what=what,place=places,stringsAsFactors=FALSE);
+    cases=expand.grid(what=what,place=places,id=id,stringsAsFactors=FALSE);
     withrows(cases,case,{
-      if (param(verbose)) print(paste('+++ plotting',what,'cmp',place));
+      id.label=if(id=='std') 'inc' else id;
+      id.title=if(id.label=='inc') 'Weekly' else 'Cumulative';
+      if (param(verbose)) print(paste('+++ plotting',what,id.label,'bysrc',place));
       if (place%in%places.nonwall) datasrc=datasrc%-%'doh';
       labels=setNames(toupper(datasrc),datasrc);
-      fname=paste(sep='_',what,'cmp',place);
+      fname=paste(sep='_',what,id.label,'bysrc',place);
       ftitle=
-        paste("Weekly",what,"per million from",paste(collapse=", ",toupper(datasrc)),"in",place);
+        paste(id.title,what,"per million from",datasrc.title,"in",place);
       figblk_start();
-      dofig(fname,
-            plot_pairs(
-              places=place,datasrc=datasrc,per.capita=TRUE,title=figtitle(ftitle),col=col[datasrc],
-              legends=list(labels=labels)));
-    });
-    cases;
-  }
-sect_cumcmp=
-  function(what=cq(cases,admits,deaths,admdea),datasrc=cq(doh,jhu,nyt),places=NULL,col.pal='d3') {
-    what=match.arg(what,several.ok=TRUE);
-    what=what%-%cq(admits,admdea); # only doh has these, so won't work when comparing sources
-    datasrc=match.arg(datasrc,several.ok=TRUE);
-    col=col_brew(datasrc,col.pal);
-    if (is.null(places)) places=get('places.all',envir=globalenv());
-    cases=expand.grid(what=what,place=places,stringsAsFactors=FALSE);
-    withrows(cases,case,{
-      if (param(verbose)) print(paste('+++ plotting',what,'cumcmp',place));
-      if (place%in%places.nonwall) datasrc=datasrc%-%'doh';
-      objs=lapply(datasrc,function(datasrc)
-        get(paste(sep='.',datasrc,what,'cum'),envir=globalenv()));
-      labels=setNames(toupper(datasrc),datasrc);
-      fname=paste(sep='_',what,'cumcmp',place);
-      ftitle=
-        paste("Cumulative",what,"per million from"
-             ,paste(collapse=", ",toupper(datasrc)),"in",place);
-      figblk_start();
-      dofig(fname,
+      if (id.label=='inc') 
+        dofig(fname,
+              plot_pairs(
+                places=place,datasrc=datasrc,per.capita=TRUE,title=figtitle(ftitle),
+                col=col[datasrc],legends=list(labels=labels)))
+      else {
+        objs=lapply(datasrc,function(datasrc)
+          get(paste(sep='.',datasrc,what,'cum'),envir=globalenv()));
+        dofig(fname,
             plot_cvdat(objs,places=place,per.capita=TRUE,title=figtitle(ftitle),col=col[datasrc],
                        legends=list(labels=labels)));
+      }
     });
     cases;
   }
+## sect_cumcmp=
+##   function(what=cq(cases,admits,deaths,admdea),datasrc=cq(doh,jhu,nyt),places=NULL,col.pal='d3') {
+##     what=match.arg(what,several.ok=TRUE);
+##     what=what%-%cq(admits,admdea); # only doh has these, so won't work when comparing sources
+##     datasrc=match.arg(datasrc,several.ok=TRUE);
+##     col=col_brew(datasrc,col.pal);
+##     if (is.null(places)) places=get('places.all',envir=globalenv());
+##     cases=expand.grid(what=what,place=places,stringsAsFactors=FALSE);
+##     withrows(cases,case,{
+##       if (param(verbose)) print(paste('+++ plotting',what,'cumcmp',place));
+##       if (place%in%places.nonwall) datasrc=datasrc%-%'doh';
+##       objs=lapply(datasrc,function(datasrc)
+##         get(paste(sep='.',datasrc,what,'cum'),envir=globalenv()));
+##       labels=setNames(toupper(datasrc),datasrc);
+##       fname=paste(sep='_',what,'cumcmp',place);
+##       ftitle=
+##         paste("Cumulative",what,"per million from"
+##              ,paste(collapse=", ",toupper(datasrc)),"in",place);
+##       figblk_start();
+##       dofig(fname,
+##             plot_cvdat(objs,places=place,per.capita=TRUE,title=figtitle(ftitle),col=col[datasrc],
+##                        legends=list(labels=labels)));
+##     });
+##     cases;
+##   }
 ## --- Manage updatsupp objects and places ---
 ## make standard objects for doc_updatsupp and assign to global
 ## from workflow.R do_objs

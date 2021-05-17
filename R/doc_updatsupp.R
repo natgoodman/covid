@@ -33,41 +33,48 @@ doc_updatsupp=
     sect.all=cq(inc.wa1,inc.wa2,inc.nonwa1,inc.nonwa2,inc.fav,
                 cum.wa1,cum.wa2,cum.nonwa1,cum.nonwa2,cum.fav,
                 inc.byage,cum.byage,
-                cmp.wa1,cmp.wa2,cmp.nonwa1,cmp.nonwa2,
-                cumcmp.wa1,cumcmp.wa2,cumcmp.nonwa1,cumcmp.nonwa2);
+                inc.bysrc.wa1,inc.bysrc.wa2,inc.bysrc.nonwa1,inc.bysrc.nonwa2,inc.bysrc.fav,
+                cum.bysrc.wa1,cum.bysrc.wa2,cum.bysrc.nonwa1,cum.bysrc.nonwa2,cum.bysrc.fav);
     if (is.null(sect)) sect=sect.all else sect=pmatch_choice(sect,sect.all,start=FALSE);
     if ('byage'%in%sect&&'doh'%notin%datasrc)
       stop("datasrc must contain 'doh' to run 'byage' section");
     if ('inc.nonwa'%in%sect&&is_empty(cq(jhu,nyt)%&%datasrc))
       stop("datasrc must contain 'jhu' or 'nyt' to run 'inc.nonwa' section");
     sapply(sect,function(sect) {
-      if (sect=='inc.wa1') sect_base(where='wa1',what=what,datasrc=datasrc);
-      if (sect=='inc.wa2') sect_base(where='wa2',what=what,datasrc=datasrc);
-      if (sect=='inc.nonwa1') sect_base(where='nonwa1',what=what,datasrc=datasrc%-%'doh');
-      if (sect=='inc.nonwa2') sect_base(where='nonwa2',what=what,datasrc=datasrc%-%'doh');
-      if (sect=='inc.fav') sect_base(where='fav',what=what,datasrc=datasrc%-%'doh');
+      if (sect=='inc.wa1') sect_byplace(where='wa1',what=what,datasrc=datasrc);
+      if (sect=='inc.wa2') sect_byplace(where='wa2',what=what,datasrc=datasrc);
+      if (sect=='inc.nonwa1') sect_byplace(where='nonwa1',what=what,datasrc=datasrc%-%'doh');
+      if (sect=='inc.nonwa2') sect_byplace(where='nonwa2',what=what,datasrc=datasrc%-%'doh');
+      if (sect=='inc.fav') sect_byplace(where='fav',what=what,datasrc=datasrc%-%'doh');
 
-      if (sect=='cum.wa1') sect_base(where='wa1',what=what,datasrc=datasrc,id='cum');
-      if (sect=='cum.wa2') sect_base(where='wa2',what=what,datasrc=datasrc,id='cum');
-      if (sect=='cum.nonwa1') sect_base(where='nonwa1',what=what,datasrc=datasrc%-%'doh',id='cum');
-      if (sect=='cum.nonwa2') sect_base(where='nonwa2',what=what,datasrc=datasrc%-%'doh',id='cum');
-      if (sect=='cum.fav') sect_base(where='fav',what=what,datasrc=datasrc%-%'doh',id='cum');
-
+      if (sect=='cum.wa1') sect_byplace(where='wa1',what=what,datasrc=datasrc,id='cum');
+      if (sect=='cum.wa2') sect_byplace(where='wa2',what=what,datasrc=datasrc,id='cum');
+      if (sect=='cum.nonwa1')
+        sect_byplace(where='nonwa1',what=what,datasrc=datasrc%-%'doh',id='cum');
+      if (sect=='cum.nonwa2')
+        sect_byplace(where='nonwa2',what=what,datasrc=datasrc%-%'doh',id='cum');
+      if (sect=='cum.fav') sect_byplace(where='fav',what=what,datasrc=datasrc%-%'doh',id='cum');
+      
       if (sect=='inc.byage')
         sapply(ageids,function(aid) sect_byage(aid=aid,what=what,datasrc='doh'));
       if (sect=='cum.byage')
         sapply(ageids,function(aid) sect_byage(aid=aid,what=what,datasrc='doh',id='cum'));
 
-      if (sect=='cmp.wa1') sect_cmp(places=places.wa1,what=what,datasrc=datasrc);
-      if (sect=='cmp.wa2') sect_cmp(places=places.wa2,what=what,datasrc=datasrc);
-      if (sect=='cmp.nonwa1') sect_cmp(places=places.nonwa1,what=what,datasrc=datasrc%-%'doh');
-      if (sect=='cmp.nonwa2') sect_cmp(places=places.nonwa2,what=what,datasrc=datasrc%-%'doh');
-      if (sect=='cumcmp.wa1') sect_cumcmp(places=places.wa1,what=what,datasrc=datasrc);
-      if (sect=='cumcmp.wa2') sect_cumcmp(places=places.wa2,what=what,datasrc=datasrc);
-      if (sect=='cumcmp.nonwa1')
-        sect_cumcmp(places=places.nonwa1,what=what,datasrc=datasrc%-%'doh');
-      if (sect=='cumcmp.nonwa2')
-        sect_cumcmp(places=places.nonwa2,what=what,datasrc=datasrc%-%'doh');
-   });
+      if (sect=='inc.bysrc.wa1') sect_bysrc(places=places.wa1,what=what,datasrc=datasrc);
+      if (sect=='inc.bysrc.wa2') sect_bysrc(places=places.wa2,what=what,datasrc=datasrc);
+      if (sect=='inc.bysrc.nonwa1')
+        sect_bysrc(places=places.nonwa1,what=what,datasrc=datasrc%-%'doh');
+      if (sect=='inc.bysrc.nonwa2')
+        sect_bysrc(places=places.nonwa2,what=what,datasrc=datasrc%-%'doh');
+      if (sect=='inc.bysrc.fav') sect_bysrc(places=places.fav,what=what,datasrc=datasrc);
+
+      if (sect=='cum.bysrc.wa1') sect_bysrc(places=places.wa1,what=what,datasrc=datasrc,id='cum');
+      if (sect=='cum.bysrc.wa2') sect_bysrc(places=places.wa2,what=what,datasrc=datasrc,id='cum');
+      if (sect=='cum.bysrc.nonwa1')
+        sect_bysrc(places=places.nonwa1,what=what,datasrc=datasrc%-%'doh',id='cum');
+      if (sect=='cum.bysrc.nonwa2')
+        sect_bysrc(places=places.nonwa2,what=what,datasrc=datasrc%-%'doh',id='cum');
+       if (sect=='cum.bysrc.fav') sect_bysrc(places=places.fav,what=what,datasrc=datasrc,id='cum');
+  });
     sect;
   }
