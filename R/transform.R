@@ -114,7 +114,8 @@ cumulative.cvdoh=function(obj,week.end=FALSE) {
   obj;
 }
 cum1=function(data,unit,week.end) {
-  data=data.frame(date=data[,1],apply(data[,-1,drop=FALSE],2,cumsum));
+  ## do it this convoluted way, so R won't munge place names or dates. sigh...
+  data=cbind(date=data[,1],as.data.frame(do.call(cbind,lapply(data[,-1,drop=FALSE],cumsum))))
   if (unit==7&&week.end) {
     date.0=data$date[1]-1;
     ## adjust dates to end of week and insert row of 0s at beginning
