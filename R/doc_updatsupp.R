@@ -21,15 +21,16 @@
 doc_updatsupp=
   function(sect=NULL,need.objs=TRUE,need.places=TRUE,need.ages=TRUE,need.init=TRUE,
            what=cq(cases,admits,deaths,admdea),datasrc=cq(doh,jhu,nyt),ageids=1:4,
-           doc='updatsupp',version='latest',figs.all=TRUE,...) {
+           doc='updatsupp',version='latest',pjto=cq(dir,file),...) {
     what=match.arg(what,several.ok=TRUE);
     datasrc=match.arg(datasrc,several.ok=TRUE);
+    if (missing(pjto)) pjto=match.arg(pjto);
     if (is.null(version)||version=='latest') version=max(sapply(datasrc,latest_version));
     if (need.objs) make_updatsupp_objs(what=what,datasrc=datasrc,version=version);
     if (need.places) make_updatsupp_places();
     if (need.ages) make_updatsupp_ages();
     ## if (need.init) init_doc(doc='updatsupp',version=version,sectpfx=TRUE,...);
-    if (need.init) init_doc(doc=doc,version=version,figlabel=FALSE,...);
+    if (need.init) init_doc(doc=doc,version=version,figlabel=FALSE,pjto=pjto,...);
     sect.all=cq(inc.wa1,inc.wa2,inc.nonwa1,inc.nonwa2,inc.fav,
                 cum.wa1,cum.wa2,cum.nonwa1,cum.nonwa2,cum.fav,
                 inc.byage,cum.byage,
@@ -75,6 +76,7 @@ doc_updatsupp=
       if (sect=='cum.bysrc.nonwa2')
         sect_bysrc(places=places.nonwa2,what=what,datasrc=datasrc%-%'doh',id='cum');
        if (sect=='cum.bysrc.fav') sect_bysrc(places=places.fav,what=what,datasrc=datasrc,id='cum');
-  });
+    });
+    if (pjto=='dir') system(paste('pjto -r',param(figdir))); # copy figdir to Mac if desired
     sect;
   }
