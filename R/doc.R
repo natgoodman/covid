@@ -51,8 +51,8 @@ dodoc=
 ## CAUTION: ... interacts with partial argument matching to cause dofig args to be
 ##   matched by plot-function args. eg, 'd' matches 'doc', 'x' matches 'xtra'
 ##   choose argument names carefully!
-dofig=function(figname,figfun,sect=param(sect),...) {
-  param(pjto);
+dofig=function(figname,figfun,sect=param(sect),pjto=param(pjto),...) {
+  if (!is.logical(pjto)) pjto=if(pjto=='file') TRUE else FALSE;
   parent.env=parent.frame(n=1);
   file=filename_fig(figlabel(where='filename'),sect,figname);
   ## png parameters found by trial and error. look reasonable
