@@ -24,7 +24,7 @@ urlcolor: blue
 
 Figures 1a-b show smoothed *case* counts per million for several Washington and non-Washington locations. The Washington locations are the entire state, the Seattle area where I live, and the adjacent counties to the north and south (Snohomish and Pierce, resp.). The non-Washington locations are Ann Arbor, Boston, San Diego, and Washington DC. 
 
-The figures use data from Johns Hopkins Center for Systems Science and Engineering (JHU), described [below](#jhu). When comparing the Washington and non-Washington graphs, please note the difference in y-scale: the current Washington rates (about 1100-2000 per million) are well above the non-Washington rates (300-700 per million).
+The figures use data from Johns Hopkins Center for Systems Science and Engineering (JHU), described [below](#jhu). When comparing the Washington and non-Washington graphs, please note the difference in y-scale: the current Washington rates (about 700-1300 per million) are greater than the non-Washington rates (250-400 per million).
 
 ```{r out.width="50%",echo=FALSE,fig.show='asis',include=TRUE}
 knitr::include_graphics(file.path(figdir,'figure_001a_cases_wa.png'));
@@ -35,11 +35,11 @@ knitr::include_graphics(file.path(figdir,'figure_001c_cases_wa_ragged.png'));
 knitr::include_graphics(file.path(figdir,'figure_001d_cases_nonwa_ragged.png'));
 ```
 
-The Washington graph (Figure 1a) shows that rates are finally declining in all locations except Pierce. Trend analysis suggests the decline is real state-wide and in Seattle (King County), but the Snohomish data is too variable to be confident in the decline; the increase in Pierce is less than in previous weeks and may be reaching the peak.
+The Washington graph (Figure 1a) shows that rates are declining in all locations. Trend analysis suggests the decline is real everywhere except Pierce. The Pierce data is ambiguous: cases were increasing until the most recent data but declined considerably this last week. Let's hope this decline is real.
 
-The picture for non-Washington locations (Figure 1b) is far better: cases are declining everywhere. Trend analysis confirms the decline everywhere except San Diego where cases may be plateauing.
+The picture for non-Washington locations (Figure 1b) is far better: cases are declining everywhere. Trend analysis confirms the decline everywhere except San Diego where cases continue to plateau.
 
-Figures 2a-b show *deaths* per million for the same locations. When comparing the Washington and non-Washington graphs, again please note the difference in y-scale: the current Washington rates are 5-12 per million; the non-Washington rates are 4-21 per million.
+Figures 2a-b show *deaths* per million for the same locations. When comparing the Washington and non-Washington graphs, again please note the difference in y-scale: the current Washington rates are 7-11 per million; the non-Washington rates are 3-18 per million.
 
 ```{r out.width="50%",echo=FALSE,fig.show='asis',include=TRUE}
 knitr::include_graphics(file.path(figdir,'figure_002a_deaths_wa.png'));
@@ -74,11 +74,11 @@ knitr::include_graphics(file.path(figdir,'figure_004c_admits_deaths_Snohomish.pn
 knitr::include_graphics(file.path(figdir,'figure_004d_admits_deaths_Pierce.png'));
 ```
 
-Early on, the pandemic struck older age groups most heavily. Over time, *cases* spread into all age groups, even the young. During the second wave, older groups did better with young adults and middle aged adults (20-34 and 35-49 years) becoming the most affected groups. The third wave swept into all age groups. As the wave grew, the oldest people (80+) were again strongly affected. The curves are finally heading down in all but the oldest age groups (65-79 and 80+); the increase in the oldest groups is slow and may be an artifact of my extrapolation (see [below](#techdetails)).
+Early on, the pandemic struck older age groups most heavily. Over time, *cases* spread into all age groups, even the young. During the second wave, older groups did better with young adults and middle aged adults (20-34 and 35-49 years) becoming the most affected groups. The third wave swept into all age groups. As the wave grew, the oldest people (80+) were again strongly affected. The curves are heading down in all but the oldest age groups (65-79 and 80+) for whom the rates are flat.
 
 The shocking *death* rate of the 80+ age group jumps off the page in Figure 4. The *death* rate in this age group shows four waves. The third wave reached its peak in December 2020. The fourth wave peaked in April 2021 at a level well below the earlier peaks. Throughout the pandemic, the death rate for the 80+ group has been much higher than for the 65-79 group; this discrepancy continues even as rates subside. 
 
-The *admit* rate shows the same four waves, but like *cases* and unlike *deaths* is heading up again. Given the declining death rates now, it seems reasonable to be optimistic that deaths will remain low in the coming weeks. 
+The *admit* rate shows the same four waves, and seems to be increasing slowly in some age groups. Given the declining death rates now, it seems reasonable to be optimistic that deaths will remain low in the coming weeks. 
 
 In versions before April 28, 2021, Figure 4 only showed *deaths*, but the growing impact on young people combined with the high vaccination rate of the old, make admissions a useful indicator of pandemic status. These earlier versions aggregated 0-64 years into a single group, since the *death* rate in these ages is near 0. Now that the graph includes *admits*, it's useful to keep the age groups separate.
 
