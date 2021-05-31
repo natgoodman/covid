@@ -60,7 +60,7 @@ import_doh=function(file) {
     wdates=seq(sunday_week(min(data$date)),vdate-7,by=7); # weekly dates spanning data
     adates=sort(unique(c(ddates,wdates)));                # all dates of interest
     log_doherrs(logdir,what,version,vdate,ddates,wdates);
-    dates=data.frame(date=adates,stringsAsFactors=F);
+    dates=data.frame(date=adates,stringsAsFactors=FALSE);
     bycounty=split(data,data$county)
     bycounty=lapply(bycounty,function(data) {
       data=merge(dates,data[,-1],all=T);
