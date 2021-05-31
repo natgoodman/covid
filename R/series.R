@@ -20,9 +20,9 @@ data_series=
     ## if (identical(ages,'all')) ages=NULL;
     if (!(is.null(ages)||identical(ages,'all'))) {
       datasrc=sapply(objs,function(obj) obj$datasrc);
-      bad=unique(datasrc[datasrc!='doh']);
+      bad=unique(datasrc%-%cq(doh,cdc));
       if (length(bad)>0) 
-        stop("Only doh objects have ages, not ",paste(collapse=', ',bad)," objects");
+        stop("Only doh and cdc objects have ages, not ",paste(collapse=', ',bad)," objects");
     }
     ## check whether edited objects are compatible
     cmp_pops(objs,places,ages,incompatible.ok=incompatible.ok);
@@ -34,7 +34,7 @@ data_series=
     series=withrows(xattr,case,{
       obj=objs[[obj]];
       data=obj$data;
-      if (obj$datasrc=='doh') data=if(is.null(ages)) data$all else data[[age]];
+      if (obj$datasrc%in%cq(doh,cdc)) data=if(is.null(ages)) data$all else data[[age]];
       if (place %notin% colnames(data)[-1])
         stop(nv(place)," not valid for ",obj$datasrc," objects");
       series=data.frame(date=data$date,y=data[[place]])
