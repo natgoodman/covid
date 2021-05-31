@@ -15,10 +15,11 @@
 library("rjson");
 ## ---- Import population metadata ----
 ## creates meta/pop .Rdata, .txt
-download_pop=function(geo=param(geo),placedir=param(placedir)) {
+download_pop=function(geo=param(geo),placedir=param(placedir),usa=TRUE) {
   if (param(verbose)) print(paste('>>> downloading pop to',placedir));
   if (is.null(geo)) geo=load_geo();
   withrows(geo,row,download_place(geoid,place,placedir));
+  if (usa) download_place(geoid='01000US',place='USA',placedir=placedir)
   nrow(geo);
 }
 ## download one county from one state
@@ -93,7 +94,23 @@ obj_pop=function(obj) {
   ## colnames(pop.obj)=places.obj;
   pop.obj;
 }
-
+## create pop for CDC Case Surveillance Data
+cdc_pop=function() {
+  pop=param(pop);
+  if (is.null(pop)) pop=load_pop();
+  places.pop=colnames(pop);
+  if ('USA'%notin%places.pop) stop('Cannot create CDC pop: USA not in main pop file');
+  pop=pop[,'USA',drop=FALSE];
+  ages.pop=rownames(pop)%-%'all';
+  ## hardcode CDC ages to 10 year ranges
+  ages.cdc=c(paste(sep='_',seq(0,70,by=10),seq(9,79,by=10)),'80_');
+  starts.pop=age_starts(ages.pop);
+  starts.cdc=age_starts(ages.cdc);
+  cats=cut(starts.pop,c(starts.cdc,100),right=F,labels=ages.cdc);
+  groups=split(ages.pop,cats);
+  pop.cdc=c(all=pop['all','USA'],sapply(groups,function(i) sum(pop[i,])));
+  data.frame(USA=pop.cdc);
+}
 ## process censusreport metadata file
 meta_names=function(metafile=param(acsmeta)) {
   json=fromJSON(file = metafile);
