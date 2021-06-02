@@ -18,12 +18,14 @@
 ## Starting with this version, I only have for the current version.
 ## Previous versions are available in GitHub, of course.
 ## no sections.
-doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',figs.all=TRUE,...) {
+doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',figs.all=TRUE,
+                   xmin.raw=NULL,...) {
   datasrc=cq(doh,jhu);
   if (is.null(version)||version=='latest') version=max(sapply(datasrc,latest_version));
   if (param(verbose)) print(paste('+++ doc_update',nv(version)));
   if (need.objs) make_updat_objs(datasrc=datasrc,version=version);
   if (need.init) init_doc(doc='updat',version=version,...);
+  if (is.null(xmin.raw)&&version>='21-05-30') xmin.raw='2021-02-15';
   places.wa<<-cq(state,King,Snohomish,Pierce);
   labels.wa=setNames(c('Washington state','Seattle (King County)',
                        'Snohomish (North of Seattle)','Pierce (South of Seattle)'),
@@ -47,7 +49,8 @@ doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',figs.all=TRUE,
   save_tbl(counts.deaths.raw,4,'counts_deaths_raw',sfx='a');
   save_tbl(counts.cases,3,'counts_cases',sfx='b');
   save_tbl(counts.deaths,4,'counts_deaths',sfx='b');
-  assign_global(trend.cases,trend.deaths,counts.cases,counts.deaths);
+  assign_global(trend.cases,trend.deaths,counts.cases,counts.deaths,
+                counts.cases.raw,counts.deaths.raw);
   if (param(verbose)) print(paste('+++ making figures'));
   ## Figures 1a-b cases
   figblk_start();
@@ -65,12 +68,14 @@ doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',figs.all=TRUE,
   dofig('cases_wa_ragged',
         plot_finraw(
           datasrc='jhu',what='cases',places=places.wa,ages='all',per.capita=TRUE,lwd=2,
+          xmin=xmin.raw,
           title=figtitle(
             "Weekly cases per million in Washington locations showing raw data"),
           legends=list(labels=labels.wa)));
   dofig('cases_nonwa_ragged',
         plot_finraw(
           datasrc='jhu',what='cases',places=places.nonwa,ages='all',per.capita=TRUE,lwd=2,
+          xmin=xmin.raw,
           title=figtitle(
             "Weekly cases per million in non-Washington locations showing raw data"),
           legends=list(labels=labels.nonwa)));
@@ -91,12 +96,14 @@ doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',figs.all=TRUE,
   dofig('deaths_wa_ragged',
         plot_finraw(
           datasrc='jhu',what='deaths',places=places.wa,ages='all',per.capita=TRUE,lwd=2,
+          xmin=xmin.raw,
           title=figtitle(
             "Weekly deaths per million in Washington locations showing raw data"),
           legends=list(labels=labels.wa)));
   dofig('deaths_nonwa_ragged',
         plot_finraw(
           datasrc='jhu',what='deaths',places=places.nonwa,ages='all',per.capita=TRUE,lwd=2,
+          xmin=xmin.raw,
           title=figtitle(
             "Weekly deaths per million in non-Washington locations showing raw data"),
           legends=list(labels=labels.nonwa)));
@@ -144,12 +151,20 @@ doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',figs.all=TRUE,
           title=figtitle(paste("Weekly admits and deaths per million by age in",
                                labels.wa[place]))));
   ## Figures 5a-b compare DOH, JHU.
-  ## Note: not used in versions after Dec 13. might come back...
-  if (figs.all) {
-    figblk_start();
-    dofig('cases_dohjhu',plot_dohjhu('cases'));
-    dofig('deaths_dohjhu',plot_dohjhu('deaths'));
-  }
+  ## Note: not used in versions after Dec 13, 2020 until Jun 2, 2021. might go away again...
+  ##if (figs.all) {
+  figblk_start();
+  dofig('cases_dohjhu',
+        plot_dohjhu(
+          'cases',
+          title=
+            figtitle('Weekly fitted and raw cases per million: DOH and JHU (Washington state)')));
+  dofig('deaths_dohjhu',
+        plot_dohjhu(
+          'deaths',
+          title=
+            figtitle('Weekly fitted and raw deaths per million: DOH and JHU (Washington state)')));
+  ## end of figures
   version;
 }
 ## make colors for doh ages. used in Figures 3,4 version 21-04-25 and later
@@ -169,7 +184,7 @@ col_ages=
 plot_finraw=
   function(datasrc=cq(doh,jhu,nyt),what=cq(cases,admits,deaths),title,legends,
            raw.plot=cq(lines,points),
-           places,ages='all',per.capita=TRUE,
+           places,ages='all',per.capita=TRUE,xmin=NULL,xmax=NULL,ymin=NULL,ymax=NULL,
            lwd=2,lwd.fin=lwd,lwd.raw=0.375*lwd.fin,lty.fin='solid',lty.raw='dotted',pch=20) {
     datasrc=match.arg(datasrc);
     what=match.arg(what);
@@ -177,8 +192,9 @@ plot_finraw=
     fin=get(paste(sep='.',datasrc,what));
     raw=get(paste(sep='.',datasrc,what,'raw'));
     data=data_cvdat(list(fin,raw),places=places,ages=ages,per.capita=per.capita);
-    ymax=max(data[,-1],na.rm=TRUE);
-    plot_cvdat(fin,places=places,ages=ages,per.capita=per.capita,ymax=ymax,
+    if (is.null(ymax)) ymax=max(data[,-1],na.rm=TRUE);
+    plot_cvdat(fin,places=places,ages=ages,per.capita=per.capita,
+               xmin=xmin,xmax=xmax,ymin=ymin,ymax=ymax,
                title=title,legends=legends,lwd=lwd.fin,lty=lty.fin);
     if ('lines'%in%raw.plot)
       plot_cvdat(
@@ -218,7 +234,7 @@ plot_admdea=
   }
 ## hack to plot doh, jhu processed and raw data together. used in Figure 5
 ## TODO: add this to plot_cvdat!
-plot_dohjhu=function(what=cq(cases,deaths)) {
+plot_dohjhu=function(what=cq(cases,deaths),title=NULL) {
   what=match.arg(what);
   doh=get(paste(sep='.','doh',what));
   jhu=get(paste(sep='.','jhu',what));
@@ -226,7 +242,8 @@ plot_dohjhu=function(what=cq(cases,deaths)) {
   jhu.raw=get(paste(sep='.','jhu',what,'raw'));
   data=data_cvdat(list(doh,jhu,doh.raw,jhu.raw),places=cq(state),ages='all',per.capita=TRUE);
   ymax=max(data[,-1],na.rm=TRUE);
-  title=paste('Weekly fitted and raw',what,'per million: DOH and JHU (Washington state)');
+  if (is.null(title))
+    title=paste('Weekly fitted and raw',what,'per million: DOH and JHU (Washington state)');
   plot_cvdat(
     list(doh,jhu),places=cq(state),ages='all',per.capita=TRUE,lwd=2,ymax=ymax,
     title=title,legends=list(title='Data Source',labels=c('DOH','JHU')));
