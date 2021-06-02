@@ -33,9 +33,16 @@ import_doh=function(file) {
     if (version<'20-12-20') {
       col.all=3;                        # hardcode it to easily cover all 3 sheets
       col.noage=which(colnames(data)=='Positive UnkAge');
-    } else {
+    } else if (version<'21-05-30') {
       col.all=
         if(what=='cases') which(colnames(data)=='TotalCases') else which(colnames(data)==Sheet);
+      col.noage=which(colnames(data)=='UnknownAge');
+    } else {
+      ## grumph... they changed format again
+      ## cases: ProbableCases,ConfirmedCases,7-Day Count
+      ## others: 7-Day <what> Counts
+      ## just hardcode col numbers
+      col.all=if(what=='cases') 5 else 3;
       col.noage=which(colnames(data)=='UnknownAge');
     }
     cols.age=grep('^Age',colnames(data));
