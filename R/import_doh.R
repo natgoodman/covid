@@ -8,7 +8,7 @@
 ##
 ## Copyright (C) 2020 Nat Goodman.
 ## 
-## Import DOH age data from input directories
+## Import DOH data from input directory. Produce ready-to-load files in data directory
 ##
 ## This software is open source, distributed under the MIT License. See LICENSE
 ## file at https://github.com/natgoodman/NewPro/FDR/LICENSE 
