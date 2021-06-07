@@ -5,7 +5,7 @@
 ##
 ## Copyright (C) 2020 Nat Goodman.
 ## 
-## Import data from input directories
+## Import data from input directories. Produce ready-to-load files in data directories
 ##
 ## This software is open source, distributed under the MIT License. See LICENSE
 ## file at https://github.com/natgoodman/NewPro/FDR/LICENSE 
@@ -33,13 +33,20 @@ import=function(datasrc,version='latest',file=NULL) {
   sapply(files,function(file) do.call(import.fun,as.list(c(file=file))));
   files;
 }
-import_all=function(datasrc=param(datasrc),version='latest')
+import_all=function(datasrc=cq(doh,jhu,nyt,cdc,trk),version='latest') {
+  if (is.null(version)||version=='latest') version=latest_version(datasrc[1],dir=indir);
+  ## trk ended 21-03-07. see covidtracking.com
+  if (version>'21-03-07') datasrc=datasrc%-%'trk';
+  ## for now, have to do CDC by itself - big and slow!
+  if (length(datasrc)>1) datasrc=datasrc%-%'cdc'; 
   sapply(datasrc,function(datasrc) {
     if (param(verbose)) print(paste('+++ importing',datasrc));
     import(datasrc,version);
   });
+}
 
-## import_doh now in import_doh.R
+## import_doh in import_doh.R
+## import_cdc in import_doh.R
 
 ## ---- Import JHU input file ----
 import_jhu=function(file) {

@@ -60,7 +60,7 @@ series_percap=function(series) {
   series=withrows(xattr,row,{
     data=data[[series]];
     pop=pop(objs[[obj]]);
-    pop=pop[age,place];
+    pop=if((datasrc=='cdc')&&place%in%c('USA F','USA U')) pop[age,'USA'] else pop[age,place];
     if (is.null(pop)) pop=NA;
     data.frame(date=data$date,y=round(1e6*data$y/pop));
   });

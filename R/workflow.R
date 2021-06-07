@@ -15,11 +15,13 @@
 ## ---- Download and import big 3 data sources plus trk ----
 ## with new DOH release schedule have to do it on Tuesdays
 ## make sure obj transforms truncate non-DOH data to previous week
-do_dlim=function(datasrc=cq(doh,jhu,nyt,trk),version=NULL,
+do_dlim=function(datasrc=cq(doh,jhu,nyt,cdc,trk),version=NULL,
                  force.sunday=TRUE,monday.only=!force.sunday,cmp.prev=force.sunday,
                  url=param(download.url),
                  do.download=TRUE,do.import=TRUE,do.pjto=TRUE) {
   datasrc=match.arg(datasrc,several.ok=TRUE);
+  ## for now, have to do CDC by itself - big and slow!
+  if (length(datasrc)>1) datasrc=datasrc%-%'cdc'; 
   if (is.null(version)) version=dl_version(force.sunday=force.sunday,monday.only=monday.only);
   ## trk ended 21-03-07. see covidtracking.com
   if (version>'21-03-07') datasrc=datasrc%-%'trk'; 
@@ -35,9 +37,12 @@ do_dlim=function(datasrc=cq(doh,jhu,nyt,trk),version=NULL,
   if (do.pjto) pjto(datasrc,version);
   version;
 }
-do_download=function(datasrc=cq(doh,jhu,nyt,trk),version=NULL,
+do_download=function(datasrc=cq(doh,jhu,nyt,cdc,trk),version=NULL,
                      force.sunday=TRUE,monday.only=!force.sunday,cmp.prev=force.sunday,
                      url=param(download.url)) {
+  datasrc=match.arg(datasrc,several.ok=TRUE);
+  ## for now, have to do CDC by itself - big and slow!
+  if (length(datasrc)>1) datasrc=datasrc%-%'cdc'; 
   if (is.null(version)) version=dl_version(force.sunday=force.sunday,monday.only=monday.only);
   ## trk ended 21-03-07. see covidtracking.com
   if (version>'21-03-07') datasrc=datasrc%-%'trk'; 
@@ -45,17 +50,16 @@ do_download=function(datasrc=cq(doh,jhu,nyt,trk),version=NULL,
   filename=dl_filenames(datasrc,version);
   sapply(datasrc,function(datasrc) {
     if (param(verbose)) print(paste('+++ downloading',datasrc));
-    switch(datasrc,
-           doh=download.file(url$doh,filename$doh),
-           jhu={
-             download.file(url$jhu.cases,filename$jhu[1]);
-             download.file(url$jhu.deaths,filename$jhu[2])
-           },
-           nyt=download.file(url$nyt,filename$nyt),
-           trk=download.file(url$trk,filename$trk));
+    if (datasrc=='jhu') {
+      download.file(url$jhu.cases,filename$jhu[1]);
+      download.file(url$jhu.deaths,filename$jhu[2]);
+    } else download.file(url[[datasrc]],filename[[datasrc]]);
   });
 }
-do_import=function(datasrc=cq(doh,jhu,nyt,trk),version=NULL) {
+do_import=function(datasrc=cq(doh,jhu,nyt,cdc,trk),version=NULL) {
+  datasrc=match.arg(datasrc,several.ok=TRUE);
+  ## for now, have to do CDC by itself - big and slow!
+  if (length(datasrc)>1) datasrc=datasrc%-%'cdc'; 
   if (is.null(version)||version=='latest') version=latest_version(datasrc[1],dir=indir);
   ## trk ended 21-03-07. see covidtracking.com
   if (version>'21-03-07') datasrc=datasrc%-%'trk'; 
@@ -70,12 +74,9 @@ cmp_prev=function(datasrc,version) {
   filename=dl_filenames(datasrc,version);
   prevname=dl_filenames(datasrc,prev);
   ok=!sapply(datasrc,function(datasrc) {
-    switch(datasrc,
-           doh=cmp_files(filename$doh,prevname$doh),
-           jhu=cmp_files(filename$jhu[1],prevname$jhu[1])&
-             cmp_files(filename$jhu[2],prevname$jhu[2]),
-           nyt=cmp_files(filename$nyt,prevname$nyt),
-           trk=cmp_files(filename$trk,prevname$trk));
+    if (datasrc=='jhu') 
+      cmp_files(filename$jhu[1],prevname$jhu[1])&cmp_files(filename$jhu[2],prevname$jhu[2])
+    else cmp_files(filename[[datasrc]],prevname[[datasrc]]);
   });
   sapply(datasrc[!ok],function(datasrc) 
     print(paste0('--- skiping ',datasrc,': current version ',version,' same as previous ',prev)));
@@ -86,10 +87,13 @@ cmp_files=function(file1,file2) {
     system(paste('cmp',file1,file2),ignore.stdout=T)==0
   else FALSE;
 }
-pjto=function(datasrc=cq(doh,jhu,nyt,trk),version=NULL) {
+pjto=function(datasrc=cq(doh,jhu,nyt,cdc,trk),version=NULL) {
+  datasrc=match.arg(datasrc,several.ok=TRUE);
+  ## for now, have to do CDC by itself - big and slow!
+  if (length(datasrc)>1) datasrc=datasrc%-%'cdc'; 
   if (is.null(version)||version=='latest') version=latest_version(datasrc[1],dir=indir);
   ## trk ended 21-03-07. see covidtracking.com
-  if (version>'21-03-07') datasrc=datasrc%-%'trk'; 
+  if (version>'21-03-07') datasrc=datasrc%-%'trk';
   sapply(datasrc,function(datasrc) {
     dir=indir(datasrc);
     cmd=paste('pjto',
@@ -99,11 +103,20 @@ pjto=function(datasrc=cq(doh,jhu,nyt,trk),version=NULL) {
                                filename(dir,base='cases',tail=version,suffix='csv'),
                                filename(dir,base='deaths',tail=version,suffix='csv')),
                      nyt=filename(dir,version,suffix='csv'),
-                     trk=filename(dir,version,suffix='csv')));
+                     trk=filename(dir,version,suffix='csv'),
+                     cdc={
+                       orig=filename(dir,version,suffix='csv');
+                       gz=paste(sep='.',orig,'gz');
+                       ## zip before copying to Mac; saves 90%
+                       cmd=paste('/bin/gzip -c',orig,'>',gz);
+                       if (param(verbose)) print(paste('+++',cmd));
+                       system(cmd);
+                       gz;
+                     }));
     if (param(verbose)) print(paste('+++',cmd));
     system(cmd);
     dir=datadir(datasrc);
-    bases=if(datasrc%in%cq(doh,trk)) cq(cases,admits,deaths) else cq(cases,deaths);
+    bases=c('cases','deaths',if(datasrc%in%cq(doh,trk)) 'admits' else cq(admits,icus));
     cases=expand.grid(base=bases,suffix=cq(txt,RData),stringsAsFactors=FALSE);
     files=unlist(withrows(cases,case,filename(dir,base=base,tail=version,suffix=suffix)));
     cmd=paste('pjto',paste(collapse=' ',files));
@@ -124,8 +137,10 @@ dl_filenames=function(datasrc,version) {
            doh=filename(dir,version,suffix='xlsx'),
            jhu=c(filename(dir,base='cases',tail=version,suffix='csv'),
                  filename(dir,base='deaths',tail=version,suffix='csv')),
-           nyt=filename(dir,version,suffix='csv'),
-           trk=filename(dir,version,suffix='csv'));
+           ## nyt=filename(dir,version,suffix='csv'),
+           ## cdc=filename(dir,version,suffix='csv'),
+           ## trk=filename(dir,version,suffix='csv'));
+           filename(dir,version,suffix='csv'));
     },simplify=FALSE);
 }
 

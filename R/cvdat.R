@@ -25,20 +25,30 @@ cvdoh=function(...) {
   class(obj)=c('cvdoh',class(obj));
   invisible(obj);
 }
-## testers for cvdat, cvdoh classes
+## constructor for cvcdc class (subclass of cvdat)
+cvcdc=function(...) {
+  obj=cvdat(...);
+  class(obj)=c('cvcdc',class(obj));
+  invisible(obj);
+}
+## testers for cvdat and suclasses
 is_cvdat=function(obj) 'cvdat' %in% class(obj);
 is_cvdoh=function(obj) 'cvdoh' %in% class(obj);
+is_cvcdc=function(obj) 'cvcdc' %in% class(obj);
 
 ## generic accessors
 places=function(obj) UseMethod('places')
 places.cvdat=function(obj) colnames(obj$data)[-1]
 places.cvdoh=function(obj) colnames(obj$data[[1]])[-1]
+places.cvcdc=places.cvdoh;
 ages=function(obj) UseMethod('ages')
 ages.cvdat=function(obj) 'all'
 ages.cvdoh=function(obj) names(obj$data)
+ages.cvcdc=ages.cvdoh;
 dates=function(obj) UseMethod('dates')
 dates.cvdat=function(obj) obj$data$date
 dates.cvdoh=function(obj) obj$data[[1]]$date
+dates.cvcdc=dates.cvdoh;
 counts=function(obj,age=NULL) UseMethod('counts')
 counts.cvdat=function(obj,age='all') {
   if (is.null(age)|age=='all') {
@@ -58,6 +68,7 @@ counts.cvdoh=function(obj,age='all') {
   rownames(counts)=data$date;
   counts;
 }
+counts.cvcdc=counts.cvdoh;
 
 ## simple accessors
 datasrc=function(obj) obj$datasrc

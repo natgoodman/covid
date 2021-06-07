@@ -25,7 +25,7 @@
 doc.all=cq(updat);                      # README presently has no code
 init=function(
   ## datasrc=cq(doh,ihme,jhu,tracking,c19pro),
-  datasrc=cq(doh,ihme,jhu,nyt,trk,yyg),
+  datasrc=cq(doh,ihme,jhu,nyt,trk,cdc,yyg),
   ## doc parameters 
   doc='updat',                             # controls data, figure, table subdirs
   docx=match.arg(doc,doc.all),
@@ -74,7 +74,34 @@ init=function(
   ## import params for specific data sources
   ihme.maxdate='latest',         # max date is latest version
   yyg.maxdate='latest',          # max date is latest version
-                                 #
+  cdc.prepro=                    # shell pipeline for preprocessing cdc download
+    "| /usr/bin/tail -n +2 | /bin/sed -r 's/\"[^\"]+\"//g' | /bin/awk -f bin/cdc.awk >",
+  cdc.sql=list(
+    cdc=
+      "CREATE TABLE cdc (
+         date DATE,age tinyint,sex char(1),cases char(1),admits char(1),icus char(1),deaths char(1)
+       )",
+    load.part1="LOAD DATA LOCAL INFILE",
+    load.part2="INTO TABLE cdc FIELDS TERMINATED BY ','", 
+    ageidx="CREATE INDEX age on cdc(age)",
+    dateidx="CREATE INDEX date on cdc(date)",
+    data=
+      "CREATE TABLE data AS
+         SELECT date,age,
+         SUM(cases='1') AS cases, SUM(cases='0') AS casesF, SUM(cases='') AS casesU,
+         SUM(admits='1') AS admits, SUM(admits='0') AS admitsF, SUM(admits='') AS admitsU,
+         SUM(icus='1') AS icus, SUM(icus='0') AS icusF, SUM(icus='') AS icusU,
+         SUM(deaths='1') AS deaths, SUM(deaths='0') AS deathsF, SUM(deaths='') AS deathsU
+         FROM cdc GROUP BY date,age",
+    ## cases="SELECT date,age,cases,casesF,casesU FROM data",
+    ## admits="SELECT date,age,admits,admitsF,admitsU FROM data",
+    ## icus="SELECT date,age,icus,icusF,icusU FROM data",
+    ## deaths="SELECT date,age,deaths,deathsF,deathsU FROM data",
+    fetch=
+      "SELECT date,age,
+         cases,casesF,casesU,admits,admitsF,admitsU,icus,icusF,icusU,deaths,deathsF,deathsU
+       FROM data"),
+
   ## transform params
   extra.fmla='y~date:w+w',       # default formula for lm models
   extra.errtype=cq('*','+',multiplicative,additive),  # error type for models
@@ -97,7 +124,8 @@ init=function(
     jhu.cases='https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv',
     jhu.deaths='https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_US.csv',
     nyt='https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv',
-    trk='https://covidtracking.com/data/download/washington-history.csv'),
+    trk='https://covidtracking.com/data/download/washington-history.csv',
+    cdc='https://data.cdc.gov/api/views/vbim-akqf/rows.csv'),
 
   ## program control
   verbose=FALSE,                 # print progress messages

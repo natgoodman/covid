@@ -21,25 +21,27 @@
 ##   cumulative vs incremental
 
 ## read raw imported data and return as object
-raw=function(what=cq(cases,admits,deaths),datasrc=param(datasrc),version='latest') {
+raw=function(what=cq(cases,admits,icus,deaths),datasrc=param(datasrc),version='latest') {
   what=match.arg(what);
   datasrc=match.arg(datasrc);
-  if (what=='admits'&&datasrc %notin% cq(doh,trk))
-    stop("Only have admits data for doh and trk, not ",datasrc);
+  if (what=='admits'&&datasrc %notin% cq(doh,cdc,trk))
+    stop("Only have admits data for doh, cdc and trk, not ",datasrc);
+  if (what=='icus'&&datasrc!='cdc') stop("Only have icus data for cdc, not ",datasrc);
   if (!is.null(version)&&version=='latest') version=latest_version(datasrc,what);
   data=load_data(whatv=what,datasrc=datasrc,version=version);
-  newobj=if(datasrc!='doh') cvdat else cvdoh;
+  newobj=switch(datasrc,doh=cvdoh,cdc=cvcdc,cvdat);
   obj=newobj(data=data,datasrc=datasrc,what=what,version=version,
              id=FALSE,fit=FALSE,roll=FALSE,extra=FALSE,edit=FALSE);
-  obj$pop=obj_pop(obj);
+  obj$pop=if(datasrc!='cdc') obj_pop(obj) else cdc_pop();
   clc(obj,switch(datasrc,
-                  doh=list(unit=7,start.on='Sunday',center=FALSE,cumulative=FALSE),
-                  ihme=list(unit=1,cumulative=FALSE),
-                  jhu=list(unit=1,cumulative=TRUE),
-                  nyt=list(unit=1,cumulative=TRUE),
-                  trk=list(unit=1,cumulative=FALSE),
-                  yyg=list(unit=1,cumulative=FALSE),
-                  stop(paste('Bad news: unknown data source',datarc,
+                 doh=list(unit=7,start.on='Sunday',center=FALSE,cumulative=FALSE),
+                 jhu=list(unit=1,cumulative=TRUE),
+                 nyt=list(unit=1,cumulative=TRUE),
+                 cdc=list(unit=1,cumulative=FALSE),
+                 trk=list(unit=1,cumulative=FALSE),
+                 ihme=list(unit=1,cumulative=FALSE),
+                 yyg=list(unit=1,cumulative=FALSE),
+                 stop(paste('Bad news: unknown data source',datarc,
                              'should have been caught earlier'))
                  ));
 }
@@ -73,6 +75,7 @@ fit.cvdoh=function(obj,method='sspline',args=list(),fit.clamp=0,fit.unit=1,...) 
   names(data)=ages;
   clc(obj,list(data=data,fit=method,fit.fun=fun,fit.args=args,fit.unit=fit.unit));
 }
+fit.cvcdc=fit.cvdoh;
 ## use rolling mean to smooth object data
 ## right alignment only. fills bottom with partial means
 roll=function(obj,...) UseMethod('roll')
@@ -86,6 +89,7 @@ roll.cvdoh=function(obj,width=NULL) {
   obj$data=sapply(obj$data,function(data) roll1(data,width),simplify=FALSE);
   clc(obj,list(roll=paste(width,if(is_weekly(obj)) 'weeks' else 'days')));
 }
+roll.cvcdc=roll.cvdoh;
 roll1=function(data,width) {
   dates=data[,1];
   counts=data[,-1,drop=FALSE];
@@ -113,6 +117,7 @@ cumulative.cvdoh=function(obj,week.end=FALSE) {
   obj$cumulative=TRUE;
   obj;
 }
+cumulative.cvcdc=cumulative.cvdoh;
 cum1=function(data,unit,week.end) {
   ## do it this convoluted way, so R won't munge place names or dates. sigh...
   data=cbind(date=data[,1],as.data.frame(do.call(cbind,lapply(data[,-1,drop=FALSE],cumsum))))
@@ -140,6 +145,7 @@ incremental.cvdoh=function(obj) {
   obj$cumulative=FALSE;
   obj;
 }
+incremental.cvcdc=incremental.cvdoh;
 inc1=function(data) {
   ## use check.names=FALSE so R won't replace spaces in place names...
   data.frame(date=data[,1],
@@ -165,6 +171,7 @@ weekly.cvdoh=function(obj,start.on='Sunday',center=FALSE) {
   if (center) obj=center(obj)
   obj;
 }
+weekly.cvcdc=weekly.cvdoh;
 wkly1=function(data,cumulative,start.on) {
   dates=data$date;
   days=weekdays(dates);
@@ -197,6 +204,7 @@ daily.cvdoh=function(obj,center=TRUE,method='linear',args=NULL) {
   obj$unit=1;
   fit(obj,method=method,args=args,fit.unit=1);
 }
+daily.cvcdc=daily.cvdoh;
 dly1=function(data,cumulative,center) {
   if (!cumulative) {
     data[,-1]=data[,-1]/7;            # scale data
@@ -233,6 +241,7 @@ center.cvdoh=function(obj,center=TRUE)  {
   obj$data=sapply(obj$data,function(data) cntr1(data,inc),simplify=FALSE);
   clc(obj,list(report.on=inc_day(obj$start.on,inc),center=center));
 }
+center.cvcdc=center.cvdoh;
 cntr1=function(data,inc) {
   data$date=data$date+inc;
   data;
@@ -326,6 +335,7 @@ edit_places_.cvdoh=function(obj,EXPR=list(),KEEP=NULL,DROP=NULL) {
   pop=edit_popp(obj$pop,EXPR,KEEP,DROP);
   clc(obj,list(data=data,pop=pop,edit.places=TRUE));
 }
+edit_places_.cvcdc=edit_places_.cvdoh;
 ## edit_ages
 edit_ages_=function(obj,...) UseMethod('edit_ages_')
 edit_ages_.cvdat=function(obj,EXPR=list(),KEEP=NULL,DROP=NULL) {
@@ -337,6 +347,7 @@ edit_ages_.cvdoh=function(obj,EXPR=list(),KEEP=NULL,DROP=NULL) {
   pop=edit_popa(obj$pop,EXPR,KEEP,DROP);
   clc(obj,list(data=data,pop=pop,edit.ages=TRUE));
 }
+edit_ages_.cvcdc=edit_ages_.cvdoh;
 ## edit_dates
 edit_dates_=function(obj,...) UseMethod('edit_dates_')
 edit_dates_.cvdat=function(obj,r) {
@@ -348,6 +359,7 @@ edit_dates_.cvdoh=function(obj,r) {
   data=sapply(ages,function(age) obj$data[[age]][r,],simplify=FALSE);
   clc(obj,list(data=data,edit.dates=TRUE));
 }
+edit_dates_.cvcdc=edit_dates_.cvdoh;
 
 ## lagged correlation
 ## TODO: not really a transformation but no place else to put it. move to better place
