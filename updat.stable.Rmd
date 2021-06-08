@@ -26,7 +26,7 @@ Figures 1a-d show smoothed *case* counts per million for several Washington and 
 
 Figures 1a-b (the top row) show smoothed data (see details [below](#techdetails)). Figures 1c-d (the bottom row) overlay raw data onto the smoothed since mid-February to illustrate recent variability. 
 
-The figures use data from Johns Hopkins Center for Systems Science and Engineering (JHU), described [below](#jhu). When comparing the Washington and non-Washington graphs, please note the difference in y-scale: the current raw counts for Washington locations (about 600-1900 per million) are much greater than for non-Washington (about 150-300 per million).
+The figures use data from Johns Hopkins Center for Systems Science and Engineering (JHU), described [below](#jhu). When comparing the Washington and non-Washington graphs, please note the difference in y-scale: the current raw counts for Washington locations (about 350-1000 per million) are much greater than for non-Washington (about 0-150 per million).
 
 ```{r out.width="50%",echo=FALSE,fig.show='asis',include=TRUE}
 knitr::include_graphics(file.path(figdir,'figure_001a_cases_wa.png'));
@@ -37,11 +37,11 @@ knitr::include_graphics(file.path(figdir,'figure_001c_cases_wa_ragged.png'));
 knitr::include_graphics(file.path(figdir,'figure_001d_cases_nonwa_ragged.png'));
 ```
 
-The smoothed graphs for Washington (Figure 1a) shows that rates are declining in all locations. Trend analysis and the raw data (Figure 1c) suggest the decline is real in Seattle and Snohomish (north of Seattle), but the state-wide and Pierce rates may be plateauing. 
+The smoothed graphs for Washington (Figure 1a) shows that rates are declining in all locations. Trend analysis supports the decline over the past six and eight weeks everywhere except Pierce (south of Seattle), but the raw data (Figure 1c) is too variable to be confident in the four-week trend. In Pierce, the data is too variable to draw conclusions over four, six, or eight weeks.
 
-The picture for non-Washington locations (Figure 1b) is far better: cases are declining everywhere. Trend analysis and the raw data (Figure 1d) confirms the decline everywhere.
+The picture for non-Washington locations (Figure 1b) is far better: cases are declining everywhere. Trend analysis and the raw data (Figure 1d) confirms the decline everywhere except San Diego where the rates seem to be flattening at a low level.
 
-Figures 2a-d show *deaths* per million for the same locations. When comparing the Washington and non-Washington graphs, again please note the difference in y-scale: the current Washington rates are 8-19 per million; the non-Washington rates are 1-14 per million. As with the *case* graphs, the top row (Figures 2a-b) show smoothed data (see details [below](#techdetails)) and the bottom row (Figures 2c-d) overlays raw data onto the smoothed since mid-February. 
+Figures 2a-d show *deaths* per million for the same locations. When comparing the Washington and non-Washington graphs, again please note the difference in y-scale: the current Washington rates are 2-14 per million; the non-Washington rates are 2-9 per million. As with the *case* graphs, the top row (Figures 2a-b) show smoothed data (see details [below](#techdetails)) and the bottom row (Figures 2c-d) overlays raw data onto the smoothed since mid-February. 
 
 ```{r out.width="50%",echo=FALSE,fig.show='asis',include=TRUE}
 knitr::include_graphics(file.path(figdir,'figure_002a_deaths_wa.png'));
@@ -52,11 +52,11 @@ knitr::include_graphics(file.path(figdir,'figure_002c_deaths_wa_ragged.png'));
 knitr::include_graphics(file.path(figdir,'figure_002d_deaths_nonwa_ragged.png'));
 ```
 
-The smoothed Washington data (Figure 2a) shows three waves. The second peak was thankfully lower than the first; the third wave exceeded the first in all areas except Seattle (King County). The graphs are well down from the first and third peaks, but have climbed from their recent valleys to levels near or above their summer 2020 peaks. The graphs are heading up in some locations and flat in others, but trend analysis and the raw data (Figure 2c) indicate the data is too variable to be confident in the direction.
+The smoothed Washington data (Figure 2a) shows three waves. The second peak was thankfully lower than the first; the third wave exceeded the first in all areas except Seattle (King County). The graphs are well down from the first and third peaks, and are now near their summer 2020 peaks. The graphs are heading up in some locations and flat in others, but trend analysis and the raw data (Figure 2c) indicate the data is too variable to be confident in the direction.
 
-The smoothed non-Washington data (Figure 2b) shows early peaks in most locations, followed by a long trough, followed by a second wave starting in November 2020. The graphs are well down from their recent peaks. Deaths are decreasing or flat everywhere. Trend analysis and the raw data (Figure 2d) indicate that the decline in San Diego is real, and other locations flat.
+The smoothed non-Washington data (Figure 2b) shows early peaks in most locations, followed by a long trough, followed by a second wave starting in November 2020. The graphs are well down from their recent peaks. Deaths are decreasing or flat everywhere. Trend analysis and the raw data (Figure 2d) indicate that the decline is real in Ann Arbor and DC, while Boston and San Diego are flat. 
 
-The next graphs show the Washington results broken down by age. This data is from Washington State Department of Health (DOH) weekly downloads, described [below](#doh). An important caveat is that the DOH download systematically undercounts events in recent weeks due to manual curation. I extrapolate data for late time points as discussed [below](#techdetails); **recent DOH counts are well below JHU** (see [below](#extra)) suggesting my extrapolation may be undershooting. 
+The next graphs show the Washington results broken down by age. This data is from Washington State Department of Health (DOH) weekly downloads, described [below](#doh). An important caveat is that the DOH download systematically undercounts events in recent weeks due to manual curation. I extrapolate data for late time points as discussed [below](#techdetails).
 
 Figure 3 is *cases*. Figure 4 shows hospital admissions (*admits*) and *deaths*. 
 
@@ -78,7 +78,7 @@ knitr::include_graphics(file.path(figdir,'figure_004d_admits_deaths_Pierce.png')
 
 Early on, the pandemic struck older age groups most heavily, but *cases* quickly spread into all age groups, even the young. During the second wave, young adults and middle aged adults (20-34 and 35-49 years) became the most affected groups. The third and fourth waves swept into all age groups. Thankfully, the fourth wave seems to be sparing the oldest age groups (65-79 and 80+) perhaps due to the high vaccination coverage in these people.
 
-The shocking *death* rate of the 80+ age group jumps off the page in Figure 4. The *death* rate for this age group shows four waves. The third wave reached its peak in December 2020. The fourth wave peaked in April 2021 at a level well below the earlier peaks. (But heed the [caveat](#extra) about DOH undercounting). Throughout the pandemic, the death  rate for the 80+ group has been much higher than any other group; this discrepancy continues even as rates subside. Given the declining *case* rates now, it seems reasonable to be optimistic that deaths will remain low in the coming weeks. 
+The shocking *death* rate of the 80+ age group jumps off the page in Figure 4. The *death* rate for this age group shows four waves. The third wave reached its peak in December 2020. The fourth wave peaked in April 2021 at a level well below the earlier peaks. But again, heed the [caveat](#extra) about DOH undercounting; **recent DOH counts are well below JHU** (see [Figure 5b below](#extra)) suggesting my extrapolation may be undershooting. Throughout the pandemic, the death  rate for the 80+ group has been much higher than any other group; this discrepancy continues even as rates subside. Given the declining *case* rates now, it seems reasonable to be optimistic that deaths will remain low in the coming weeks. 
 
 The *admit* rate shows the same four waves, and seems to be decreasing in most groups. (But again, heed the [caveat](#extra) about DOH undercounting).
 
@@ -133,7 +133,7 @@ The weekly DOH download reports data by age group. In past, the groups were 20-y
 
 #### Issues with DOH Extrapolation {#extra}
 
-Figures 5a-b compare DOH and JHU *cases* and *deaths* for Washington state to illustrate the undercount in the raw DOH data. The *cases* data matches well except for the most recent data; this suggests that my extrapolation is underestimating the true counts. The *deaths* data matches less well for reasons I don't understand. As with *cases*, the most recent DOH data is considerably lower than JHU.
+Figures 5a-b compare DOH and JHU *cases* and *deaths* for Washington state to illustrate the undercount in the raw DOH data. The *cases* data matches well except for a few periods spanning several weeks, including most of May. The *deaths* data matches less well and is presently much lower than JHU. I have no explanation for the discrepancies.
 
 ```{r out.width="50%",echo=FALSE,fig.show='asis',include=TRUE}
 knitr::include_graphics(file.path(figdir,'figure_005a_cases_dohjhu.png'));
