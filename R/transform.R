@@ -38,9 +38,9 @@ raw=function(what=cq(cases,admits,icus,deaths),datasrc=param(datasrc),version='l
                  jhu=list(unit=1,cumulative=TRUE),
                  nyt=list(unit=1,cumulative=TRUE),
                  cdc=list(unit=1,cumulative=FALSE),
-                 trk=list(unit=1,cumulative=FALSE),
-                 ihme=list(unit=1,cumulative=FALSE),
-                 yyg=list(unit=1,cumulative=FALSE),
+                 ## trk=list(unit=1,cumulative=FALSE),
+                 ## ihme=list(unit=1,cumulative=FALSE),
+                 ## yyg=list(unit=1,cumulative=FALSE),
                  stop(paste('Bad news: unknown data source',datarc,
                              'should have been caught earlier'))
                  ));
@@ -246,6 +246,28 @@ cntr1=function(data,inc) {
   data$date=data$date+inc;
   data;
 }
+## scale object data. useful when plotting weekly and daily data together
+mul=function(obj,mul=1,unit=NULL) {
+  if (!is.null(unit))
+    if (mul!=1) stop ("Cannot specify both 'mul' and 'unit'")
+    else mul=unit/unit(obj);
+  obj=mul_(obj,mul);
+  clc(obj,list(mul=mul));
+}
+mul_=function(obj,mul) UseMethod('mul_')
+mul_.cvdat=function(obj,mul=1) {
+  obj$data=mul1(obj$data,mul);
+  obj;
+}
+mul_.cvdoh=function(obj,mul=1) {
+  obj$data=sapply(obj$data,function(data) mul1(data,mul),simplify=FALSE);
+  obj;
+}
+mul_.cvcdc=mul_.cvdoh;
+mul1=function(data,k) {
+  data[,-1]=k*data[,-1];
+  data;
+}
 ## add 'extra' counts to DOH objects to adjust for incomplete data near end
 ## model computed by 'extra_mdl' function in extra.R
 ## NG 20-12-14: fixed longstanding bug: 'extra' has to pass objs to 'extra_mdl' to include
@@ -330,12 +352,17 @@ edit_places_.cvdat=function(obj,EXPR=list(),KEEP=NULL,DROP=NULL) {
 edit_places_.cvdoh=function(obj,EXPR=list(),KEEP=NULL,DROP=NULL) {
   EXPR=edit_fixneg(EXPR,'state',places(obj));
   ages=ages(obj);
-  data=sapply(ages,function(age) edit_places1(obj$data[[age]],EXPR,KEEP,DROP),
-              simplify=FALSE);
+  data=sapply(ages,function(age) edit_places1(obj$data[[age]],EXPR,KEEP,DROP),simplify=FALSE);
   pop=edit_popp(obj$pop,EXPR,KEEP,DROP);
   clc(obj,list(data=data,pop=pop,edit.places=TRUE));
 }
-edit_places_.cvcdc=edit_places_.cvdoh;
+edit_places_.cvcdc=function(obj,EXPR=list(),KEEP=NULL,DROP=NULL) {
+  EXPR=edit_fixneg(EXPR,'state',places(obj));
+  ages=ages(obj);
+  ## edit data but not pop: USA has only one real place
+  data=sapply(ages,function(age) edit_places1(obj$data[[age]],EXPR,KEEP,DROP),simplify=FALSE);
+  clc(obj,list(data=data,edit.places=TRUE));
+}
 ## edit_ages
 edit_ages_=function(obj,...) UseMethod('edit_ages_')
 edit_ages_.cvdat=function(obj,EXPR=list(),KEEP=NULL,DROP=NULL) {
