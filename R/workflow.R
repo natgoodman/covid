@@ -15,7 +15,7 @@
 ## ---- Download and import big 3 data sources plus trk ----
 ## with new DOH release schedule have to do it on Tuesdays
 ## make sure obj transforms truncate non-DOH data to previous week
-do_dlim=function(datasrc=cq(doh,jhu,nyt,cdc,trk),version=NULL,
+do_dlim=function(datasrc=param(datasrc),version=NULL,
                  force.sunday=TRUE,monday.only=!force.sunday,cmp.prev=force.sunday,
                  url=param(download.url),
                  do.download=TRUE,do.import=TRUE,do.pjto=TRUE) {
@@ -24,7 +24,7 @@ do_dlim=function(datasrc=cq(doh,jhu,nyt,cdc,trk),version=NULL,
   if (length(datasrc)>1) datasrc=datasrc%-%'cdc'; 
   if (is.null(version)) version=dl_version(force.sunday=force.sunday,monday.only=monday.only);
   ## trk ended 21-03-07. see covidtracking.com
-  if (version>'21-03-07') datasrc=datasrc%-%'trk'; 
+  ## if (version>'21-03-07') datasrc=datasrc%-%'trk'; 
   if (do.pjto) {
     ok=system('pjtest')==0;
     if (!ok) stop('Reverse tunnel not running; stopping before download');
@@ -37,7 +37,7 @@ do_dlim=function(datasrc=cq(doh,jhu,nyt,cdc,trk),version=NULL,
   if (do.pjto) pjto(datasrc,version);
   version;
 }
-do_download=function(datasrc=cq(doh,jhu,nyt,cdc,trk),version=NULL,
+do_download=function(datasrc=param(datasrc),version=NULL,
                      force.sunday=TRUE,monday.only=!force.sunday,cmp.prev=force.sunday,
                      url=param(download.url)) {
   datasrc=match.arg(datasrc,several.ok=TRUE);
@@ -45,7 +45,7 @@ do_download=function(datasrc=cq(doh,jhu,nyt,cdc,trk),version=NULL,
   if (length(datasrc)>1) datasrc=datasrc%-%'cdc'; 
   if (is.null(version)) version=dl_version(force.sunday=force.sunday,monday.only=monday.only);
   ## trk ended 21-03-07. see covidtracking.com
-  if (version>'21-03-07') datasrc=datasrc%-%'trk'; 
+  ## if (version>'21-03-07') datasrc=datasrc%-%'trk'; 
   if (param(verbose)) print(paste('+++ running download: version',version));
   filename=dl_filenames(datasrc,version);
   sapply(datasrc,function(datasrc) {
@@ -56,13 +56,13 @@ do_download=function(datasrc=cq(doh,jhu,nyt,cdc,trk),version=NULL,
     } else download.file(url[[datasrc]],filename[[datasrc]]);
   });
 }
-do_import=function(datasrc=cq(doh,jhu,nyt,cdc,trk),version=NULL) {
+do_import=function(datasrc=param(datasrc),version=NULL) {
   datasrc=match.arg(datasrc,several.ok=TRUE);
   ## for now, have to do CDC by itself - big and slow!
   if (length(datasrc)>1) datasrc=datasrc%-%'cdc'; 
   if (is.null(version)||version=='latest') version=latest_version(datasrc[1],dir=indir);
   ## trk ended 21-03-07. see covidtracking.com
-  if (version>'21-03-07') datasrc=datasrc%-%'trk'; 
+  ## if (version>'21-03-07') datasrc=datasrc%-%'trk'; 
   if (param(verbose)) print(paste('+++ running import: version',version));
   sapply(datasrc,function(datasrc) {
     if (param(verbose)) print(paste('+++ importing',datasrc));
@@ -87,13 +87,13 @@ cmp_files=function(file1,file2) {
     system(paste('cmp',file1,file2),ignore.stdout=T)==0
   else FALSE;
 }
-pjto=function(datasrc=cq(doh,jhu,nyt,cdc,trk),version=NULL) {
+pjto=function(datasrc=param(datasrc),version=NULL) {
   datasrc=match.arg(datasrc,several.ok=TRUE);
   ## for now, have to do CDC by itself - big and slow!
   if (length(datasrc)>1) datasrc=datasrc%-%'cdc'; 
   if (is.null(version)||version=='latest') version=latest_version(datasrc[1],dir=indir);
   ## trk ended 21-03-07. see covidtracking.com
-  if (version>'21-03-07') datasrc=datasrc%-%'trk';
+  ## if (version>'21-03-07') datasrc=datasrc%-%'trk';
   sapply(datasrc,function(datasrc) {
     dir=indir(datasrc);
     cmd=paste('pjto',
