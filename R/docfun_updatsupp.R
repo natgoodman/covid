@@ -21,7 +21,7 @@
 ## --- Functions for updatsupp sections ---
 sect_byplace=
   function(where=cq(wa1,wa2,nonwa1,nonwa2,fav),
-           what=cq(cases,admits,deaths,admdea),datasrc=cq(doh,jhu,nyt),id=cq(std,cum,inc),
+           what=cq(cases,admits,deaths,admdea),datasrc=param(datasrc),id=cq(std,cum,inc),
            places=NULL) {
     where=match.arg(where);
     what=match.arg(what,several.ok=TRUE);
@@ -71,7 +71,7 @@ sect_byplace=
     cases;
   }
 sect_byage=
-  function(aid=1,what=cq(cases,admits,deaths,admdea),datasrc=cq(doh),id=cq(std,cum,inc),
+  function(aid=1,what=cq(cases,admits,deaths,admdea),datasrc=cq(doh,cdc),id=cq(std,cum,inc),
            places=NULL,ages=NULL,col=NULL) {
     aid=as.character(aid);
     what=match.arg(what,several.ok=TRUE);
@@ -129,7 +129,7 @@ sect_byage=
     cases;
   }
 sect_bysrc=
-  function(what=cq(cases,admits,deaths,admdea),datasrc=cq(doh,jhu,nyt),id=cq(std,cum,inc),
+  function(what=cq(cases,admits,deaths,admdea),datasrc=param(datasrc),id=cq(std,cum,inc),
            places=NULL,col.pal='d3') {
     what=match.arg(what,several.ok=TRUE);
     what=what%-%cq(admits,admdea); # only doh has these, so won't work when comparing sources
@@ -197,14 +197,15 @@ sect_bysrc=
 ## make standard objects for doc_updatsupp and assign to global
 ## from workflow.R do_objs
 make_updatsupp_objs=
-  function(what=cq(cases,admits,deaths,admdea),datasrc=cq(doh,jhu,nyt),version='latest') {
+  function(what=cq(cases,admits,icus,deaths,admdea),datasrc=param(datasrc),version='latest') {
     what=match.arg(what,several.ok=TRUE);
     datasrc=match.arg(datasrc,several.ok=TRUE);
     cases=expand.grid(what=what,datasrc=datasrc,stringsAsFactors=FALSE);
-    ## only 'doh' has 'admits'. prune others
-    cases=cases[(cases$what!='admits'|cases$datasrc%in%cq(doh)),]
-    ## only 'doh' has 'admits'. prune others. 'admdea' irrelevant here, so prune it, oo
-    cases=cases[(cases$what!='admits'|cases$datasrc%in%cq(doh))&(cases$what!='admdea'),]
+    ## prune invalid what, datasrc combinations
+    cases=subset(cases,
+                 subset=((what%in%cq(cases,deaths)) |              # all have cases, deaths
+                         (what=='admits'&datasrc%in%cq(doh,cdc)) | # doh, cdc have admits
+                         (what=='icus'&datasrc=='cdc')));          # cdc has icus
     ## sorted county populations and names
     pop.wa=sort(pop_wa(),decreasing=TRUE);
     counties.wa=colnames(pop.wa);
@@ -214,40 +215,56 @@ make_updatsupp_objs=
       if (param(verbose)) print(paste('+++ making',datasrc,what));
       case.env=environment();
       obj.src=raw(what,datasrc,version);
-      ## do edit first so downstream objects all comparable
-      obj.edit=edit(obj.src,
-                    SKP=Snohomish+King+Pierce,
-                    North=Whatcom+Skagit,
-                    South=Thurston+Lewis+Skamania,
-                    West=Kitsap+Island+'San Juan',
-                    East=Okanogan+Chelan+Kittitas+Yakima+Klickitat,
-                    EastNotYakima=Okanogan+Chelan+Kittitas+Klickitat,
-                    SUM=list(Top5=top5,Bottom10=bottom10),
-                    NEG=list(notKing='King',notSKP='SKP',notTop5='Top5',notBottom10='Bottom10'));
-      if (datasrc=='doh')
-        obj.edit=if(version(obj.src)<='21-03-07')
-                   ## original ages
-                   edit(obj.edit,
-                        '20_59'='20_39'+'40_59',
-                        '20_79'='20_39'+'40_59'+'60_79',
-                        '40_79'='40_59'+'60_79',
-                        '60_'='60_79'+'80_')
-                 else ## new ages
-                   edit(obj.edit,
-                        '20_49'='20_34'+'35_49',
-                        '20_64'='20_34'+'35_49'+'50_64',
-                        '20_79'='20_34'+'35_49'+'50_64'+'65_79',
-                        '35_64'='35_49'+'50_64',
-                        '35_79'='35_49'+'50_64'+'65_79',
-                        '50_79'='50_64'+'65_79',
-                        '65_'='65_79'+'80_');
+      if (datasrc!='cdc') {
+        ## do edit first so downstream objects all comparable
+        obj.edit=edit(obj.src,
+                      SKP=Snohomish+King+Pierce,
+                      North=Whatcom+Skagit,
+                      South=Thurston+Lewis+Skamania,
+                      West=Kitsap+Island+'San Juan',
+                      East=Okanogan+Chelan+Kittitas+Yakima+Klickitat,
+                      EastNotYakima=Okanogan+Chelan+Kittitas+Klickitat,
+                      SUM=list(Top5=top5,Bottom10=bottom10),
+                      NEG=list(notKing='King',notSKP='SKP',notTop5='Top5',notBottom10='Bottom10'));
+        if (datasrc=='doh')
+          obj.edit=if(version(obj.src)<='21-03-07')
+                     ## original ages
+                     edit(obj.edit,
+                          '20_59'='20_39'+'40_59',
+                          '20_79'='20_39'+'40_59'+'60_79',
+                          '40_79'='40_59'+'60_79',
+                          '60_'='60_79'+'80_')
+                   else ## new ages
+                     edit(obj.edit,
+                          '20_49'='20_34'+'35_49',
+                          '20_64'='20_34'+'35_49'+'50_64',
+                          '20_79'='20_34'+'35_49'+'50_64'+'65_79',
+                          '35_64'='35_49'+'50_64',
+                          '35_79'='35_49'+'50_64'+'65_79',
+                          '50_79'='50_64'+'65_79',
+                          '65_'='65_79'+'80_');
+      } else {
+        obj.edit=edit(obj.src,
+                      Confirmed=USA,Probable='USA F','All Cases'=USA+'USA F',
+                      '0_19'='0_9'+'10_19',
+                      '20_49'='20_29'+'30_39'+'40_49',
+                      '50_79'='50_59'+'60_69'+'70_79',
+                      '60_'='60_69'+'70_79'+'80_',
+                      '70_'='70_79'+'80_');
+      }
       ## 'raw' really means 'edited', 'weekly, incremental'
       obj.raw=if(datasrc=='doh') obj.edit else weekly(incremental(obj.edit));
       ## 'cum'. convert jhu, nyt to weekly so dates will match doh
       obj.cum=if(datasrc=='doh') cumulative(obj.edit) else weekly(obj.edit);
       obj.roll=roll(obj.raw);
+      ## 'dly' is 'daily', 'incremental'. only useful for sources with daily data
+      obj.dly=switch(datasrc,
+                     doh=daily(obj.edit),
+                     jhu=incremental(obj.edit),
+                     nyt=incremental(obj.edit),
+                     cdc=obj.edit);
       ## for fit, use 1 day for cases, 10.5 days (1.5 weeks) for deaths
-      fit.unit=switch(what,cases=1,admits=7,deaths=10.5);
+      fit.unit=switch(what,cases=1,admits=7,icus=7,deaths=10.5);
       obj.fit=fit(obj.raw,fit.unit=fit.unit);
       if(datasrc=='doh')  {
         obj.extra=extra(obj.raw);
@@ -273,7 +290,7 @@ make_updatsupp_objs=
   }
 ## remove superflous objects - either because they were created by mistake or to start clean
 ## if id is set, only removes those objects, else all that fit the pattern
-rm_updatsupp_objs=function(what=cq(cases,admits,deaths,admea),datasrc=cq(doh,jhu,nyt),
+rm_updatsupp_objs=function(what=cq(cases,admits,icus,deaths,admea),datasrc=param(datasrc),
                            id=NULL,rm.std=is.null(id)) {
   what=match.arg(what,several.ok=TRUE);
   what=what%-%'admdea';           # admea irrelevant here, so prune it
@@ -383,7 +400,7 @@ plot_admdeasupp=
 ## objpairs is list of object pairs: overrides choices from previous args
 ## TODO: add this to plot_cvdat!
 plot_pairs=
-  function(what=cq(cases,admits,deaths,admdea),datasrc=cq(doh,jhu,nyt),
+  function(what=cq(cases,admits,deaths,admdea),datasrc=param(datasrc),
            id=cq(src,edit,raw,cum,roll,fit,extra,fitx,std),
            objpairs=list(),
            places='state',ages='all',per.capita=TRUE,
