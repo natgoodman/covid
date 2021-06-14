@@ -24,8 +24,10 @@
 ## doc.all=cq(readme,updat);
 doc.all=cq(updat);                      # README presently has no code
 init=function(
-  ## datasrc=cq(doh,ihme,jhu,tracking,c19pro),
-  datasrc=cq(doh,ihme,jhu,nyt,trk,cdc,yyg),
+  ## NG 21-06-14: datasrc now active sources, datasrc.old inactive, datasrc.all all
+  datasrc=cq(doh,jhu,nyt,cdc),
+  datasrc.old=cq(ihme,trk,yyg),
+  datasrc.all=c(datasrc,datasrc.old),
   ## doc parameters 
   doc='updat',                             # controls data, figure, table subdirs
   docx=match.arg(doc,doc.all),
