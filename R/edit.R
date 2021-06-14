@@ -34,9 +34,11 @@ edit_df1=function(data,EXPR=list(),KEEP=NULL,DROP=NULL,total='state',TARGNAME='p
     expr=EXPR[[i]];
     name=names[i];
     edit_chkvars(expr_vars(expr),name,colnames(data),TARGNAME);
-    out=data.frame(x=eval(expr,data))
-    colnames(out)=name;
-    data<<-cbind(data,out);             # so later exprs can see this one
+    out=data.frame(x=eval(expr,data));
+    if (name%notin%colnames(data)) {
+      colnames(out)=name;
+      data<<-cbind(data,out);             # so later exprs can see this one
+    } else data[,name]<<-out;
   }));
   if (!is.null(KEEP)&&!is.null(DROP)&&!DROP%==%total)
     stop('Illegal to specify both KEEP and DROP (except to DROP ',total,')')
@@ -54,7 +56,7 @@ edit_df1=function(data,EXPR=list(),KEEP=NULL,DROP=NULL,total='state',TARGNAME='p
   data;
 }
 
-## edit ages for one doh object
+## edit ages for one doh or cdc object
 edit_ages1=function(data,EXPR=list(),KEEP=NULL,DROP=NULL) {
   dates=data[[1]][1];
   data=lapply(data,function(data) data[,-1,drop=FALSE]);
@@ -64,7 +66,9 @@ edit_ages1=function(data,EXPR=list(),KEEP=NULL,DROP=NULL) {
     name=names[i];
     out=list(eval(expr,data));
     names(out)=name;
-    data<<-c(data,out);             # so later dots exprs see this one
+    if (name%notin%names(data)) {
+      data<<-c(data,out);             # so later dots exprs see this one
+    } else data[[name]]<<-out[[1]];
   });;
   if (!is.null(KEEP)&&!is.null(DROP)&&!DROP%==%'all')
     stop('Illegal to specify both KEEP and DROP (except to DROP ',total,')')
