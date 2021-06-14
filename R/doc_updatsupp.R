@@ -20,7 +20,7 @@
 ## --- Generate Figures and Tables for updat suplement ---
 doc_updatsupp=
   function(sect=NULL,need.objs=TRUE,need.places=TRUE,need.ages=TRUE,need.init=TRUE,
-           what=cq(cases,admits,deaths,admdea),datasrc=cq(doh,jhu,nyt),ageids=1:4,
+           what=cq(cases,admits,deaths,admdea),datasrc=param(datasrc),ageids=1:4,
            doc='updatsupp',version='latest',pjto=cq(dir,file),...) {
     what=match.arg(what,several.ok=TRUE);
     datasrc=match.arg(datasrc,several.ok=TRUE);
