@@ -81,7 +81,7 @@ import_cdc=
         bydate=split(data,data$date);
         byage$all=do.call(rbind,lapply(bydate,function(data) {
           counts=colSums(data[,3:5]);
-          data.frame(date=data$date[1],age='all',t(counts),row.names=NULL);
+          data.frame(date=data$date[1],age='all',t(counts),row.names=NULL,check.names=FALSE);
         }));
         byage=lapply(byage,function(data) {
           ## drop 'age' column
