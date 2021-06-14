@@ -15,7 +15,7 @@ library(readxl);
 ## wrapper for import functions
 ## if version specified, import that version only. if NULL do all
 ## file, if set, includes path and supercedes version. can be directory or single file
-import=function(datasrc,version='latest',file=NULL) {
+import=function(datasrc,version='latest',file=NULL,do.usa=FALSE) {
   datasrc=match.arg(datasrc,param(datasrc));
   import.fun=get0(paste0('import_',datasrc),mode='function');
   if (!is.null(file)) {
@@ -30,10 +30,14 @@ import=function(datasrc,version='latest',file=NULL) {
       stop(paste('No files found for',nv(datasrc,version,file,SEP=', ')));
     files=sort(files);
   }
-  sapply(files,function(file) do.call(import.fun,as.list(c(file=file))));
+  sapply(files,function(file) {
+    args=list(file=file);
+    if (datasrc%in%cq(jhu,nyt)) args=c(ages,do.usa=do.usa);
+    do.call(import.fun,args);
+  });
   files;
 }
-import_all=function(datasrc=cq(doh,jhu,nyt,cdc,trk),version='latest') {
+import_all=function(datasrc=param(datasrc),version='latest',do.usa=FALSE) {
   if (is.null(version)||version=='latest') version=latest_version(datasrc[1],dir=indir);
   ## trk ended 21-03-07. see covidtracking.com
   if (version>'21-03-07') datasrc=datasrc%-%'trk';
@@ -41,7 +45,7 @@ import_all=function(datasrc=cq(doh,jhu,nyt,cdc,trk),version='latest') {
   if (length(datasrc)>1) datasrc=datasrc%-%'cdc'; 
   sapply(datasrc,function(datasrc) {
     if (param(verbose)) print(paste('+++ importing',datasrc));
-    import(datasrc,version);
+    import(datasrc,version,do.usa=do.usa);
   });
 }
 
@@ -49,7 +53,7 @@ import_all=function(datasrc=cq(doh,jhu,nyt,cdc,trk),version='latest') {
 ## import_cdc in import_doh.R
 
 ## ---- Import JHU input file ----
-import_jhu=function(file) {
+import_jhu=function(file,do.usa=FALSE) {
   if (param(verbose)) print(paste('>>> importing',file));
   ## filenames are, eg, cases.20-05-03.csv. split into what,version.
   base=basename(file);
@@ -57,6 +61,7 @@ import_jhu=function(file) {
   what=parts[1];
   version=parts[2];
   data=read.csv(file,stringsAsFactors=FALSE);
+  if (do.usa) usa=usa_jhu(data);
   data_wa=subset(data,subset=(Province_State=='Washington'));
   data_other=data_jhu_other(data);
   colwant=grep('Admin2|^X\\d',colnames(data),value=TRUE);
@@ -83,6 +88,7 @@ import_jhu=function(file) {
     stop(paste('jhu version',version,'missing places:',paste(collapse=', ',bad)));
   ## quick hack to tack on Ann Arbor and Omaha
   ## data=cbind(data,import_jhu_other(file));
+  if (do.usa) data=cbind(data,USA=usa);
   save_data(what,'jhu',version,data=data);
 }
 ## import non-Washington places
@@ -92,12 +98,20 @@ data_jhu_other=function(data,places.nonwa=param(places.nonwa)) {
   data_other$Admin2=data_other$place;
   data_other;
 }
+## compute counts for entire USA
+usa_jhu=function(data) {
+  ## columns we want are dates. don't care about place names here
+  colwant=grep('^X\\d',colnames(data),value=TRUE);
+  data=data[,colwant];
+  usa=colSums(data);
+}
 
 ## ---- Import NY Times input file ----
-import_nyt=function(file) {
+import_nyt=function(file,do.usa=FALSE) {
   if (param(verbose)) print(paste('>>> importing',file));
   version=baseonly(file,keep.dir=FALSE);
   data=read.csv(file,stringsAsFactors=FALSE);
+  if (do.usa) usa=usa_nyt(data);
   ## format is dead simple: date,county,state,fips,cases,deaths
   data_wa=subset(data,subset=(state=='Washington'));
   data_other=data_nyt_other(data);
@@ -144,6 +158,12 @@ import_nyt=function(file) {
     bad=which(date.diff!=1);
     if (length(bad)>0) stop(paste("These dates in nyt",what,"version",version,
                                   "are not sequential:",paste(collapse=', ',dates[bad])));
+    if (do.usa) {
+      ## for sanity, make sure data dates and usa dates equal
+      bad=which(data$date!=usa$date);
+      if (length(bad)>0) stop(paste(length(bad),"data and usa dates don't match"))
+      data=cbind(data,USA=usa[[what]]);
+    }
     save_data(what,'nyt',version,data=data);
   });
 }
@@ -154,7 +174,14 @@ data_nyt_other=function(data,places.nonwa=param(places.nonwa)) {
   data_other$county=data_other$place;
   data_other[,colnames(data)];
 }
-
+## compute counts for entire USA
+usa_nyt=function(data) {
+  ## group by date and sum counts
+  bydate=split(data,data$date);
+  cases=sapply(bydate,function(data) sum(data$cases));
+  deaths=sapply(bydate,function(data) sum(data$deaths));
+  usa=data.frame(date=as_date(names(bydate)),cases,deaths,row.names=NULL);
+}
 
 ## ---- Import C19Pro (aka yyg) input file ----
 ## no counties
