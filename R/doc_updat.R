@@ -182,7 +182,7 @@ col_ages=
 ## used for jhu in Figures 1,2 version 21-01-24
 ## TODO: add this to plot_cvdat!
 plot_finraw=
-  function(datasrc=cq(doh,jhu,nyt),what=cq(cases,admits,deaths),title,legends,
+  function(datasrc=param(datasrc),what=cq(cases,admits,deaths),title,legends,
            raw.plot=cq(lines,points),
            places,ages='all',per.capita=TRUE,xmin=NULL,xmax=NULL,ymin=NULL,ymax=NULL,
            lwd=2,lwd.fin=lwd,lwd.raw=0.375*lwd.fin,lty.fin='solid',lty.raw='dotted',pch=20) {
@@ -266,7 +266,7 @@ make_updat_objs=
     datasrc=match.arg(datasrc,several.ok=TRUE);
     cases=expand.grid(what=what,datasrc=datasrc,stringsAsFactors=FALSE);
     cases=cases[(cases$what!='admits'|cases$datasrc%in%cq(doh)),]; # only 'doh' has 'admits'
-   withrows(cases,case,{
+    withrows(cases,case,{
       if (param(verbose)) print(paste('+++ making',datasrc,what));
       ## start with raw. really 'weekly, incremental'
       obj=raw(what,datasrc,version);    # start with raw
@@ -291,7 +291,7 @@ fit_updat_obj=function(obj,what) {
 }
 ## remove superflous objects - either because they were created by mistake or to start clean
 ## if id is set, only removes those objects, else all that fit the pattern
-rm_updat_objs=function(what=cq(cases,admits,deaths),datasrc=cq(doh,jhu,nyt),
+rm_updat_objs=function(what=cq(cases,admits,deaths),datasrc=param(datasrc),
                        id=NULL,rm.std=is.null(id)) {
   what=match.arg(what,several.ok=TRUE);
   datasrc=match.arg(datasrc,several.ok=TRUE);
