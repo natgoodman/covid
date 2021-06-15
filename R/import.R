@@ -15,7 +15,7 @@ library(readxl);
 ## wrapper for import functions
 ## if version specified, import that version only. if NULL do all
 ## file, if set, includes path and supercedes version. can be directory or single file
-import=function(datasrc,version='latest',file=NULL,do.usa=FALSE) {
+import=function(datasrc,version='latest',file=NULL,do.usa=TRUE) {
   datasrc=match.arg(datasrc,param(datasrc));
   import.fun=get0(paste0('import_',datasrc),mode='function');
   if (!is.null(file)) {
@@ -32,12 +32,12 @@ import=function(datasrc,version='latest',file=NULL,do.usa=FALSE) {
   }
   sapply(files,function(file) {
     args=list(file=file);
-    if (datasrc%in%cq(jhu,nyt)) args=c(ages,do.usa=do.usa);
+    if (datasrc%in%cq(jhu,nyt)) args=c(args,do.usa=do.usa);
     do.call(import.fun,args);
   });
   files;
 }
-import_all=function(datasrc=param(datasrc),version='latest',do.usa=FALSE) {
+import_all=function(datasrc=param(datasrc),version='latest',do.usa=TRUE) {
   if (is.null(version)||version=='latest') version=latest_version(datasrc[1],dir=indir);
   ## trk ended 21-03-07. see covidtracking.com
   if (version>'21-03-07') datasrc=datasrc%-%'trk';
@@ -53,7 +53,7 @@ import_all=function(datasrc=param(datasrc),version='latest',do.usa=FALSE) {
 ## import_cdc in import_doh.R
 
 ## ---- Import JHU input file ----
-import_jhu=function(file,do.usa=FALSE) {
+import_jhu=function(file,do.usa=TRUE) {
   if (param(verbose)) print(paste('>>> importing',file));
   ## filenames are, eg, cases.20-05-03.csv. split into what,version.
   base=basename(file);
@@ -107,7 +107,7 @@ usa_jhu=function(data) {
 }
 
 ## ---- Import NY Times input file ----
-import_nyt=function(file,do.usa=FALSE) {
+import_nyt=function(file,do.usa=TRUE) {
   if (param(verbose)) print(paste('>>> importing',file));
   version=baseonly(file,keep.dir=FALSE);
   data=read.csv(file,stringsAsFactors=FALSE);
