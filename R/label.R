@@ -40,8 +40,9 @@ cuminc_label=Vectorize(function(cum,fmt=cq(title,legend,ylab)) {
   vectorize.args='cum');
 
 datasrc_label=Vectorize(function(datasrc)
-  switch(datasrc,doh='DOH',ihme='IHME',jhu='JHU',nyt='NYTimes',trk='CovidTrack',yyg='C19Pro',
-         datasrc),
+  ## switch(datasrc,doh='DOH',ihme='IHME',jhu='JHU',nyt='NYTimes',trk='CovidTrack',yyg='C19Pro',
+  ##        datasrc),
+  toupper(datasrc),
   USE.NAMES=FALSE)
 id_label=Vectorize(function(id,fmt=cq(title,legend,ylab)) {
   fmt=match.arg(fmt);

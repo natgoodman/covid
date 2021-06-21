@@ -56,10 +56,10 @@ doc_updatsupp=
         sect_byplace(where='nonwa2',what=what,datasrc=datasrc%-%'doh',id='cum');
       if (sect=='cum.fav') sect_byplace(where='fav',what=what,datasrc=datasrc%-%'doh',id='cum');
       
-      if (sect=='inc.byage')
-        sapply(ageids,function(aid) sect_byage(aid=aid,what=what,datasrc='doh'));
-      if (sect=='cum.byage')
-        sapply(ageids,function(aid) sect_byage(aid=aid,what=what,datasrc='doh',id='cum'));
+      if (sect=='inc.byage.wa') sect_byage(aid=ageids,what=what,datasrc='doh');
+      if (sect=='cum.byage.wa') sect_byage(aid=ageids,what=what,datasrc='doh',id='cum');
+      if (sect=='inc.byage.usa') sect_byage(aid=ageids,what=what,datasrc='cdc');
+      if (sect=='cum.byage.usa') sect_byage(aid=ageids,what=what,datasrc='cdc',id='cum');
 
       if (sect=='inc.bysrc.wa1') sect_bysrc(places=places.wa1,what=what,datasrc=datasrc);
       if (sect=='inc.bysrc.wa2') sect_bysrc(places=places.wa2,what=what,datasrc=datasrc);
