@@ -24,7 +24,9 @@ import_doh=function(file) {
   vdate=as_date(version);
   logdir=filename(param(logdir),'doh.import');
   dir.create(logdir,recursive=TRUE,showWarnings=FALSE);
-  Sheets=c(cq(Cases,Deaths),if(version>='20-05-24') 'Hospitalizations');
+  ## Hospitalizations broken in version 21-06-20. hopefully temporary...
+  ## Sheets=c(cq(Cases,Deaths),if(version>='20-05-24') 'Hospitalizations');
+  Sheets=c(cq(Cases,Deaths),if(version>='20-05-24'&version!='21-06-20') 'Hospitalizations');
   sapply(Sheets,function(Sheet) {
     what=if(Sheet!='Hospitalizations') tolower(Sheet) else 'admits'
     data=suppressMessages(read_excel(file,sheet=Sheet));
@@ -76,6 +78,7 @@ import_doh=function(file) {
       data=fix_nonsundays(data);
       data=fix_extraweeks(data,vdate);
       data});
+    ## BREAKPOINT('import_doh: after bycounty',nv(Sheet))
     ## TODO: add 'noage' group to data. probably many ramifications... too hard to do now
     names.dat=c('all',names.age)
     byage=sapply(names.dat,simplify=FALSE,function(nm) {
