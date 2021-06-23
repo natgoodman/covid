@@ -23,7 +23,11 @@ doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',figs.all=TRUE,
   datasrc=cq(doh,jhu);
   if (is.null(version)||version=='latest') version=max(sapply(datasrc,latest_version));
   if (param(verbose)) print(paste('+++ doc_update',nv(version)));
-  if (need.objs) make_updat_objs(datasrc=datasrc,version=version);
+  if (need.objs) {
+    ## admits broken in version 21-06-20. hopefully temporary...
+    what=if(version!='21-06-20') cq(cases,admits,deaths) else cq(cases,deaths);
+    make_updat_objs(what=what,datasrc=datasrc,version=version);
+  }
   if (need.init) init_doc(doc='updat',version=version,...);
   if (is.null(xmin.raw)&&version>='21-05-30') xmin.raw='2021-02-15';
   places.wa<<-cq(state,King,Snohomish,Pierce);
@@ -37,20 +41,25 @@ doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',figs.all=TRUE,
   ## NOTE: save_tbl in this file not dat.R where you might expect it
   if (param(verbose)) print(paste('+++ making tables'));
   widths=if(version<'21-02-28') 4 else c(4,6,8);
+  widths.dly=7*(1:6);
   trend.cases=trend(jhu.cases.raw,places=c(places.wa,places.nonwa),widths=widths);
   trend.deaths=trend(jhu.deaths.raw,places=c(places.wa,places.nonwa),widths=widths);
+  trend.cases.dly=trend(jhu.cases.dly,places=c(places.wa,places.nonwa),widths=widths.dly);
+  trend.deaths.dly=trend(jhu.deaths.dly,places=c(places.wa,places.nonwa),widths=widths.dly);
   counts.cases.raw=data_cvdat(jhu.cases.raw,places=c(places.wa,places.nonwa),per.capita=TRUE);
   counts.deaths.raw=data_cvdat(jhu.deaths.raw,places=c(places.wa,places.nonwa),per.capita=TRUE);
   counts.cases=data_cvdat(jhu.cases,places=c(places.wa,places.nonwa),per.capita=TRUE);
   counts.deaths=data_cvdat(jhu.deaths,places=c(places.wa,places.nonwa),per.capita=TRUE);
-  save_tbl(trend.cases,1,'trend_cases');
-  save_tbl(trend.deaths,2,'trend_deaths');
+  save_tbl(trend.cases,1,'trend_cases',sfx='a');
+  save_tbl(trend.deaths,2,'trend_deaths',sfx='a');
+  save_tbl(trend.cases.dly,1,'trend_cases_dly',sfx='b');
+  save_tbl(trend.deaths.dly,2,'trend_deaths_dly',sfx='b');
   save_tbl(counts.cases.raw,3,'counts_cases_raw',sfx='a');
   save_tbl(counts.deaths.raw,4,'counts_deaths_raw',sfx='a');
   save_tbl(counts.cases,3,'counts_cases',sfx='b');
   save_tbl(counts.deaths,4,'counts_deaths',sfx='b');
-  assign_global(trend.cases,trend.deaths,counts.cases,counts.deaths,
-                counts.cases.raw,counts.deaths.raw);
+  assign_global(trend.cases,trend.deaths,trend.cases.dly,trend.deaths.dly,
+                counts.cases,counts.deaths,counts.cases.raw,counts.deaths.raw);
   if (param(verbose)) print(paste('+++ making figures'));
   ## Figures 1a-b cases
   figblk_start();
@@ -127,15 +136,27 @@ doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',figs.all=TRUE,
               title=figtitle(paste("Weekly cases per million by age in",labels.wa[place])))));
     ## Figures 4a-d admits, deaths by age
     figblk_start();
-    data=data_cvdat(list(doh.admits,doh.deaths),places=places.wa,ages=ages,per.capita=TRUE);
-    ymax=max(data[,-1],na.rm=TRUE);
-    sapply(places.wa,function(place) 
-      dofig(paste(sep='_','admits_deaths',place),
-            plot_admdea(
-              places=place,ages=ages,col=col,per.capita=TRUE,ymax=ymax,
-              title=figtitle(paste("Weekly admits and deaths per million by age in",
-                                   labels.wa[place])))));
-      param(fignum=fignum.sav);           # restore fignum after a-d figs
+    ## admits broken in version 21-06-20. hopefully temporary...
+    if (version!='21-06-20') {
+      data=data_cvdat(list(doh.admits,doh.deaths),places=places.wa,ages=ages,per.capita=TRUE);
+      ymax=max(data[,-1],na.rm=TRUE);
+      sapply(places.wa,function(place) 
+        dofig(paste(sep='_','admits_deaths',place),
+              plot_admdea(
+                places=place,ages=ages,col=col,per.capita=TRUE,ymax=ymax,
+                title=figtitle(paste("Weekly admits and deaths per million by age in",
+                                     labels.wa[place])))));
+    } else {
+      data=data_cvdat(list(doh.deaths),places=places.wa,ages=ages,per.capita=TRUE);
+      ymax=max(data[,-1],na.rm=TRUE);
+      sapply(places.wa,function(place) 
+        dofig(paste(sep='_','deaths',place),
+              plot_cvdat(
+                doh.deaths,places=place,ages=ages,col=col,per.capita=TRUE,ymax=ymax,
+                title=figtitle(paste("Weekly deaths per million by age in",
+                                     labels.wa[place])))));
+    }
+    param(fignum=fignum.sav);           # restore fignum after a-d figs
   }
   ## Figures 3 WA DOH cases by age for state
   figblk_end();
@@ -145,11 +166,19 @@ doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',figs.all=TRUE,
           doh.cases,places=place,ages=ages,col=col,per.capita=TRUE,lwd=2,
           title=figtitle(paste("Weekly cases per million by age in",labels.wa[place]))));
   ## Figures 4 WA DOH admits and deaths by age for state
-  dofig(paste(sep='_','admits_deaths',place),
+  ## admits broken in version 21-06-20. hopefully temporary...
+  if (version!='21-06-20') {
+    dofig(paste(sep='_','admits_deaths',place),
         plot_admdea(
           places=place,ages=ages,col=col,per.capita=TRUE,
           title=figtitle(paste("Weekly admits and deaths per million by age in",
                                labels.wa[place]))));
+  } else {
+    dofig(paste(sep='_','deaths',place),
+          plot_cvdat(
+            doh.deaths,places=place,ages=ages,col=col,per.capita=TRUE,lwd=2,
+            title=figtitle(paste("Weekly deaths per million by age in",labels.wa[place]))));
+  }
   ## Figures 5a-b compare DOH, JHU.
   ## Note: not used in versions after Dec 13, 2020 until Jun 2, 2021. might go away again...
   ##if (figs.all) {
@@ -270,9 +299,14 @@ make_updat_objs=
       if (param(verbose)) print(paste('+++ making',datasrc,what));
       ## start with raw. really 'weekly, incremental'
       obj=raw(what,datasrc,version);    # start with raw
+      assign(paste(sep='.',datasrc,what,'src'),obj,globalenv());  # save as 'src'
       obj=switch(datasrc,               # transform as needed for src
                  doh=edit(obj,KEEP=cq(state,King,Snohomish,Pierce)),
-                 jhu=weekly(incremental(obj)));
+                 jhu={
+                   obj=incremental(obj);
+                   assign(paste(sep='.',datasrc,what,'dly'),obj,globalenv());  # save as 'dly'
+                   weekly(obj);
+                 });
       assign(paste(sep='.',datasrc,what,'raw'),obj,globalenv());  # save as 'raw'
       if (datasrc=='doh') {
         ## if (what=='deaths') obj=edit(obj,'0_64'='0_19'+'20_34'+'35_49'+'50_64',
@@ -281,6 +315,7 @@ make_updat_objs=
       }
       obj=fit_updat_obj(obj,what);
       assign(paste(sep='.',datasrc,what),obj,globalenv());        # save as 'final'
+      assign(paste(sep='.',datasrc,what,'std'),obj,globalenv());  # and 'std' 
     });
     cases;
   }
@@ -324,7 +359,11 @@ save_tbl=function(tbl,tblnum,tblname,sfx=NULL) {
 
 ## show trend results in convenient format. for interactive use
 show_trend=show_trends=
-  function(cases=parent(trend.cases),deaths=parent(trend.deaths),pval.cutoff=NA,do.print=TRUE) {
+  function(cases=parent(trend.cases),deaths=parent(trend.deaths),
+           where=cq(wa,nonwa),what=cq(cases,deaths),
+           pval.cutoff=NA,do.print=TRUE) {
+    where=match.arg(where,several.ok=TRUE);
+    what=match.arg(what,several.ok=TRUE);
     if (!is.na(pval.cutoff)) {
       cases=cases[cases$pval<=pval.cutoff,];
       deaths=deaths[deaths$pval<=pval.cutoff,];
@@ -335,58 +374,77 @@ show_trend=show_trends=
     deaths.byplace=split(deaths,deaths$place);
     assign_global(cases.byplace,deaths.byplace);
     if (do.print) {
-      print('cases.wa');
-      print(cases.byplace[places.wa]);
-      print('----------');
-      print('cases.nonwa');
-      print(cases.byplace[places.nonwa]);
-      print('----------');
-      print('deaths.wa');
-      print(deaths.byplace[places.wa]);
-      print('----------');
-      print('deaths.nonwa');
-      print(deaths.byplace[places.nonwa]);
+      if ('wa'%in%where&&'cases'%in%what) {
+        print('cases.wa');
+        print(cases.byplace[places.wa]);
+        print('----------');
+      }
+      if ('nonwa'%in%where&&'cases'%in%what) {
+        print('cases.nonwa');
+        print(cases.byplace[places.nonwa]);
+        print('----------');
+      }
+      if ('wa'%in%where&&'deaths'%in%what) {
+        print('deaths.wa');
+        print(deaths.byplace[places.wa]);
+        print('----------');
+      }
+      if ('nonwa'%in%where&&'deaths'%in%what) {
+        print('deaths.nonwa');
+        print(deaths.byplace[places.nonwa]);
+      }
     }
     invisible(list(cases=cases.byplace,deaths=deaths.byplace));
   }
 ## show counts results in convenient format. for interactive use
 show_counts=
   function(cases=parent(counts.cases),deaths=parent(counts.deaths),
+           where=cq(wa,nonwa),what=cq(cases,deaths),
            places.wa=parent(places.wa),places.nonwa=parent(places.nonwa),
            peak.cases.wa=c('2020-06-21','2020-08-16'), peak.deaths.wa=c('2020-06-21','2020-09-06'),
            do.print=TRUE) {
+    where=match.arg(where,several.ok=TRUE);
+    what=match.arg(what,several.ok=TRUE);
     cases.wa=cases[,c('date',places.wa)];
     deaths.wa=deaths[,c('date',places.wa)];
     cases.nonwa=cases[,c('date',places.nonwa)];
     deaths.nonwa=deaths[,c('date',places.nonwa)];
     assign_global(cases.wa,deaths.wa,cases.nonwa,deaths.nonwa);
     if (do.print) {
-      print('cases.wa summer peak');
-      ## print(subset(cases.wa,subset=btwn_cc(date,peak.cases.wa[1],peak.cases.wa[2])));
-      peak=subset(cases.wa,subset=btwn_cc(date,peak.cases.wa[1],peak.cases.wa[2]));
-      i=capply(peak[,-1],which.max);
-      peak=peak[i,];
-      smax=capply(peak[,-1],max);
-      peak=rbind(peak,data.frame(date=NA,smax))
-      print(peak);
-      print('cases.wa now');
-      print(tail(cases.wa[weekdays(cases.wa$date)=='Sunday',],n=3));        # Sundays
-      print('----------');
-      print('deaths.wa summer peak');
-      ## print(subset(deaths.wa,subset=btwn_cc(date,peak.deaths.wa[1],peak.deaths.wa[2])));
-      peak=subset(deaths.wa,subset=btwn_cc(date,peak.deaths.wa[1],peak.deaths.wa[2]));
-      i=capply(peak[,-1],which.max);
-      peak=peak[i,];
-      smax=capply(peak[,-1],max);
-      peak=rbind(peak,data.frame(date=NA,smax))
-      print(peak);
-      print('deaths.wa now');
-      print(tail(deaths.wa[weekdays(deaths.wa$date)=='Sunday',],n=3));      # Sundays
-      print('----------');
-      print('cases.nonwa now');
-      print(tail(cases.nonwa[weekdays(cases.nonwa$date)=='Sunday',],n=3));   # Sundays
-      print('deaths.nonwa now');
-      print(tail(deaths.nonwa[weekdays(deaths.nonwa$date)=='Sunday',],n=3)); # Sundays
+      if ('wa'%in%where&&'cases'%in%what) {
+        print('cases.wa summer peak');
+        ## print(subset(cases.wa,subset=btwn_cc(date,peak.cases.wa[1],peak.cases.wa[2])));
+        peak=subset(cases.wa,subset=btwn_cc(date,peak.cases.wa[1],peak.cases.wa[2]));
+        i=capply(peak[,-1],which.max);
+        peak=peak[i,];
+        smax=capply(peak[,-1],max);
+        peak=rbind(peak,data.frame(date=NA,smax))
+        print(peak);
+        print('cases.wa now');
+        print(tail(cases.wa[weekdays(cases.wa$date)=='Sunday',],n=3));        # Sundays
+        print('----------');
+      }
+      if ('wa'%in%where&&'deaths'%in%what) {
+        print('deaths.wa summer peak');
+        ## print(subset(deaths.wa,subset=btwn_cc(date,peak.deaths.wa[1],peak.deaths.wa[2])));
+        peak=subset(deaths.wa,subset=btwn_cc(date,peak.deaths.wa[1],peak.deaths.wa[2]));
+        i=capply(peak[,-1],which.max);
+        peak=peak[i,];
+        smax=capply(peak[,-1],max);
+        peak=rbind(peak,data.frame(date=NA,smax))
+        print(peak);
+        print('deaths.wa now');
+        print(tail(deaths.wa[weekdays(deaths.wa$date)=='Sunday',],n=3));      # Sundays
+        print('----------');
+      }
+      if ('nonwa'%in%where&&'cases'%in%what) {
+        print('cases.nonwa now');
+        print(tail(cases.nonwa[weekdays(cases.nonwa$date)=='Sunday',],n=3));   # Sundays
+      }
+      if ('nonwa'%in%where&&'deaths'%in%what) {
+        print('deaths.nonwa now');
+        print(tail(deaths.nonwa[weekdays(deaths.nonwa$date)=='Sunday',],n=3)); # Sundays
+      }
     }
     invisible(list(cases.wa=cases.wa,deaths.wa=deaths.wa,
                    cases.nonwa=cases.nonwa,deaths.nonwa=deaths.nonwa));
