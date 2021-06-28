@@ -39,7 +39,7 @@ data_cvdat=
              ".\nValid ages for these objects are: ",paste(collapse=', ',ages.all));
     }
     series=data_series(objs,places,ages,incompatible.ok,attrs);
-   if (per.capita) series=series_percap(series);
+    if (per.capita) series=series_percap(series);
     ct=ct_attrs(series,attrs)
     ## construct colnames. apply to series so merge won't complain about duplicate colnames
     nattr=series$xattr[,ct$mv.attrs%-%cq(series,obj),drop=FALSE];
