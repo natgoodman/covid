@@ -212,7 +212,8 @@ init_doc=function(
   vsndir=if(doc%in% cq(updat,updatsupp)) versionx else NULL,
   figdir=filename('figure',param(doc),subdoc,param(run.id),vsndir), # directory for figures
   tbldir=filename('table',param(doc),subdoc,param(run.id),vsndir),  # directory for tables
-  ## 'what' used in doc. presently only updatsupp
+  ## 'where', 'what' used in updatsupp
+  where=if(doc=='updatsupp') cq(wa1,wa2,nonwa1,nonwa2,fav,usa) else NULL,
   what=if(doc=='updatsupp') cq(cases,admits,icus,deaths,admdea) else NULL,
   ## output modifiers
   outpfx=NULL,                  # prefix before figure or table number - NOT USED
