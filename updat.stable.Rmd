@@ -26,7 +26,7 @@ Figures 1a-b show smoothed *case* counts per million for several Washington and 
 
 Previous versions also showed raw data overlaid on the smoothed to illustrate variability. With *case* and *death* counts so low, variability is no longer a big issue.
 
-The figures use data from Johns Hopkins Center for Systems Science and Engineering (JHU), described [below](#jhu). When comparing the Washington and non-Washington graphs, please note the difference in y-scale: the current counts for Washington locations are about 200-400 per million;  non-Washington counts are about 0-100 per million.
+The figures use data from Johns Hopkins Center for Systems Science and Engineering (JHU), described [below](#jhu). When comparing the Washington and non-Washington graphs, please note the difference in y-scale: the current counts for Washington locations are about 200-350 per million;  non-Washington counts are about 0-150 per million.
 
 ```{r out.width="50%",echo=FALSE,fig.show='asis',include=TRUE}
 knitr::include_graphics(file.path(figdir,'figure_001a_cases_wa.png'));
@@ -37,9 +37,9 @@ knitr::include_graphics(file.path(figdir,'figure_001c_cases_wa_ragged.png'));
 knitr::include_graphics(file.path(figdir,'figure_001d_cases_nonwa_ragged.png'));
 ```
 
-The graphs for Washington (Figure 1a) and non-Washington locations (Figure 1b) show that rates are declining in all locations. Trend analysis supports the decline. 
+The graphs for Washington (Figure 1a) and non-Washington locations (Figure 1b) show that rates are declining in all locations. Trend analysis supports the decline in all locations except Seattle (King County) where the rate seems to be flattening. 
 
-Figures 2a-b show smoothed *deaths* per million for the same locations. When comparing the Washington and non-Washington graphs, again please note the difference in y-scale: the current Washington rates are 0-6 per million; the non-Washington rates are 1-4 per million. 
+Figures 2a-b show smoothed *deaths* per million for the same locations. When comparing the Washington and non-Washington graphs, again please note the difference in y-scale: the current Washington rates are 0-11 per million; the non-Washington rates are 0-1 per million. 
 
 ```{r out.width="50%",echo=FALSE,fig.show='asis',include=TRUE}
 knitr::include_graphics(file.path(figdir,'figure_002a_deaths_wa.png'));
@@ -50,15 +50,17 @@ knitr::include_graphics(file.path(figdir,'figure_002c_deaths_wa_ragged.png'));
 knitr::include_graphics(file.path(figdir,'figure_002d_deaths_nonwa_ragged.png'));
 ```
 
-The graphs for Washington (Figure 2a) and non-Washington locations (Figure 2b) are declining everywhere except Snohomish (North of Seattle). The small increase in Snohomish is due to an anomalously high count for the most recent week; hopefully next week the counts will come back down. Trend analysis suggests that rates are basically flat everywhere.
+The graphs for Washington (Figure 2a) show rates declining state-wide and in Pierce (South of Seattle), but increasing in Seattle and Snohomish (North of Seattle). Trend analysis suggests that rates are actually flat everywhere; the graph directions are probably artifacts of data variability and fitting.
+
+The graphs for non-Washington locations (Figure 2b) are declining everywhere. Trend analysis suggests that rates are actually flat; counts are so low that further decline is meaningless.
 
 The next graphs show the Washington results broken down by age. This data is from Washington State Department of Health (DOH) weekly downloads, described [below](#doh). An important caveat is that the DOH download systematically undercounts events in recent weeks due to manual curation. I extrapolate data for late time points as discussed [below](#techdetails).
 
-Figure 3 is *cases* and figure 4 is *deaths*. Previous versions also showed hospital admissions (*admits*) along with *deaths*, but the admissions data is clearly incorrect  in the most recent download.
+Figure 3 is *cases* and figure 4 shows hospital admissions (*admits*) and *deaths*.
 
 ```{r out.width="50%",echo=FALSE,fig.show='asis',include=TRUE}
 knitr::include_graphics(file.path(figdir,'figure_003_cases_state.png'));
-knitr::include_graphics(file.path(figdir,'figure_004_deaths_state.png'));
+knitr::include_graphics(file.path(figdir,'figure_004_admits_deaths_state.png'));
 ```
 
 ```{r out.width="50%",echo=FALSE,fig.show='asis',include=FALSE}
@@ -66,15 +68,17 @@ knitr::include_graphics(file.path(figdir,'figure_003a_cases_state.png'));
 knitr::include_graphics(file.path(figdir,'figure_003b_cases_King.png'));
 knitr::include_graphics(file.path(figdir,'figure_003c_cases_Snohomish.png'));
 knitr::include_graphics(file.path(figdir,'figure_003d_cases_Pierce.png'));
-knitr::include_graphics(file.path(figdir,'figure_004a_deaths_state.png'));
-knitr::include_graphics(file.path(figdir,'figure_004b_deaths_King.png'));
-knitr::include_graphics(file.path(figdir,'figure_004c_deaths_Snohomish.png'));
-knitr::include_graphics(file.path(figdir,'figure_004d_deaths_Pierce.png'));
+knitr::include_graphics(file.path(figdir,'figure_004a_admits_deaths_state.png'));
+knitr::include_graphics(file.path(figdir,'figure_004b_admits_deaths_King.png'));
+knitr::include_graphics(file.path(figdir,'figure_004c_admits_deaths_Snohomish.png'));
+knitr::include_graphics(file.path(figdir,'figure_004d_admits_deaths_Pierce.png'));
 ```
 
 Early on, the pandemic struck older age groups most heavily, but *cases* quickly spread into all age groups, even the young. Thankfully, rates are now declining in all age groups. The oldest age groups (65-79 and 80+) are doing best, perhaps due to the high vaccination coverage in these people. 
 
-The shocking *death* rate of the 80+ age group jumps off the page in Figure 4. Thankfully, *deaths* are now declining even in this group.
+The shocking *death* rate of the 80+ age group jumps off the page in Figure 4. The *death* rate for this age group shows four waves. The third wave reached its peak in December 2020. The fourth wave peaked in April 2021 at a level well below the earlier peaks. Throughout the pandemic, the death  rate for the 80+ group was much higher than any other group, but it now appears that deaths even in this group have dropped to near zero. Given the declining *case* rates, it seems reasonable to be optimistic that deaths will remain low in the coming weeks. 
+
+The *admit* rate shows the same four waves, and seems to be decreasing in all groups.
 
 ```{r out.width="50%",echo=FALSE,fig.show='asis',include=FALSE}
 knitr::include_graphics(file.path(figdir,'figure_005a_cases_dohjhu.png'));
@@ -101,7 +105,7 @@ knitr::include_graphics(file.path(figdir,'figure_005b_deaths_dohjhu.png'));
 
 2. The Washington DOH data (used in Figures 3 and 4 to show counts broken down by age) systematically undercounts events in recent weeks due to manual curation. I attempt to correct this undercount through a linear extrapolation function (using R's `lm`). I have tweaked the extrapolation repeatedly, even turning it off for a few weeks. The current version uses a model that combines date and recentness effects. In past, I created models for each Washington location and age group but had to change when DOH changed its age groups on March 14, 2021 (see [below](#doh)). I now create a single model for the state as a whole and all age groups summed together, then blithely apply that model to all locations and ages.
 
-3. The trend analysis computes a linear regression (using R's `lm`) over the most recent four, six, or eight weeks of data and reports the computed slope and the p-value for the slope. In essence, this compares the trend to the null hypothesis that the true counts are constant and the observed points are randomly selected from a normal distribution. After looking at trend results across the entire time series, I determined that p-values below 0.1 indicate convincing trends; this cutoff is arbitrary, of course.
+3. The trend analysis computes a linear regression (using R's `lm`) over the most recent four, six, or eight weeks of data and reports the computed slope and the p-value for the slope. I also compute a regression using daily data over the most recent 7-42 days. In essence, this compares the trend to the null hypothesis that the true counts are constant and the observed points are randomly selected from a normal distribution. After looking at trend results across the entire time series, I determined that p-values below 0.15 indicate convincing trends; this cutoff is arbitrary, of course.
 
 4. In previous versions of the document, I've shown plots that overlay raw *case* and *death* counts onto the smoothed graphs in Figures 1 and 2. Recent data is much less variable than in past making these plots superfluous.
 
