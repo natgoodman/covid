@@ -401,7 +401,14 @@ show_counts=
   function(cases=parent(counts.cases),deaths=parent(counts.deaths),
            where=cq(wa,nonwa),what=cq(cases,deaths),
            places.wa=parent(places.wa),places.nonwa=parent(places.nonwa),
-           peak.cases.wa=c('2020-06-21','2020-08-16'), peak.deaths.wa=c('2020-06-21','2020-09-06'),
+           ## wa spring 2020 peak dates
+           do.spring=TRUE,
+           peak.cases.spring=c('2020-03-15','2020-05-01'),
+           peak.deaths.spring=c('2020-03-15','2020-06-01'),
+           ## wa summer 2020 peak dates
+           do.summer=TRUE,
+           peak.cases.summer=c('2020-06-21','2020-08-16'),
+           peak.deaths.summer=c('2020-06-21','2020-09-06'),
            do.print=TRUE) {
     where=match.arg(where,several.ok=TRUE);
     what=match.arg(what,several.ok=TRUE);
@@ -412,27 +419,19 @@ show_counts=
     assign_global(cases.wa,deaths.wa,cases.nonwa,deaths.nonwa);
     if (do.print) {
       if ('wa'%in%where&&'cases'%in%what) {
-        print('cases.wa summer peak');
-        ## print(subset(cases.wa,subset=btwn_cc(date,peak.cases.wa[1],peak.cases.wa[2])));
-        peak=subset(cases.wa,subset=btwn_cc(date,peak.cases.wa[1],peak.cases.wa[2]));
-        i=capply(peak[,-1],which.max);
-        peak=peak[i,];
-        smax=capply(peak[,-1],max);
-        peak=rbind(peak,data.frame(date=NA,smax))
-        print(peak);
+        if (do.spring)
+          show_peak(cases.wa,places.wa,dates=peak.cases.spring,'cases.wa spring 2020');
+        if (do.summer)
+          show_peak(cases.wa,places.wa,dates=peak.cases.summer,'cases.wa summer 2020');
         print('cases.wa now');
         print(tail(cases.wa[weekdays(cases.wa$date)=='Sunday',],n=3));        # Sundays
         print('----------');
       }
       if ('wa'%in%where&&'deaths'%in%what) {
-        print('deaths.wa summer peak');
-        ## print(subset(deaths.wa,subset=btwn_cc(date,peak.deaths.wa[1],peak.deaths.wa[2])));
-        peak=subset(deaths.wa,subset=btwn_cc(date,peak.deaths.wa[1],peak.deaths.wa[2]));
-        i=capply(peak[,-1],which.max);
-        peak=peak[i,];
-        smax=capply(peak[,-1],max);
-        peak=rbind(peak,data.frame(date=NA,smax))
-        print(peak);
+        if (do.spring)
+          show_peak(deaths.wa,places.wa,dates=peak.deaths.spring,'deaths.wa spring 2020');
+        if (do.summer)
+          show_peak(deaths.wa,places.wa,dates=peak.deaths.summer,'deaths.wa summer 2020');
         print('deaths.wa now');
         print(tail(deaths.wa[weekdays(deaths.wa$date)=='Sunday',],n=3));      # Sundays
         print('----------');
@@ -449,6 +448,17 @@ show_counts=
     invisible(list(cases.wa=cases.wa,deaths.wa=deaths.wa,
                    cases.nonwa=cases.nonwa,deaths.nonwa=deaths.nonwa));
   }
-
+show_peak=function(counts,places,dates,label=NULL,do.print=TRUE) {
+  if (do.print) print(paste(collapse=' ',c(label,'peak')));
+  peak=subset(counts,subset=btwn_cc(date,dates[1],dates[2]));
+  i=capply(peak[,-1],which.max);
+  peak=peak[i,];
+  smax=capply(peak[,-1],max);
+  peak=rbind(peak,data.frame(date=NA,smax))
+  if (do.print) {
+    print(peak);
+    invisible(peak);
+  } else peak;
+}
 
   
