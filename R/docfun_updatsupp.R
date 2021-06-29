@@ -186,14 +186,10 @@ sect_bysrc=
 ## process 'id','exlicit' args to 'sect' functions
 ## usual case: 'id' one or more known values, 'explicit' NULL
 ## also ok: 'id' single novel value, explicit non-NULL
-where_arg=function(where,places) {
-  if (is.null(places)) where=pmatch_choice(where,param(where)) # usual case
-  else {
-    if ((length(where)!=1)|(!is.null(pmatch_choice(where,param(where),none.ok=TRUE))))
-      stop("When 'places' is non-NULL, 'where' must contain novel value, not ",
-           paste(collapse=', ',where));
-  }
-  where;
+where_arg=function(where,places=NULL)) {
+  places=get0(paste(sep='.','places',where),ifnotfound=places)
+  if (is.null(places)) stop("No 'places.where' variable exists and 'places' is NULL: ",nv(where));
+  places;
 }
 
                    
