@@ -87,11 +87,14 @@ series_blocks=
       if (block %in% attrs) {
         if (block=='obj') attrs=attrs%-%cq(series,obj,place,age)
         else attrs=block;
-        bxattr=xattr[,attrs,drop=FALSE];
-        xattr.grp=split(xattr,bxattr,drop=TRUE);
-        blocks=lapply(xattr.grp,function(xattr) xattr$series);
-        blocks=blocks[order(sapply(blocks,min))];
-        list(blocks=blocks,xattr=unique(bxattr));
+        ## I think this 'if' fixes bug noted above about crashing if objs have same attrs
+        if (length(attrs)) {
+          bxattr=xattr[,attrs,drop=FALSE];
+          xattr.grp=split(xattr,bxattr,drop=TRUE);
+          blocks=lapply(xattr.grp,function(xattr) xattr$series);
+          blocks=blocks[order(sapply(blocks,min))];
+          list(blocks=blocks,xattr=unique(bxattr));
+        } else NULL;
       }
     },simplify=FALSE);
     blocks[!sapply(blocks,is.null)];
