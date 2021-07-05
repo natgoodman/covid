@@ -254,7 +254,7 @@ auto_ylab=function(series,attrs=cq(unit,cumulative,what),per.capita=FALSE,SEP='&
   xattr=series$xattr;
   attrs=attrs %&% colnames(xattr);
   xattr=unique(xattr[,attrs]);
-  if (xattr$cumulative) xattr$unit=FALSE; # unit doesn't matter for cum
+  if (all(xattr$cumulative)) xattr$unit=FALSE; # unit doesn't matter for cum
   vals=sapply(attrs,function(attr) name_label(attr,xattr[[attr]],fmt='ylab'),simplify=FALSE);
   if (per.capita&&'what'%in%attrs) {
     ## add per capita label to what
@@ -276,6 +276,7 @@ auto_legend=
            blocks.order=cq(obj,place,age,objs,places,ages),
            attrs=cq(unit,cumulative,what,datasrc,version,fit,roll,extra),
            col='black',lty='solid',lwd=2,SEP=', ') {
+    if (length(legends)!=0&&!is_list(legends[[1]])) legends=list(legends);
     if (is.null(blocks)) {
       if (is.null(ct)) ct=ct_attrs(series,attrs);
       blocks=series_blocks(series,ct,blocks.order);
@@ -283,11 +284,14 @@ auto_legend=
     if (is.null(lprop$col.block)) col=lprop$col;
     if (is.null(lprop$lty.block)) lty=lprop$lty;
     if (is.null(lprop$lwd.block)) lwd=lprop$lwd;
-    if (is.null(legend.order)) legend.order=names(blocks);
-    if (length(legends)!=0) {
-      if (!is_list(legends[[1]])) legends=list(legends);
-      names(legends)=legend.order;
+    if (length(blocks)==0) {
+      ## use legends as given with lprop's added
+      default=list(col=col,lty=lty,lwd=lwd);
+      legend=lapply(legends,function(legend) fill_defaults(default,legend));
+      return(legend);
     }
+    if (is.null(legend.order)) legend.order=names(blocks);
+    if (length(legends)!=0) names(legends)=legend.order;
     ## legend=lapply(blocks[legend.order],function(block) {
     legend=lapply(legend.order,function(name) {
       block=blocks[[name]];
