@@ -178,8 +178,8 @@ data_nyt_other=function(data,places.nonwa=param(places.nonwa)) {
 usa_nyt=function(data) {
   ## group by date and sum counts
   bydate=split(data,data$date);
-  cases=sapply(bydate,function(data) sum(data$cases));
-  deaths=sapply(bydate,function(data) sum(data$deaths));
+  cases=sapply(bydate,function(data) sum(data$cases,na.rm=TRUE));
+  deaths=sapply(bydate,function(data) sum(data$deaths,na.rm=TRUE));
   usa=data.frame(date=as_date(names(bydate)),cases,deaths,row.names=NULL);
 }
 
