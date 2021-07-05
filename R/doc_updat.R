@@ -214,6 +214,7 @@ plot_finraw=
   function(datasrc=param(datasrc),what=cq(cases,admits,deaths),title,legends,
            raw.plot=cq(lines,points),
            places,ages='all',per.capita=TRUE,xmin=NULL,xmax=NULL,ymin=NULL,ymax=NULL,
+           col=NULL,
            lwd=2,lwd.fin=lwd,lwd.raw=0.375*lwd.fin,lty.fin='solid',lty.raw='dotted',pch=20) {
     datasrc=match.arg(datasrc);
     what=match.arg(what);
@@ -224,14 +225,15 @@ plot_finraw=
     if (is.null(ymax)) ymax=max(data[,-1],na.rm=TRUE);
     plot_cvdat(fin,places=places,ages=ages,per.capita=per.capita,
                xmin=xmin,xmax=xmax,ymin=ymin,ymax=ymax,
-               title=title,legends=legends,lwd=lwd.fin,lty=lty.fin);
+               title=title,legends=legends,col=col,lwd=lwd.fin,lty=lty.fin);
     if ('lines'%in%raw.plot)
       plot_cvdat(
-        raw,places=places,ages=ages,per.capita=per.capita,add=TRUE,lwd=lwd.raw,lty=lty.raw);
+        raw,places=places,ages=ages,per.capita=per.capita,add=TRUE,
+        col=col,lwd=lwd.raw,lty=lty.raw);
     if ('points'%in%raw.plot)
       plot_cvdat(
-        raw,places=places,ages=ages,per.capita=per.capita,add=TRUE,lwd=lwd.raw,lty=lty.raw,
-        type='p',pch=rep(pch,length(places)*length(ages)))
+        raw,places=places,ages=ages,per.capita=per.capita,add=TRUE,
+        col=col,lwd=lwd.raw,lty=lty.raw,type='p',pch=rep(pch,length(places)*length(ages)))
   }
 ## hack to plot admits and deaths data together
 ## used for Figure 4 version 21-04-25 and later
