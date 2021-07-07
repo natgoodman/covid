@@ -31,8 +31,8 @@ do_dlim=function(datasrc=param(datasrc),version=NULL,
   }
   if (do.download) do_download(datasrc,version,url);
   if (do.import) {
-    if (cmp.prev) datasrc=cmp_prev(datasrc,version);
-    do_import(datasrc,version);
+    if (cmp.prev) datasrc.ok=cmp_prev(datasrc,version);
+    if (length(datasrc.ok)) do_import(datasrc.ok,version);
   }
   if (do.pjto) pjto(datasrc,version);
   version;
