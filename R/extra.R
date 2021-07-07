@@ -38,7 +38,9 @@ extrafun=function(obj,objs,places,ages,method=cq(lm,wfun),args=list(),err.type,w
     sapply(places,simplify=FALSE,function(place) {
       wmat=extra_wmat(obj,objs,place,age,vdates,wmax,d.first,d.last);
       if (err.type=='*') werr=extra_errmul(wmat,mulmax) else werr=extra_erradd(wmat);
-      if (any(!is.finite(werr))) stop('Bad news: bad values in werr: ',nv(age,place));
+      ## admits version 21-06-20 missing 'cuz data was bad. allow NAs in this special case
+      if (!btwn_cc('21-06-20',versions[length(versions)-(wmax-1)],versions[length(versions)]))
+        if (any(!is.finite(werr))) stop('Bad news: bad values in werr: ',nv(age,place));
       fun=extrafun1(werr,w,method,args);
     }));
     invisible(fun);
