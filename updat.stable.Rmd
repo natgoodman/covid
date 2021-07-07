@@ -24,9 +24,9 @@ urlcolor: blue
 
 Figures 1a-b show smoothed *case* counts per million for several Washington and non-Washington locations. The Washington locations are the entire state, the Seattle area where I live, and the adjacent counties to the north and south (Snohomish and Pierce, resp.). The non-Washington locations are Ann Arbor, Boston, San Diego, and Washington DC. See [below](#techdetails) for details on the smoothing method. 
 
-Previous versions also showed raw data overlaid on the smoothed to illustrate variability. With *case* and *death* counts so low, variability is no longer a big issue.
+Previous versions also showed raw data overlaid on the smoothed to illustrate variability. With *cases* and *deaths* so low, variability is no longer a big issue.
 
-The figures use data from Johns Hopkins Center for Systems Science and Engineering (JHU), described [below](#jhu). When comparing the Washington and non-Washington graphs, please note the difference in y-scale: the current counts for Washington locations are about 200-350 per million;  non-Washington counts are about 0-150 per million.
+The figures use data from Johns Hopkins Center for Systems Science and Engineering (JHU), described [below](#jhu). When comparing the Washington and non-Washington graphs, please note the difference in y-scale: the current counts for Washington locations are about 150-250 per million;  non-Washington counts are about 0-150 per million.
 
 ```{r out.width="50%",echo=FALSE,fig.show='asis',include=TRUE}
 knitr::include_graphics(file.path(figdir,'figure_001a_cases_wa.png'));
@@ -37,9 +37,9 @@ knitr::include_graphics(file.path(figdir,'figure_001c_cases_wa_ragged.png'));
 knitr::include_graphics(file.path(figdir,'figure_001d_cases_nonwa_ragged.png'));
 ```
 
-The graphs for Washington (Figure 1a) and non-Washington locations (Figure 1b) show that rates are declining in all locations. Trend analysis supports the decline in all locations except Seattle (King County) where the rate seems to be flattening. 
+The graphs for Washington (Figure 1a) and non-Washington locations (Figure 1b) show that rates are declining in all locations. Trend analysis supports the decline. 
 
-Figures 2a-b show smoothed *deaths* per million for the same locations. When comparing the Washington and non-Washington graphs, again please note the difference in y-scale: the current Washington rates are 0-11 per million; the non-Washington rates are 0-1 per million. 
+Figures 2a-b show smoothed *deaths* per million for the same locations. When comparing the Washington and non-Washington graphs, again please note the difference in y-scale: the current Washington rates are 0-7 per million; the non-Washington rates are 0-2 per million. 
 
 ```{r out.width="50%",echo=FALSE,fig.show='asis',include=TRUE}
 knitr::include_graphics(file.path(figdir,'figure_002a_deaths_wa.png'));
@@ -50,7 +50,7 @@ knitr::include_graphics(file.path(figdir,'figure_002c_deaths_wa_ragged.png'));
 knitr::include_graphics(file.path(figdir,'figure_002d_deaths_nonwa_ragged.png'));
 ```
 
-The graphs for Washington (Figure 2a) show rates declining state-wide and in Pierce (South of Seattle), but increasing in Seattle and Snohomish (North of Seattle). Trend analysis suggests that rates are actually flat everywhere; the graph directions are probably artifacts of data variability and fitting.
+The graphs for Washington (Figure 2a) show rates increasing in Snohomish (North of Seattle) and flat everywhere else. Trend analysis suggests that rates are actually flat everywhere; the apparent increase in Snohomish is probably an artifact of data variability and fitting.
 
 The graphs for non-Washington locations (Figure 2b) are declining everywhere. Trend analysis suggests that rates are actually flat; counts are so low that further decline is meaningless.
 
