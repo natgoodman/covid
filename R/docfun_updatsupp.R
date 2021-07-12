@@ -317,7 +317,7 @@ make_updatsupp_objs=
       ## 'cum'. convert jhu, nyt to weekly so dates will match doh
       obj.cum=if(is_incremental(obj.edit)) cumulative(obj.edit) else weekly(obj.edit);
       obj.roll=roll(obj.raw);
-      ## 'dly' is 'daily', 'incremental'. only useful for sources with daily data
+      ## 'dly' is 'edited', 'daily', 'incremental'. only useful for sources with daily data
       obj.dly=switch(datasrc,
                      doh=daily(obj.edit),
                      jhu=incremental(obj.edit),
@@ -374,9 +374,9 @@ make_updatsupp_places=function() {
  places.wa1=setNames(cq(state,King,Snohomish,Pierce),
                       c('Washington state','Seattle (King County)',
                        'Snohomish (North of Seattle)','Pierce (South of Seattle)'));
- places.wa2=setNames(cq(SKP,North,South,West,EastNotYakima),
+ places.wa2=setNames(cq(SKP,North,South,West,EastNotYakima,Yakima),
                       c('Seattle Metro (SKP)','North of SKP','South of SKP',
-                        'West of SKP','East of SKP (except Yakima)'));
+                        'West of SKP','East of SKP (except Yakima)','Yakima'));
  places.wa=c(places.wa1,places.wa2);
 
  places.nonwa1=setNames(cq('Ann Arbor',Boston,'San Diego',DC),
@@ -393,11 +393,20 @@ make_updatsupp_places=function() {
  places.usa=setNames('USA','USA');
 
  assign_global();                       # assign all locals to global
- ## assign_global(places.wa1,places.wa2,places.wa,places.nonwa1,places.nonwa2,places.nonwa,
- ##               places.fav);
+ vars=ls();
+ where=sub('^places\\.','',vars);
+ param(where=where);
+ places.updatsupp<<-vars;               # for rm_updatsupp_places
+ vars;
+}
+rm_updatsupp_places=function() {
+  if (exists('places.updatsupp',envir=globalenv())) {
+    vars=places.updatsupp;
+    rm(list=c(places.updatsupp,'places.updatsupp'),envir=globalenv());
+    vars;
+  } else NULL;
 }
 ## make standard age lists for doc_updatsupp and assign to global
-## TODO: handle cdc ages
 make_updatsupp_ages=function(datasrc=cq(doh,cdc)) {
   sapply(datasrc,function(datasrc) {
     if (datasrc=='doh') {
@@ -421,9 +430,17 @@ make_updatsupp_ages=function(datasrc=cq(doh,cdc)) {
                   c('0_9','10_19','20_49','50_59','60_69','70_'));
       }
     names(agel)=seq_along(agel);      # so ageids like '1' will work
-    assign(paste(sep='.',datasrc,'ages'),agel,envir=.GlobalEnv);
+    assign(paste(sep='.',datasrc,'ages'),agel,envir=globalenv());
   });
-  datasrc;
+  ages.updatsupp<<-paste(sep='.',datasrc,'ages');
+  ages.updatsupp;
+}
+rm_updatsupp_ages=function() {
+  if (exists('ages.updatsupp',envir=globalenv())) {
+    vars=ages.updatsupp;
+    rm(list=c(ages.updatsupp,'ages.updatsupp'),envir=globalenv());
+    vars;
+  } else NULL;
 }
 
 ## make colors for ages used here. adapted from col_ages in doc_updat.R
