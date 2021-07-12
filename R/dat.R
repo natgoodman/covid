@@ -85,14 +85,14 @@ datadir=function(datasrc) filename(param(datadir),datasrc)
 ## ---- Save and Load population metadata ----
 ## base includes path. suffix optional
 ## pop - population by place, age - for per capita calculations
-save_pop=function(pop,base=param(pop.file),suffix=cq(txt,RData)) {
+save_pop=function(pop,base=param(pop.file)) {
   param(save.meta,save.txt.meta);
-  save_(pop,base=base,save=save.meta,save.txt=FALSE,suffix=suffix);
+  save_(pop,base=base,save=save.meta,save.txt=FALSE);
   if (save.txt.meta) {
     ## want explicit age column in text file
     ## NG 21-04-12: use 'cbind' instead of 'data.frame' so R won't munge column names. sigh...
     pop=cbind(age=rownames(pop),pop);
-    file=resuffix(base,old.suffix=suffix,suffix='txt');
+    file=resuffix(base,old.suffix=cq(txt,RData),suffix='txt');
     write.table(pop,file=file,sep='\t',quote=F,row.names=F);
   }
 }
@@ -105,8 +105,8 @@ read_pop=function(base=param(pop.file)) {
   param(pop=pop);
 }
 ## geo - geoids and place names - eg, for places_wa, places_nonwa functions
-save_geo=function(geo,base=param(geo.file),suffix=cq(txt,RData))
-  save_(geo,base=base,save=param(save.meta),save.txt=param(save.txt.meta),suffix=suffix)
+save_geo=function(geo,base=param(geo.file))
+  save_(geo,base=base,save=param(save.meta),save.txt=param(save.txt.meta))
 load_geo=function(base=param(geo.file)) {
   geo=load_(base=base);
   param(geo=geo);
@@ -116,8 +116,8 @@ read_geo=function(base=param(geo.file)) {
   param(geo=geo);
 }
 ## stateid - map state names to IDs (eg, Washington to WA)
-save_stateid=function(stateid,base=param(stateid.file),suffix=cq(txt,RData))
-  save_(stateid,base=base,save=param(save.meta),save.txt=param(save.txt.meta),suffix=suffix)
+save_stateid=function(stateid,base=param(stateid.file))
+  save_(stateid,base=base,save=param(save.meta),save.txt=param(save.txt.meta))
 load_stateid=function(base=param(stateid.file)) {
   stateid=load_(base=base);
   param(stateid=stateid);
