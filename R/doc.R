@@ -43,15 +43,8 @@ dodoc=
 ## --- Document Functions ---
 ## utility functions to make figures and tables for documents
 ## run plot function, label result with name
-## figfun can be a function or call
-##   if function, args from ... passed to it
-##   if call, it's eval'ed as is
-## title -- can be NULL, string, or function -- if function, call to get actual title
-## extra -- figure is 'extra' - will not be included in document
-## CAUTION: ... interacts with partial argument matching to cause dofig args to be
-##   matched by plot-function args. eg, 'd' matches 'doc', 'x' matches 'xtra'
-##   choose argument names carefully!
-dofig=function(figname,figfun,sect=param(sect),pjto=param(pjto),...) {
+## figfun can be function call, or statement block. eval'ed in parent env
+dofig=function(figname,figfun,sect=param(sect),pjto=param(pjto)) {
   if (!is.logical(pjto)) pjto=if(pjto=='file') TRUE else FALSE;
   parent.env=parent.frame(n=1);
   file=filename_fig(figlabel(where='filename'),sect,figname);
@@ -61,39 +54,25 @@ dofig=function(figname,figfun,sect=param(sect),pjto=param(pjto),...) {
   png(filename=file,height=8,width=8,units='in',res=200,pointsize=12);
   dev=dev.cur();
   figfun=pryr::subs(figfun);
-  ## figfun can be name or call
-  if (!(is.name(figfun)||is.call(figfun)))
-    stop("'figfun' must be a function or call, not ",class(figfun));
-  if (is.name(figfun)) {
-    figfun=eval(figfun,parent.env);     # must eval to function
-    if (!is.function(figfun)) stop("'figfun' must be function, not ",class(figfun));
-    wrapfun(figfun,...);                # draw the figure!
-  }
-  else eval(figfun,parent.env)          # draw the figure!
+  eval(figfun,parent.env)               # draw the figure!
   dev.off(dev);                         # close device
   if (pjto) system(paste('pjto',file)); # copy to Mac if desired (usally is)
   figinc();                             # increment figure info for next time
   figname;
 }
-##### NOT YET WORKING!!
-## save one table. tblfun can be a function or call
-dotbl=function(tblname,tblfun=NULL,sect=param(sect),...,OBJ.OK=TRUE) {
-  param(pjto);
+## generate and save one table.
+## tblfun can be a function or call or statement block
+##   if function, args from ... passed to it
+##   else eval'ed as is
+## tblfun can be a variable, function call, or statement block. eval'ed in parent env
+dotbl=function(tblname,tblfun=NULL,sect=param(sect),pjto=param(pjto),obj.ok=TRUE) {
+  if (!is.logical(pjto)) pjto=if(pjto=='file') TRUE else FALSE;
   parent.env=parent.frame(n=1);
-  base=filename_tbl(tbllabel(where='filename'),sect,tblname);
+  base=filename_tbl(tbllabel(where='filename'),sect,tblname,suffix=NULL);
   tblfun=pryr::subs(tblfun);
-  ## tblfun can be name or call
-  if (!(is.name(tblfun)||is.call(tblfun)))
-    stop("'tblfun' must be name or call, not ",class(tblfun));
-  if (is.name(tblfun)) {
-    tblfun=eval(tblfun,parent.env);     # get value
-    if (is.function(tblfun)) wrapfun(tblfun,base=base,...)                # generate table!
-    else save_tbl(tblfun,base)             # 'tblfun' is really tbl. just save it
-  }
-  else {
-    tbl=eval(tblfun,parent.env)          # generate table!
-    save_tbl(tbl,base)
-  }
+  tbl=eval(tblfun,parent.env);          # generate table!
+  save_(tbl,base=base,save=param(save.RData.tbl),save.txt=param(save.txt.tbl),obj.ok=obj.ok)
+  tblinc();                             # increment table info for next time
   tblname;
 }
 
@@ -179,7 +158,7 @@ figinc=function(extra=FALSE)
 figblk_start=function(extra=FALSE) {
   if (extra) return(xfigblk_start());
   param(figblk,fignum);
-  ## ## if already in block, end it
+  ## if already in block, end it
   if (!is.null(figblk)) param(fignum=fignum+1);
   param(figblk=1);
 }
@@ -205,9 +184,9 @@ tblinc=function() {
     if (!is.null(tblblk)) param(tblblk=tblblk+1) else param(tblnum=tblnum+1);
 }
 tblblk_start=function() {
-  ## param(tblblk,tblnum);
-  ## ## if already in block, end it
-  ## if (!is.null(tblblk)) param(tblnum=tblnum+1);
+  param(tblblk,tblnum);
+  ## if already in block, end it
+  if (!is.null(tblblk)) param(tblnum=tblnum+1);
   param(tblblk=1);
 }
 tblblk_end=function() {
