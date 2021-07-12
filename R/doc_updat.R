@@ -37,8 +37,6 @@ doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',figs.all=TRUE,
   places.nonwa<<-cq('Ann Arbor',Boston,'San Diego',DC);
   labels.nonwa=setNames(c('Ann Arbor','Boston','San Diego','Washington DC'),places.nonwa);
   ## Tables 1-2 trend analysis. Tables 3-4 raw data counts. not used in document.
-  ## TODO: rewrite using dotbl when implemented!
-  ## NOTE: save_tbl in this file not dat.R where you might expect it
   if (param(verbose)) print(paste('+++ making tables'));
   widths=if(version<'21-02-28') 4 else c(4,6,8);
   widths.dly=7*(1:6);
@@ -50,14 +48,20 @@ doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',figs.all=TRUE,
   counts.deaths.raw=data_cvdat(jhu.deaths.raw,places=c(places.wa,places.nonwa),per.capita=TRUE);
   counts.cases=data_cvdat(jhu.cases,places=c(places.wa,places.nonwa),per.capita=TRUE);
   counts.deaths=data_cvdat(jhu.deaths,places=c(places.wa,places.nonwa),per.capita=TRUE);
-  save_tbl(trend.cases,1,'trend_cases',sfx='a');
-  save_tbl(trend.deaths,2,'trend_deaths',sfx='a');
-  save_tbl(trend.cases.dly,1,'trend_cases_dly',sfx='b');
-  save_tbl(trend.deaths.dly,2,'trend_deaths_dly',sfx='b');
-  save_tbl(counts.cases.raw,3,'counts_cases_raw',sfx='a');
-  save_tbl(counts.deaths.raw,4,'counts_deaths_raw',sfx='a');
-  save_tbl(counts.cases,3,'counts_cases',sfx='b');
-  save_tbl(counts.deaths,4,'counts_deaths',sfx='b');
+
+  tblblk_start();
+  dotbl('trend_cases',trend.cases);
+  dotbl('trend_cases_dly',trend.cases.dly);
+  tblblk_start();
+  dotbl('trend_deaths',trend.deaths);
+  dotbl('trend_deaths_dly',trend.deaths.dly);
+  tblblk_start();
+  dotbl('counts_cases_raw',counts.cases.raw);
+  dotbl('counts_cases',counts.cases);
+  tblblk_start();
+  dotbl('counts_deaths_raw',counts.deaths.raw);
+  dotbl('counts_deaths',counts.deaths);
+
   assign_global(trend.cases,trend.deaths,trend.cases.dly,trend.deaths.dly,
                 counts.cases,counts.deaths,counts.cases.raw,counts.deaths.raw);
   if (param(verbose)) print(paste('+++ making figures'));
@@ -350,14 +354,14 @@ rm_updat_objs=function(what=cq(cases,admits,deaths),datasrc=param(datasrc),
 
 ## save table as txt file
 ## TODO: rewrite using dotbl when implemented!
-save_tbl=function(tbl,tblnum,tblname,sfx=NULL) {
-  tblnum=sprintf('%03i',tblnum);
-  base=paste(sep='_','table',paste(collapse='',c(tblnum,sfx)),tblname);
-  file=filename(param(tbldir),base,suffix='txt')
-  write.table(tbl,file=file,sep='\t',quote=FALSE,row.names=FALSE);
-  if (param(pjto)) system(paste('pjto',file));           # copy to Mac if desired (usally is)
-  file;
-}
+## save_tbl=function(tbl,tblnum,tblname,sfx=NULL) {
+##   tblnum=sprintf('%03i',tblnum);
+##   base=paste(sep='_','table',paste(collapse='',c(tblnum,sfx)),tblname);
+##   file=filename(param(tbldir),base,suffix='txt')
+##   write.table(tbl,file=file,sep='\t',quote=FALSE,row.names=FALSE);
+##   if (param(pjto)) system(paste('pjto',file));           # copy to Mac if desired (usally is)
+##   file;
+## }
 
 ## show trend results in convenient format. for interactive use
 show_trend=show_trends=
