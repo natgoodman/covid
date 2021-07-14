@@ -22,39 +22,39 @@ urlcolor: blue
 
 *Counts of cases, hospital admissions, and deaths are key metrics of COVID-19 prevalence and burden, and are the basis for model-based estimates and predictions of these statistics. I present here graphs showing these metrics over time in Washington state and a few other USA locations of interest to me. I update the graphs and this write-up weekly. Previous versions are [here](https://natgoodman.github.io/covid/updatvsn.html). See below for [caveats](#caveats) and [technical details](#techdetails).*
 
-Figures 1a-b show smoothed *case* counts per million for several Washington and non-Washington locations. The Washington locations are the entire state, the Seattle area where I live, and the adjacent counties to the north and south (Snohomish and Pierce, resp.). The non-Washington locations are Ann Arbor, Boston, San Diego, and Washington DC. See [below](#techdetails) for details on the smoothing method. 
+The first several figures (1a-2d) show *case* and *death* counts per million for several Washington and non-Washington locations using data from Johns Hopkins Center for Systems Science and Engineering (JHU), described [below](#jhu). The Washington locations are the entire state, the Seattle area where I live, and the adjacent counties to the north and south (Snohomish and Pierce, resp.). The non-Washington locations are Ann Arbor, Boston, San Diego, and Washington DC.
 
-Previous versions also showed raw data overlaid on the smoothed to illustrate variability. With *cases* and *deaths* so low, variability is no longer a big issue.
+Figures 1a-b (the top row) show smoothed *case* counts (See [below](#techdetails) for details on the smoothing method). Figures 1c-d (the bottom row) overlay raw data onto the smoothed since May 1 to illustrate recent variability.
 
-The figures use data from Johns Hopkins Center for Systems Science and Engineering (JHU), described [below](#jhu). When comparing the Washington and non-Washington graphs, please note the difference in y-scale: the current counts for Washington locations are about 150-250 per million;  non-Washington counts are about 0-150 per million.
+When comparing the Washington and non-Washington graphs, please note the difference in y-scale: the current raw counts for Washington locations are about 250-350 per million; non-Washington raw counts are about 100-350 per million.
 
 ```{r out.width="50%",echo=FALSE,fig.show='asis',include=TRUE}
 knitr::include_graphics(file.path(figdir,'figure_001a_cases_wa.png'));
 knitr::include_graphics(file.path(figdir,'figure_001b_cases_nonwa.png'));
 ```
-```{r out.width="50%",echo=FALSE,fig.show='asis',include=FALSE}
+```{r out.width="50%",echo=FALSE,fig.show='asis',include=TRUE}
 knitr::include_graphics(file.path(figdir,'figure_001c_cases_wa_ragged.png'));
 knitr::include_graphics(file.path(figdir,'figure_001d_cases_nonwa_ragged.png'));
 ```
 
-The graphs for Washington (Figure 1a) and non-Washington locations (Figure 1b) show that rates are declining in all locations. Trend analysis supports the decline. 
+The smoothed graphs for Washington (Figure 1a) show rates declining in all locations, while the graphs for non-Washington locations (Figure 1b) are mixed. Trend analysis and raw data (Figures 1c-d) suggest that rates are actually flat everywhere.
 
-Figures 2a-b show smoothed *deaths* per million for the same locations. When comparing the Washington and non-Washington graphs, again please note the difference in y-scale: the current Washington rates are 0-7 per million; the non-Washington rates are 0-2 per million. 
+Figures 2a-d show *deaths* per million for the same locations. As with the *cases* graphs, the top row (Figures 2a-b) show smoothed data (see details [below](#techdetails)) and the bottom row (Figures 2c-d) overlays raw data onto the smoothed since May 1.
+
+When comparing the Washington and non-Washington graphs, again please note the difference in y-scale: the current Washington rates are 5-7 per million; the non-Washington rates are 1-3 per million. 
 
 ```{r out.width="50%",echo=FALSE,fig.show='asis',include=TRUE}
 knitr::include_graphics(file.path(figdir,'figure_002a_deaths_wa.png'));
 knitr::include_graphics(file.path(figdir,'figure_002b_deaths_nonwa.png'));
 ```
-```{r out.width="50%",echo=FALSE,fig.show='asis',include=FALSE}
+```{r out.width="50%",echo=FALSE,fig.show='asis',include=TRUE}
 knitr::include_graphics(file.path(figdir,'figure_002c_deaths_wa_ragged.png'));
 knitr::include_graphics(file.path(figdir,'figure_002d_deaths_nonwa_ragged.png'));
 ```
 
-The graphs for Washington (Figure 2a) show rates increasing in Snohomish (North of Seattle) and flat everywhere else. Trend analysis suggests that rates are actually flat everywhere; the apparent increase in Snohomish is probably an artifact of data variability and fitting.
+The smoothed graphs for Washington (Figure 2a) show rates bouncing around; the non-Washington graphs are all down or flat. Trend analysis and raw data (Figures 2c-d) suggest that rates everywhere are variable but the trend is flat. Counts are thankfully so low that small changes confuse my data fitting method. 
 
-The graphs for non-Washington locations (Figure 2b) are declining everywhere. Trend analysis suggests that rates are actually flat; counts are so low that further decline is meaningless.
-
-The next graphs show the Washington results broken down by age. This data is from Washington State Department of Health (DOH) weekly downloads, described [below](#doh). An important caveat is that the DOH download systematically undercounts events in recent weeks due to manual curation. I extrapolate data for late time points as discussed [below](#techdetails).
+The next graphs show the Washington results broken down by age. This data is from Washington State Department of Health (DOH) weekly downloads, described [below](#doh). An important caveat is that the DOH download systematically undercounts events in recent weeks due to manual curation. I extrapolate data for late time points as discussed [below](#techdetails). Two further caveats are (1) *deaths* data for the most recent week is completely missing, and (2) DOH *deaths* have been consistently lower than JHU since mid-May.
 
 Figure 3 is *cases* and figure 4 shows hospital admissions (*admits*) and *deaths*.
 
@@ -95,23 +95,21 @@ knitr::include_graphics(file.path(figdir,'figure_005b_deaths_dohjhu.png'));
 
 4. The geographic granularity in the underlying data is *state* or *county*. I refer to locations by city names reasoning that readers are more likely to know "Seattle" or "Ann Arbor" than "King" or "Washtenaw".
 
-5. The date granularity in the graphs is weekly. The underlying JHU data is daily; I sum the data by week before graphing.
+5. The date granularity in the graphs is weekly. The underlying JHU data is daily; I sum data by week before graphing.
 
-6. I truncate the data to the last full week prior to the week reported here.
+6. I truncate data to the last full week prior to the week reported here.
 
 ## Technical Details {#techdetails}
 
-1. I smooth the graphs using a smoothing spline (R's `smooth.spline`) for visual appeal. This is especially important for the *deaths* graphs where the counts are so low that unsmoothed week-to-week variation makes the graphs hard to read.
+1. I smooth the graphs using a smoothing spline (R's `smooth.spline`) for visual appeal. This is especially important for the *deaths* graphs where the counts are so low that unsmoothed week-to-week variation makes the graphs hard to read. Now that *death* counts are low,  the smoothing method seems not to be working well.
 
 2. The Washington DOH data (used in Figures 3 and 4 to show counts broken down by age) systematically undercounts events in recent weeks due to manual curation. I attempt to correct this undercount through a linear extrapolation function (using R's `lm`). I have tweaked the extrapolation repeatedly, even turning it off for a few weeks. The current version uses a model that combines date and recentness effects. In past, I created models for each Washington location and age group but had to change when DOH changed its age groups on March 14, 2021 (see [below](#doh)). I now create a single model for the state as a whole and all age groups summed together, then blithely apply that model to all locations and ages.
 
 3. The trend analysis computes a linear regression (using R's `lm`) over the most recent four, six, or eight weeks of data and reports the computed slope and the p-value for the slope. I also compute a regression using daily data over the most recent 7-42 days. In essence, this compares the trend to the null hypothesis that the true counts are constant and the observed points are randomly selected from a normal distribution. After looking at trend results across the entire time series, I determined that p-values below 0.15 indicate convincing trends; this cutoff is arbitrary, of course.
 
-4. In previous versions of the document, I've shown plots that overlay raw *case* and *death* counts onto the smoothed graphs in Figures 1 and 2. Recent data is much less variable than in past making these plots superfluous.
+4. In most versions before March 17, 2021, I showed counts broken down by age (as in Figures 3 and 4) for each Washington location. Now I only show the statewide graphs: the other locations are similar. 
 
-5. In most versions before March 17, 2021, I showed counts broken down by age (as in Figures 3 and 4) graphs for each Washington location. Now I only show the statewide graphs: the other locations are similar. 
-
-6. In past, DOH reported results in 20 year age groups starting with 0-19, with a final group for 80+. As of the March 14, 2021 data release (corresponding to document version March 17), DOH changed age groups. The new groups are 0-19, followed by 15 year ranges (20-34, 35-49, 50-64, 65-79) with a final group for 80+.
+5. In past, DOH reported results in 20 year age groups starting with 0-19, with a final group for 80+. As of the March 14, 2021 data release (corresponding to document version March 17), DOH changed age groups. The new groups are 0-19, followed by 15 year ranges (20-34, 35-49, 50-64, 65-79) with a final group for 80+.
 
 ## Data Sources
 
