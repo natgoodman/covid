@@ -19,7 +19,7 @@
 ## Previous versions are available in GitHub, of course.
 ## no sections.
 doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',figs.all=TRUE,
-                   xmin.raw=NULL,...) {
+                   do.fig=TRUE,do.tbl=TRUE,xmin.raw=NULL,...) {
   datasrc=cq(doh,jhu);
   if (is.null(version)||version=='latest') version=max(sapply(datasrc,latest_version));
   if (param(verbose)) print(paste('+++ doc_update',nv(version)));
@@ -29,41 +29,59 @@ doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',figs.all=TRUE,
     make_updat_objs(what=what,datasrc=datasrc,version=version);
   }
   if (need.init) init_doc(doc='updat',version=version,...);
-  if (is.null(xmin.raw)&&version>='21-05-30') xmin.raw='2021-02-15';
+  ## if (is.null(xmin.raw)&&version>='21-05-30') xmin.raw='2021-02-15';
+  if (is.null(xmin.raw))
+    if (btwn_co(version,'21-05-30','21-07-11')) xmin.raw='2021-02-15'
+    else if (version>='21-07-11') xmin.raw='2021-05-01';  
   places.wa<<-cq(state,King,Snohomish,Pierce);
   labels.wa=setNames(c('Washington state','Seattle (King County)',
                        'Snohomish (North of Seattle)','Pierce (South of Seattle)'),
                      places.wa);
   places.nonwa<<-cq('Ann Arbor',Boston,'San Diego',DC);
   labels.nonwa=setNames(c('Ann Arbor','Boston','San Diego','Washington DC'),places.nonwa);
-  ## Tables 1-2 trend analysis. Tables 3-4 raw data counts. not used in document.
-  if (param(verbose)) print(paste('+++ making tables'));
-  widths=if(version<'21-02-28') 4 else c(4,6,8);
-  widths.dly=7*(1:6);
-  trend.cases=trend(jhu.cases.raw,places=c(places.wa,places.nonwa),widths=widths);
-  trend.deaths=trend(jhu.deaths.raw,places=c(places.wa,places.nonwa),widths=widths);
-  trend.cases.dly=trend(jhu.cases.dly,places=c(places.wa,places.nonwa),widths=widths.dly);
-  trend.deaths.dly=trend(jhu.deaths.dly,places=c(places.wa,places.nonwa),widths=widths.dly);
-  counts.cases.raw=data_cvdat(jhu.cases.raw,places=c(places.wa,places.nonwa),per.capita=TRUE);
-  counts.deaths.raw=data_cvdat(jhu.deaths.raw,places=c(places.wa,places.nonwa),per.capita=TRUE);
-  counts.cases=data_cvdat(jhu.cases,places=c(places.wa,places.nonwa),per.capita=TRUE);
-  counts.deaths=data_cvdat(jhu.deaths,places=c(places.wa,places.nonwa),per.capita=TRUE);
 
-  tblblk_start();
-  dotbl('trend_cases',trend.cases);
-  dotbl('trend_cases_dly',trend.cases.dly);
-  tblblk_start();
-  dotbl('trend_deaths',trend.deaths);
-  dotbl('trend_deaths_dly',trend.deaths.dly);
-  tblblk_start();
-  dotbl('counts_cases_raw',counts.cases.raw);
-  dotbl('counts_cases',counts.cases);
-  tblblk_start();
-  dotbl('counts_deaths_raw',counts.deaths.raw);
-  dotbl('counts_deaths',counts.deaths);
+  if (do.tbl) {
+    ## Tables 1-2 trend analysis. Tables 3-4 data counts. not used in document.
+    if (param(verbose)) print(paste('+++ making tables'));
+    widths=if(version<'21-02-28') 4 else c(4,6,8);
+    widths.dly=7*(1:6);
+    trend.cases=trend(jhu.cases,places=c(places.wa,places.nonwa),widths=widths);
+    trend.deaths=trend(jhu.deaths,places=c(places.wa,places.nonwa),widths=widths);
+    trend.cases.raw=trend(jhu.cases.raw,places=c(places.wa,places.nonwa),widths=widths);
+    trend.deaths.raw=trend(jhu.deaths.raw,places=c(places.wa,places.nonwa),widths=widths);
+    trend.cases.dly=trend(jhu.cases.dly,places=c(places.wa,places.nonwa),widths=widths.dly);
+    trend.deaths.dly=trend(jhu.deaths.dly,places=c(places.wa,places.nonwa),widths=widths.dly);
 
-  assign_global(trend.cases,trend.deaths,trend.cases.dly,trend.deaths.dly,
-                counts.cases,counts.deaths,counts.cases.raw,counts.deaths.raw);
+    counts.cases=data_cvdat(jhu.cases,places=c(places.wa,places.nonwa),per.capita=TRUE);
+    counts.deaths=data_cvdat(jhu.deaths,places=c(places.wa,places.nonwa),per.capita=TRUE);
+    counts.cases.raw=data_cvdat(jhu.cases.raw,places=c(places.wa,places.nonwa),per.capita=TRUE);
+    counts.deaths.raw=data_cvdat(jhu.deaths.raw,places=c(places.wa,places.nonwa),per.capita=TRUE);
+    counts.cases.dly=data_cvdat(jhu.cases.dly,places=c(places.wa,places.nonwa),per.capita=TRUE);
+    counts.deaths.dly=data_cvdat(jhu.deaths.dly,places=c(places.wa,places.nonwa),per.capita=TRUE);
+
+    tblblk_start();
+    dotbl('trend_cases',trend.cases);
+    dotbl('trend_cases_raw',trend.cases.raw);
+    dotbl('trend_cases_dly',trend.cases.dly);
+    tblblk_start();
+    dotbl('trend_deaths',trend.deaths);
+    dotbl('trend_deaths_raw',trend.deaths.raw);
+    dotbl('trend_deaths_dly',trend.deaths.dly);
+    tblblk_start();
+    dotbl('counts_cases',counts.cases);
+    dotbl('counts_cases_raw',counts.cases.raw);
+    dotbl('counts_cases_dly',counts.cases.dly);
+    tblblk_start();
+    dotbl('counts_deaths',counts.deaths);
+    dotbl('counts_deaths_raw',counts.deaths.raw);
+    dotbl('counts_deaths_dly',counts.deaths.dly);
+
+    assign_global(
+      trend.cases,trend.deaths,trend.cases.raw,trend.deaths.raw,trend.cases.dly,trend.deaths.dly,
+      counts.cases,counts.deaths,counts.cases.raw,counts.deaths.raw,
+      counts.cases.dly,counts.deaths.dly);
+  }
+  if (!do.fig) return(version);
   if (param(verbose)) print(paste('+++ making figures'));
   ## Figures 1a-b cases
   figblk_start();
@@ -77,20 +95,20 @@ doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',figs.all=TRUE,
           jhu.cases,places=places.nonwa,ages='all',per.capita=TRUE,lwd=2,
           title=figtitle("Weekly cases per million in non-Washington locations"),
           legends=list(labels=labels.nonwa)));
-  ## recent WA raw data very ragged in versions >= 21-01-24. include figures showing this
+  ## recent raw data very ragged in some versions. include figures showing this  
   dofig('cases_wa_ragged',
         plot_finraw(
           datasrc='jhu',what='cases',places=places.wa,ages='all',per.capita=TRUE,lwd=2,
           xmin=xmin.raw,
           title=figtitle(
-            "Weekly cases per million in Washington locations showing raw data"),
+            "Weekly cases per million in Washington locations showing recent raw data"),
           legends=list(labels=labels.wa)));
   dofig('cases_nonwa_ragged',
         plot_finraw(
           datasrc='jhu',what='cases',places=places.nonwa,ages='all',per.capita=TRUE,lwd=2,
           xmin=xmin.raw,
           title=figtitle(
-            "Weekly cases per million in non-Washington locations showing raw data"),
+            "Weekly cases per million in non-Washington locations showing recent raw data"),
           legends=list(labels=labels.nonwa)));
   ## Figures 2a-b deaths
   figblk_start();
@@ -105,20 +123,20 @@ doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',figs.all=TRUE,
           ages='all',per.capita=TRUE,lwd=2,
           title=figtitle("Weekly deaths per million in non-Washington locations"),
           legend='top',legends=list(labels=labels.nonwa)));
-  ## recent WA raw data very ragged in version 21-01-24. include figures showing this
+  ## recent raw data very ragged in some versions. include figures showing this
   dofig('deaths_wa_ragged',
         plot_finraw(
           datasrc='jhu',what='deaths',places=places.wa,ages='all',per.capita=TRUE,lwd=2,
           xmin=xmin.raw,
           title=figtitle(
-            "Weekly deaths per million in Washington locations showing raw data"),
+            "Weekly deaths per million in Washington locations showing recent raw data"),
           legends=list(labels=labels.wa)));
   dofig('deaths_nonwa_ragged',
         plot_finraw(
           datasrc='jhu',what='deaths',places=places.nonwa,ages='all',per.capita=TRUE,lwd=2,
           xmin=xmin.raw,
           title=figtitle(
-            "Weekly deaths per million in non-Washington locations showing raw data"),
+            "Weekly deaths per million in non-Washington locations showing recent raw data"),
           legends=list(labels=labels.nonwa)));
   if ('doh'%notin%datasrc) return();
   ## Figures 3,4  WA DOH cases, deaths by age
@@ -215,9 +233,9 @@ col_ages=
 ## used for jhu in Figures 1,2 version 21-01-24
 ## TODO: add this to plot_cvdat!
 plot_finraw=
-  function(datasrc=param(datasrc),what=cq(cases,admits,deaths),title,legends,
-           raw.plot=cq(lines,points),
-           places,ages='all',per.capita=TRUE,xmin=NULL,xmax=NULL,ymin=NULL,ymax=NULL,
+  function(datasrc=param(datasrc),what=cq(cases,admits,deaths),
+           title,legends,where.legend='topright',raw.plot=cq(lines,points),
+           places,ages='all',per.capita=TRUE,xmin=NULL,xmax=NULL,ymin=NULL,ymax='auto',
            col=NULL,
            lwd=2,lwd.fin=lwd,lwd.raw=0.375*lwd.fin,lty.fin='solid',lty.raw='dotted',pch=20) {
     datasrc=match.arg(datasrc);
@@ -225,11 +243,25 @@ plot_finraw=
     if (!is.null(raw.plot)) raw.plot=match.arg(raw.plot,several.ok=TRUE);
     fin=get(paste(sep='.',datasrc,what));
     raw=get(paste(sep='.',datasrc,what,'raw'));
-    data=data_cvdat(list(fin,raw),places=places,ages=ages,per.capita=per.capita);
-    if (is.null(ymax)) ymax=max(data[,-1],na.rm=TRUE);
+    if (ymax=='auto') {
+      if (!is.null(xmin)) {
+        fin=edit(fin,date>=xmin);
+        raw=edit(raw,date>=xmin);
+      }
+      if (!is.null(xmax)) {
+        fin=edit(fin,date<=xmax);
+        raw=edit(raw,date<=xmax);
+      }
+      ymax=NULL;
+    }
+    if (is.null(ymax)) {
+      data=data_cvdat(list(fin,raw),places=places,ages=ages,per.capita=per.capita);
+      ymax=max(data[,-1],na.rm=TRUE);
+    }
     plot_cvdat(fin,places=places,ages=ages,per.capita=per.capita,
                xmin=xmin,xmax=xmax,ymin=ymin,ymax=ymax,
-               title=title,legends=legends,col=col,lwd=lwd.fin,lty=lty.fin);
+               title=title,legends=legends,where.legend=where.legend,
+               col=col,lwd=lwd.fin,lty=lty.fin);
     if ('lines'%in%raw.plot)
       plot_cvdat(
         raw,places=places,ages=ages,per.capita=per.capita,add=TRUE,
@@ -376,6 +408,8 @@ show_trend=show_trends=
     }
     cases$pval=round(cases$pval,digits=3);
     deaths$pval=round(deaths$pval,digits=3);
+    cases$slope=round(cases$slope,digits=2);
+    deaths$slope=round(deaths$slope,digits=2);
     cases.byplace=split(cases,cases$place);
     deaths.byplace=split(deaths,deaths$place);
     assign_global(cases.byplace,deaths.byplace);
@@ -407,6 +441,7 @@ show_counts=
   function(cases=parent(counts.cases),deaths=parent(counts.deaths),
            where=cq(wa,nonwa),what=cq(cases,deaths),
            places.wa=parent(places.wa),places.nonwa=parent(places.nonwa),
+           tail.n=3,
            ## wa spring 2020 peak dates
            do.spring=TRUE,
            peak.cases.spring=c('2020-03-15','2020-05-01'),
@@ -430,7 +465,7 @@ show_counts=
         if (do.summer)
           show_peak(cases.wa,places.wa,dates=peak.cases.summer,'cases.wa summer 2020');
         print('cases.wa now');
-        print(tail(cases.wa[weekdays(cases.wa$date)=='Sunday',],n=3));        # Sundays
+        print(tail(cases.wa[weekdays(cases.wa$date)=='Sunday',],n=tail.n));        # Sundays
         print('----------');
       }
       if ('wa'%in%where&&'deaths'%in%what) {
@@ -439,16 +474,16 @@ show_counts=
         if (do.summer)
           show_peak(deaths.wa,places.wa,dates=peak.deaths.summer,'deaths.wa summer 2020');
         print('deaths.wa now');
-        print(tail(deaths.wa[weekdays(deaths.wa$date)=='Sunday',],n=3));      # Sundays
+        print(tail(deaths.wa[weekdays(deaths.wa$date)=='Sunday',],n=tail.n));      # Sundays
         print('----------');
       }
       if ('nonwa'%in%where&&'cases'%in%what) {
         print('cases.nonwa now');
-        print(tail(cases.nonwa[weekdays(cases.nonwa$date)=='Sunday',],n=3));   # Sundays
+        print(tail(cases.nonwa[weekdays(cases.nonwa$date)=='Sunday',],n=tail.n));   # Sundays
       }
       if ('nonwa'%in%where&&'deaths'%in%what) {
         print('deaths.nonwa now');
-        print(tail(deaths.nonwa[weekdays(deaths.nonwa$date)=='Sunday',],n=3)); # Sundays
+        print(tail(deaths.nonwa[weekdays(deaths.nonwa$date)=='Sunday',],n=tail.n)); # Sundays
       }
     }
     invisible(list(cases.wa=cases.wa,deaths.wa=deaths.wa,
