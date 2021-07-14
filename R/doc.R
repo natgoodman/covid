@@ -71,7 +71,8 @@ dotbl=function(tblname,tblfun=NULL,sect=param(sect),pjto=param(pjto),obj.ok=TRUE
   base=filename_tbl(tbllabel(where='filename'),sect,tblname,suffix=NULL);
   tblfun=pryr::subs(tblfun);
   tbl=eval(tblfun,parent.env);          # generate table!
-  save_(tbl,base=base,save=param(save.RData.tbl),save.txt=param(save.txt.tbl),obj.ok=obj.ok)
+  save_(tbl,base=base,save=param(save.RData.tbl),save.txt=param(save.txt.tbl),
+        pjto=pjto,obj.ok=obj.ok)
   tblinc();                             # increment table info for next time
   tblname;
 }
