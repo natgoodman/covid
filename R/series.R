@@ -63,7 +63,9 @@ series_percap=function(series) {
     ## pop=if((datasrc=='cdc')&&place%in%c('USA F','USA U')) pop[age,'USA'] else pop[age,place];
     pop=if(datasrc=='cdc') pop[age,'USA'] else pop[age,place];
     if (is.null(pop)) pop=NA;
-    data.frame(date=data$date,y=round(1e6*data$y/pop));
+    ## NG 21-07-15: turn off rounding. causes jaggy plots of deaths
+    ## data.frame(date=data$date,y=round(1e6*data$y/pop));
+    data.frame(date=data$date,y=1e6*data$y/pop);
   });
   list(objs=objs,xattr=xattr,series=series);
 }

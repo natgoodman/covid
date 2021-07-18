@@ -323,9 +323,12 @@ make_updatsupp_objs=
                      jhu=incremental(obj.edit),
                      nyt=incremental(obj.edit),
                      cdc=obj.edit);
+      ## NG 21-07-15: using different fit.units for cases and others was bad idea
+      ##   jagged non-case plots actually caused by rounding of per.capita results
       ## for fit, use 1 day for cases, 10.5 days (1.5 weeks) for deaths
-      fit.unit=switch(what,cases=1,admits=7,icus=7,deaths=10.5);
-      obj.fit=fit(obj.raw,fit.unit=fit.unit);
+      ## fit.unit=switch(what,cases=1,admits=7,icus=7,deaths=10.5);
+      ## obj.fit=fit(obj.raw,fit.unit=fit.unit);
+      obj.fit=fit(obj.raw);                          # default method=sspline, fit.unit=1
       if(datasrc=='doh')  {
         obj.extra=extra(obj.raw);
         obj.rollx=roll(obj.extra);

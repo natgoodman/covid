@@ -351,17 +351,23 @@ make_updat_objs=
         ##                               DROP=cq('0_19','20_34','35_49','50_64'));
         obj=extra(obj);
       }
-      obj=fit_updat_obj(obj,what);
+      ## NG 21-07-15: using different fit.units for cases and others was bad idea
+      ##   jagged deaths plots actually caused by rounding of per.capita results
+      ## obj=fit_updat_obj(obj,what);
+      obj=fit(obj);                     # default method=sspline, fit.unit=1
       assign(paste(sep='.',datasrc,what),obj,globalenv());        # save as 'final'
       assign(paste(sep='.',datasrc,what,'std'),obj,globalenv());  # and 'std' 
+      assign(paste(sep='.',datasrc,what,'fit'),obj,globalenv());  # and 'fit' 
     });
     cases;
   }
-fit_updat_obj=function(obj,what) {
-  ## use 1 day for cases, 10.5 days (1.5 weeks) for deaths
-  fit.unit=if(what=='cases') 1 else 10.5;
-  fit(obj,fit.unit=fit.unit);
-}
+## NG 21-07-15: using different fit.units for cases and others was bad idea
+##   jagged deaths plots actually caused by rounding of per.capita results
+## fit_updat_obj=function(obj,what) {
+##   ## use 1 day for cases, 10.5 days (1.5 weeks) for deaths
+##   fit.unit=if(what=='cases') 1 else 10.5;
+##   fit(obj,fit.unit=fit.unit);
+## }
 ## remove superflous objects - either because they were created by mistake or to start clean
 ## if id is set, only removes those objects, else all that fit the pattern
 rm_updat_objs=function(what=cq(cases,admits,deaths),datasrc=param(datasrc),
@@ -441,7 +447,7 @@ show_counts=
   function(cases=parent(counts.cases),deaths=parent(counts.deaths),
            where=cq(wa,nonwa),what=cq(cases,deaths),
            places.wa=parent(places.wa),places.nonwa=parent(places.nonwa),
-           tail.n=3,
+           tail.n=3,round.digits=2,
            ## wa spring 2020 peak dates
            do.spring=TRUE,
            peak.cases.spring=c('2020-03-15','2020-05-01'),
@@ -453,6 +459,8 @@ show_counts=
            do.print=TRUE) {
     where=match.arg(where,several.ok=TRUE);
     what=match.arg(what,several.ok=TRUE);
+    cases[,-1]=round(cases[,-1],digits=round.digits);
+    deaths[,-1]=round(deaths[,-1],digits=round.digits);
     cases.wa=cases[,c('date',places.wa)];
     deaths.wa=deaths[,c('date',places.wa)];
     cases.nonwa=cases[,c('date',places.nonwa)];
