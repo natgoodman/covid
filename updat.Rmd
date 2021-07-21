@@ -24,9 +24,9 @@ urlcolor: blue
 
 The first several figures (1a-2d) show *case* and *death* counts per million for several Washington and non-Washington locations using data from Johns Hopkins Center for Systems Science and Engineering (JHU), described [below](#jhu). The Washington locations are the entire state, the Seattle area where I live, and the adjacent counties to the north and south (Snohomish and Pierce, resp.). The non-Washington locations are Ann Arbor, Boston, San Diego, and Washington DC.
 
-Figures 1a-b (the top row) show smoothed *case* counts (See [below](#techdetails) for details on the smoothing method). Figures 1c-d (the bottom row) overlay raw data onto the smoothed since May 1 to illustrate recent variability.
+Figures 1a-b (the top row) show smoothed *case* counts (See [below](#techdetails) for details on the smoothing method). Figures 1c-d (the bottom row) overlay raw data onto the smoothed since May 1 to help explain recent trends.
 
-When comparing the Washington and non-Washington graphs, please note the difference in y-scale: the current raw counts for Washington locations are about 250-350 per million; non-Washington raw counts are about 100-350 per million.
+When comparing the Washington and non-Washington graphs, please note the difference in y-scale: the current raw counts for Washington locations are about 450-750 per million; non-Washington raw counts are about 150-750 per million.
 
 ```{r out.width="50%",echo=FALSE,fig.show='asis',include=TRUE}
 knitr::include_graphics(file.path(figdir,'figure_001a_cases_wa.png'));
@@ -37,11 +37,11 @@ knitr::include_graphics(file.path(figdir,'figure_001c_cases_wa_ragged.png'));
 knitr::include_graphics(file.path(figdir,'figure_001d_cases_nonwa_ragged.png'));
 ```
 
-The smoothed graphs for Washington (Figure 1a) show rates declining in all locations, while the graphs for non-Washington locations (Figure 1b) are mixed. Trend analysis and raw data (Figures 1c-d) suggest that rates are actually flat everywhere.
+The smoothed graphs for Washington and non-Washington locations (Figures 1a-b) show rates increasing in all locations. The raw data (Figures 1c-d) show increases in most locations for the past two weeks, with large bumps everywhere for the most recent week. Trend analysis is equivocal, perhaps because the increases only stretch back a week or two which isn't enough to produce impressive p-values.
 
 Figures 2a-d show *deaths* per million for the same locations. As with the *cases* graphs, the top row (Figures 2a-b) show smoothed data (see details [below](#techdetails)) and the bottom row (Figures 2c-d) overlays raw data onto the smoothed since May 1.
 
-When comparing the Washington and non-Washington graphs, again please note the difference in y-scale: the current Washington rates are 5-7 per million; the non-Washington rates are 1-3 per million. 
+When comparing the Washington and non-Washington graphs, again please note the difference in y-scale: the current Washington rates are 2-7 per million; the non-Washington rates are 0-4 per million. 
 
 ```{r out.width="50%",echo=FALSE,fig.show='asis',include=TRUE}
 knitr::include_graphics(file.path(figdir,'figure_002a_deaths_wa.png'));
@@ -52,9 +52,9 @@ knitr::include_graphics(file.path(figdir,'figure_002c_deaths_wa_ragged.png'));
 knitr::include_graphics(file.path(figdir,'figure_002d_deaths_nonwa_ragged.png'));
 ```
 
-The smoothed graphs for Washington (Figure 2a) show rates bouncing around; the non-Washington graphs are all down or flat. Trend analysis and raw data (Figures 2c-d) suggest that rates everywhere are variable but the trend is flat. Counts are thankfully so low that small changes confuse my data fitting method. 
+The smoothed graphs for Washington (Figure 2a) show rates bouncing around; the non-Washington graphs are all down or flat. Trend analysis and raw data (Figures 2c-d) suggest that rates everywhere are variable but the trend is flat. The two week flat line for Pierce in early June 2021 is due to negative counts for those weeks: this arises when JHU discovers they overcounted previous weeks and are catching up; my software clamps the fit to zero reasoning that negative counts are meaningless. If you look closely, you'll see that Boston's raw data also goes negative in the last time point. 
 
-The next graphs show the Washington results broken down by age. This data is from Washington State Department of Health (DOH) weekly downloads, described [below](#doh). An important caveat is that the DOH download systematically undercounts events in recent weeks due to manual curation. I extrapolate data for late time points as discussed [below](#techdetails). Two further caveats are (1) *deaths* data for the most recent week is completely missing, and (2) DOH *deaths* have been consistently lower than JHU since mid-May.
+The next graphs show the Washington results broken down by age. This data is from Washington State Department of Health (DOH) weekly downloads, described [below](#doh). An important caveat is that the DOH download systematically undercounts events in recent weeks due to manual curation. I extrapolate data for late time points as discussed [below](#techdetails). Two further caveats are (1) *deaths* data for the most recent week is completely missing, and (2) DOH *deaths* have been consistently lower than JHU since mid-May (see Figure 5b [below](#dohjhu)).
 
 Figure 3 is *cases* and figure 4 shows hospital admissions (*admits*) and *deaths*.
 
@@ -74,11 +74,9 @@ knitr::include_graphics(file.path(figdir,'figure_004c_admits_deaths_Snohomish.pn
 knitr::include_graphics(file.path(figdir,'figure_004d_admits_deaths_Pierce.png'));
 ```
 
-Early on, the pandemic struck older age groups most heavily, but *cases* quickly spread into all age groups, even the young. Thankfully, rates are now declining in all age groups. The oldest age groups (65-79 and 80+) are doing best, perhaps due to the high vaccination coverage in these people. 
+Early on, the pandemic struck older age groups most heavily, but *cases* quickly spread into all age groups, even the young. Thankfully, rates are well below their earlier peaks in all age groups but sadly are starting to rise again. The oldest age groups (65-79 and 80+) are doing best, perhaps due to the high vaccination coverage in these people. 
 
-The shocking *death* rate of the 80+ age group jumps off the page in Figure 4. The *death* rate for this age group shows four waves. The third wave reached its peak in December 2020. The fourth wave peaked in April 2021 at a level well below the earlier peaks. Throughout the pandemic, the death  rate for the 80+ group was much higher than any other group, but it now appears that deaths even in this group have dropped to near zero. Given the declining *case* rates, it seems reasonable to be optimistic that deaths will remain low in the coming weeks. 
-
-The *admit* rate shows the same four waves, and seems to be decreasing in all groups.
+Throughout the pandemic, the death rate for the 80+ group was much higher than any other group, but it now appears that deaths even in this group have dropped to near zero. *Admits* for the 80+ age group are well below their peaks but are starting to rise again. It remains to be seen whether the increasing *case* and *admit* rates will lead to higher *deaths* in the coming weeks.
 
 ```{r out.width="50%",echo=FALSE,fig.show='asis',include=FALSE}
 knitr::include_graphics(file.path(figdir,'figure_005a_cases_dohjhu.png'));
@@ -124,6 +122,15 @@ DOH provides three COVID data streams.
 3. Weekly data downloads (available from the [Data Dashboard](https://www.doh.wa.gov/Emergencies/COVID19/DataDashboard) web page) of data curated by DOH staff. The curation corrects errors in the daily feed, such as, duplicate reports, multiple test results for the same incident (e.g., initial and confirmation tests for the same individual), incorrect reporting dates, incorrect county assignments (e.g., when an individual crosses county lines to get tested). 
 
 The weekly DOH download reports data by age group. In past, the groups were 20-year ranges starting with 0-19, with a final group for 80+. As of March 14, 2021, they changed the groups to an initial 20-year range (0-19), then several 15-year ranges (20-34, 35-49, 50-64, 65-79), with a final group for 80+.
+
+#### Issues with DOH Undercounting {#dohjhu}
+
+Figures 5a-b compare DOH and JHU *cases* and *deaths* for Washington state to illustrate the undercount in the raw DOH data. The *cases* data matches well except for a few periods spanning several weeks, including most of May. The *deaths* data matches less well and is presently much lower than JHU. I have no explanation for the discrepancies.
+
+```{r out.width="50%",echo=FALSE,fig.show='asis',include=TRUE}
+knitr::include_graphics(file.path(figdir,'figure_005a_cases_dohjhu.png'));
+knitr::include_graphics(file.path(figdir,'figure_005b_deaths_dohjhu.png'));
+```
 
 ### Johns Hopkins Center for Systems Science and Engineering (JHU) {#jhu}
 
