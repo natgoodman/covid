@@ -268,6 +268,13 @@ make_updatsupp_objs=
     counties.wa=colnames(pop.wa);
     top5=head(counties.wa,n=5);
     bottom10=tail(counties.wa,n=10);
+    ## Eastern WA, Western WA from Wikipedia
+    easternwa=c("Adams","Asotin","Benton","Chelan","Columbia","Douglas","Ferry","Franklin",
+                "Garfield","Grant","Kittitas","Klickitat","Lincoln","Okanogan","Pend Oreille",
+                "Spokane","Stevens","Walla Walla","Whitman","Yakima");
+    westernwa=c("Clallam","Clark","Cowlitz","Grays Harbor","Island","Jefferson","King","Kitsap",
+                "Lewis","Mason","Pacific","Pierce","San Juan","Skagit","Skamania","Snohomish",
+                "Thurston","Wahkiakum","Whatcom");
     withrows(cases,case,{
       if (param(verbose)) print(paste('+++ making',datasrc,what));
       case.env=environment();
@@ -281,7 +288,9 @@ make_updatsupp_objs=
                       West=Kitsap+Island+'San Juan',
                       East=Okanogan+Chelan+Kittitas+Yakima+Klickitat,
                       EastNotYakima=Okanogan+Chelan+Kittitas+Klickitat,
-                      SUM=list(Top5=top5,Bottom10=bottom10),
+                      SUM=list(Top5=top5,Bottom10=bottom10,
+                               EasternWA=easternwa,EasternWANotYakima=easternwa%-%'Yakima',
+                               WesternWA=westernwa,WesternWANotKing=westernwa%-%'King'),
                       NEG=list(notKing='King',notSKP='SKP',notTop5='Top5',notBottom10='Bottom10'));
         if (datasrc=='doh')
           obj.edit=if(version(obj.src)<='21-03-07')
@@ -332,7 +341,7 @@ make_updatsupp_objs=
       if(datasrc=='doh')  {
         obj.extra=extra(obj.raw);
         obj.rollx=roll(obj.extra);
-        obj.std=obj.fitx=fit(obj.extra,fit.unit=fit.unit);
+        obj.std=obj.fitx=fit(obj.extra);
       } else {
         obj.std=obj.fit;
       }
@@ -380,7 +389,10 @@ make_updatsupp_places=function() {
  places.wa2=setNames(cq(SKP,North,South,West,EastNotYakima,Yakima),
                       c('Seattle Metro (SKP)','North of SKP','South of SKP',
                         'West of SKP','East of SKP (except Yakima)','Yakima'));
- places.wa=c(places.wa1,places.wa2);
+ places.wa3=setNames(cq(EasternWA,EasternWANotYakima,WesternWA,WesternWANotKing),
+                     c('Eastern Washington','Eastern Washington (except Yakima)',
+                       'Western Washington','Western Washington (except King)'));
+ places.wa=c(places.wa1,places.wa2,places.wa3);
 
  places.nonwa1=setNames(cq('Ann Arbor',Boston,'San Diego',DC),
                         cq('Ann Arbor','Boston','San Diego','Washington DC'));

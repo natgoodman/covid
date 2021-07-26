@@ -213,13 +213,13 @@ init_doc=function(
   figdir=filename('figure',param(doc),subdoc,param(run.id),vsndir), # directory for figures
   tbldir=filename('table',param(doc),subdoc,param(run.id),vsndir),  # directory for tables
   ## 'where', 'what' used in updatsupp
-  where=if(doc=='updatsupp') cq(wa1,wa2,nonwa1,nonwa2,fav,usa) else NULL,
+  where=if(doc=='updatsupp') cq(wa1,wa2,wa3,nonwa1,nonwa2,fav,usa) else NULL,
   what=if(doc=='updatsupp') cq(cases,admits,icus,deaths,admdea) else NULL,
   ## output modifiers
   outpfx=NULL,                  # prefix before figure or table number - NOT USED
   outsfx=letters,               # suffix in figure and table blocks
   sectpfx=FALSE,                # add section number to prefix eg, S1
-  outlabel=TRUE,                # use label, eg, Figure nnn. updatsupp sets to FALSE
+  outlabel=(doc!='updatsupp'),  # use label, eg, Figure nnn. updatsupp sets to FALSE
   sectnum=1,                    # section number. usually set in docs
   sect=NULL,
   ## figures
