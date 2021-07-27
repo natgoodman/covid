@@ -26,7 +26,7 @@ The first several figures (1a-2d) show *case* and *death* counts per million for
 
 Figures 1a-b (the top row) show smoothed *case* counts (See [below](#techdetails) for details on the smoothing method). Figures 1c-d (the bottom row) overlay raw data onto the smoothed since May 1 to help explain recent trends.
 
-When comparing the Washington and non-Washington graphs, please note the difference in y-scale: the current raw counts for Washington locations are about 450-750 per million; non-Washington raw counts are about 150-750 per million.
+When comparing the Washington and non-Washington graphs, please note the difference in y-scale: the current raw counts for Washington locations are about 550-1200 per million; non-Washington raw counts are about 250-1300 per million.
 
 ```{r out.width="50%",echo=FALSE,fig.show='asis',include=TRUE}
 knitr::include_graphics(file.path(figdir,'figure_001a_cases_wa.png'));
@@ -37,11 +37,11 @@ knitr::include_graphics(file.path(figdir,'figure_001c_cases_wa_ragged.png'));
 knitr::include_graphics(file.path(figdir,'figure_001d_cases_nonwa_ragged.png'));
 ```
 
-The smoothed graphs for Washington and non-Washington locations (Figures 1a-b) show rates increasing in all locations. The raw data (Figures 1c-d) show increases in most locations for the past two weeks, with large bumps everywhere for the most recent week. Trend analysis is equivocal, perhaps because the increases only stretch back a week or two which isn't enough to produce impressive p-values.
+The smoothed graphs for Washington and non-Washington locations (Figures 1a-b) show rates increasing in all locations. The raw data and trend analysis concur. Rates in all Washington locations are near or beyond the peaks in spring and summer 2020.
 
 Figures 2a-d show *deaths* per million for the same locations. As with the *cases* graphs, the top row (Figures 2a-b) show smoothed data (see details [below](#techdetails)) and the bottom row (Figures 2c-d) overlays raw data onto the smoothed since May 1.
 
-When comparing the Washington and non-Washington graphs, again please note the difference in y-scale: the current Washington rates are 2-7 per million; the non-Washington rates are 0-4 per million. 
+When comparing the Washington and non-Washington graphs, again please note the difference in y-scale: the current Washington and non-Washington rates are similar (0-6 per million).
 
 ```{r out.width="50%",echo=FALSE,fig.show='asis',include=TRUE}
 knitr::include_graphics(file.path(figdir,'figure_002a_deaths_wa.png'));
@@ -52,9 +52,9 @@ knitr::include_graphics(file.path(figdir,'figure_002c_deaths_wa_ragged.png'));
 knitr::include_graphics(file.path(figdir,'figure_002d_deaths_nonwa_ragged.png'));
 ```
 
-The smoothed graphs for Washington (Figure 2a) show rates bouncing around; the non-Washington graphs are all down or flat. Trend analysis and raw data (Figures 2c-d) suggest that rates everywhere are variable but the trend is flat. The two week flat line for Pierce in early June 2021 is due to negative counts for those weeks: this arises when JHU discovers they overcounted previous weeks and are catching up; my software clamps the fit to zero reasoning that negative counts are meaningless. If you look closely, you'll see that Boston's raw data also goes negative in the last time point. 
+The smoothed graphs for Washington (Figure 2a) show rates bouncing around; the non-Washington graphs are all down or flat. Trend analysis and raw data (Figures 2c-d) suggest that rates everywhere are variable but the trend is flat. The long flat line for Pierce in late May-June 2021 is due to negative counts for two weeks in early June: this arises when JHU discovers they overcounted previous weeks and are catching up; my software clamps the fit to zero reasoning that negative counts are meaningless. If you look closely, you'll see that Boston's raw data also goes negative in the second to last time point. 
 
-The next graphs show the Washington results broken down by age. This data is from Washington State Department of Health (DOH) weekly downloads, described [below](#doh). An important caveat is that the DOH download systematically undercounts events in recent weeks due to manual curation. I extrapolate data for late time points as discussed [below](#techdetails). Two further caveats are (1) *deaths* data for the most recent week is completely missing, and (2) DOH *deaths* have been consistently lower than JHU since mid-May (see Figure 5b [below](#dohjhu)).
+The next graphs show the Washington results broken down by age. This data is from Washington State Department of Health (DOH) weekly downloads, described [below](#doh). An important caveat is that the DOH download systematically undercounts events in recent weeks due to manual curation. I extrapolate data for late time points as discussed [below](#techdetails). A further caveat is that DOH *deaths* have been consistently lower than JHU since mid-May (see Figure 5b [below](#dohjhu)).
 
 Figure 3 is *cases* and figure 4 shows hospital admissions (*admits*) and *deaths*.
 
@@ -74,7 +74,7 @@ knitr::include_graphics(file.path(figdir,'figure_004c_admits_deaths_Snohomish.pn
 knitr::include_graphics(file.path(figdir,'figure_004d_admits_deaths_Pierce.png'));
 ```
 
-Early on, the pandemic struck older age groups most heavily, but *cases* quickly spread into all age groups, even the young. Thankfully, rates are well below their earlier peaks in all age groups but sadly are starting to rise again. The oldest age groups (65-79 and 80+) are doing best, perhaps due to the high vaccination coverage in these people. 
+Early on, the pandemic struck older age groups most heavily, but *cases* quickly spread into all age groups, even the young. Rates are heading up again in all age groups. Young adults (20-34 years) are leading the way, with the next older group (35-49 years) close behind. The oldest age groups (65-79 and 80+ years) are doing best, perhaps due to the high vaccination coverage in these people. 
 
 Throughout the pandemic, the death rate for the 80+ group was much higher than any other group, but it now appears that deaths even in this group have dropped to near zero. *Admits* for the 80+ age group are well below their peaks but are starting to rise again. It remains to be seen whether the increasing *case* and *admit* rates will lead to higher *deaths* in the coming weeks.
 
