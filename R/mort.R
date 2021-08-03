@@ -64,18 +64,25 @@ import_wa_county_age=function(file=param(mort.infiles)['wa_county_age']) {
 }
 import_mort_place=function(mort,place,file) {
     total=tail(mort,n=1);
-    mort=head(mort,n=-1)[,cq(place,age,deaths)];
-    mort$age=mort_age(mort$age);
+    mort=head(mort,n=-1);
+    mort.age=mort_age(mort$age);
+    mort=mort[,cq(deaths)];
     age.want=c('0','1_4',
                sapply(seq(5,95,by=5),function(start) paste0(start,'_',start+4)),
-               '100');
-    bad=age.want%-%unique(mort$age);
-    if (length(bad)) stop(file," is missing ages(s): ",paste(collapse=',',bad));
-    bad=unique(mort$age)%-%c(age.want,NA);
-    if (length(bad)) stop(file," has unexpected ages(s): ",paste(collapse=',',bad));
-
+               '100','NS');
+    bad=age.want%-%mort.age;
+    if (length(bad)) stop(file," is missing ages(s) for ",
+                          nv(place),": ",paste(collapse=',',bad));
+    bad=mort.age%-%c(age.want,NA);
+    if (length(bad)) stop(file," has unexpected ages(s) for ",
+                          nv(place),": ",paste(collapse=',',bad));
+    ## make sure age in expected order
+    bad=age.want!=mort.age;
+    if (any(bad)) stop(file," has ages out of order for ",nv(place));
     ## add total deaths row as 'all'
-    mort=rbind(data.frame(age='all',deaths=total$deaths,stringsAsFactors=FALSE),mort);
+    mort=rbind(total['deaths'],mort);
+    rownames(mort)=c('all',age.want);
+    colnames(mort)=place;
     ## TODO: find better way to hang onto pop
     assign(paste(sep='.',desuffix(basename(file)),place,'.age.pop'),total$pop,envir=.GlobalEnv);
     mort;
@@ -164,7 +171,8 @@ mort_age=function(age) {
   age=ifelse(age==1,0,age);             # convert 1 to 0
   age=sub('-','_',age,fixed=TRUE);      # convert '-' to '_', eg '1-4' to '1_4'
   age=sub('+','',age,fixed=TRUE);       # convert 100+ to 100
-  age=ifelse(age%in%c('NS',''),NA,age); # convert NS, "" to NA
+  age=ifelse(age=='',NA,age);           # convert "" to NA
+                                        # leave NS as is
   age;
 }
 
