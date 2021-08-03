@@ -14,7 +14,8 @@
 #################################################################################
 library("rjson");
 ## ---- Import population metadata ----
-## creates meta/pop .Rdata, .txt
+## input files in input/meta and subdirs
+## output files meta/pop .RData, .txt
 download_pop=function(geo=param(geo),placedir=param(placedir),usa=TRUE) {
   if (param(verbose)) print(paste('>>> downloading pop to',placedir));
   if (is.null(geo)) geo=load_geo();
