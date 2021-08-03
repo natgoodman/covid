@@ -44,15 +44,20 @@ init=function(
   tmpdir=filename(datadir,'tmp'),           # tmp dir if needed
   inmetadir=filename(indir,'meta'),
   placedir=filename(inmetadir,'place'),
+  inmortdir=filename(indir,'meta','mortality'),
   ## metadata input URLs and files
   ## acs5yr=filename(inmetadir,'acs2018_5yr_B01001_05000US53041.csv'),
   acsmeta=filename(inmetadir,'metadata.json'),
   geo.infile=filename(inmetadir,'geoid.txt'),         # geoids for all US counties (Census Bureau)
   stateid.infile=filename(inmetadir,'stateid.txt'),   # map state names to IDs(World Pop Review)
+  mort.infiles=                                       # mortality input files
+    sapply(cq(usa_age,usa_county,wa_county_age,wa_county),
+      function(base) filename(inmortdir,base,suffix='txt')),
   ## computed metadata files
   pop.file=filename(metadir,'pop'),         # pop by place, age
   geo.file=filename(metadir,'geo'),         # geoids and place names
   stateid.file=filename(metadir,'stateid'), # map state names to IDs
+  mort.file=filename(metadir,'mort'),       # mortality (see mort.R for details)
   ## descriptors for non-WA places of interest
   ## entries are place, state, county. converted to data frame in code below
   places.nonwa=
