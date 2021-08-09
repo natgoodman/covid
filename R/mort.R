@@ -26,80 +26,99 @@ download_mort=function(...) {
   stop("Mortality files downloaded 'manually' using CDC WONDER web query tool and stored in ",
        param(inmortdir));
 }
-import_mort=
-  function(places=NULL,base=param(pop.file),placedir=param(placedir),metafile=param(acsmeta)) {
-   places.all=sub('.json','',list.files(placedir,pattern='.json',full.names=FALSE));
-    if (is.null(places)) places=places.all
-    else {
-      bad=places%-%places.all;
-      if (length(bad)) stop('Invalid places(s): ',paste(collapse=', ',bad));
-    }
-   metanames=meta_names(metafile);
-   pop=do.call(cbind,lapply(places,function(place) import_pop1(placedir,place,metanames)));
-   colnames(pop)=places;
-   save_pop(pop,base=base);
-  }
-import_mort_usa_age=function(file=param(mort.infiles)['usa_age']) {
-  mort=read_mort_input(file,cq(Notes,Year,'Five-Year Age Groups Code',Deaths,Population));
-  mort=import_mort_place(mort,'USA',file);
-  total=tail(mort,n=1);
-  mort=head(mort,n=-1)[,cq(age,deaths)]
-  ## add total deaths row as 'all', place=USA column
-  mort=rbind(data.frame(age='all',deaths=total$deaths,stringsAsFactors=FALSE),mort);
-  mort=cbind(place='USA',mort);  
-  ## TODO: find better way to hang onto pop
-  assign('usa.age.pop',total$pop,envir=.GlobalEnv);
-  mort; 
+import_mort=function() {
+  ## import each piece. note spelling of function names 'imort' not 'import' (no 'p')
+  usa=imort_usa();
+  state=imort_state();
+  wa=imort_wa();
+  nonwa=imort_nonwa();
+  mort=do.call(cbind,lapply(list(usa,state,wa,nonwa), function(x) x$mort));
+  pop=do.call(cbind,lapply(list(usa,state,wa,nonwa), function(x) x$pop));
+  save_mort(mort);
+  save_mortpop(pop);
+  invisible(list(mort=deaths,pop=pop));
 }
-import_wa_county_age=function(file=param(mort.infiles)['wa_county_age']) {
+## import USA data by age and 'all'
+imort_usa=function(base='usa',file=NULL) {
+  if (param(verbose)) print(paste('>>> importing usa mortality'));
+  mort=read_mort_input(base,cq(Notes,Year,'Five-Year Age Groups Code',Deaths,Population),file);
+  ## usa has total lines
+  total=tail(mort,n=1);
+  mort=head(mort,n=-1);
+  mort=import_mort_age(mort,file,total,'USA');
+  end_mort(mort,'USA');
+}
+## import WA state data by age and 'all'
+imort_state=function(bases=cq(state_age,state_all),files=NULL) {
+  if (param(verbose)) print(paste('>>> importing WA state mortality'));
+  if (is.null(files))
+    files=sapply(bases,function(base) filename(param(inmortdir),base,suffix='txt'));
+  ## state_age has ages but not 'all'
+  file=files[1];
   mort=read_mort_input(
-    file,cq(Notes,Year,County,'County Code','Five-Year Age Groups Code',Deaths,Population),
-    place.want=places_wa()%-%'state'
-    );
-  total=tail(mort,n=1);
-  mort=head(mort,n=-1)[,cq(notes,place,age,deaths)];
+    file=file,colwant=cq(Notes,Year,State,'Five-Year Age Groups Code',Deaths,Population));
+  ## make sure place really is Washington
+  bad=mort$place%-%'Washington';
+  if (length(bad)) stop(file," has unexpected place(s): ",paste(collapse=',',bad));
+  file=files[2];
+  total=read_mort_input(file=file,colwant=cq(Notes,Year,State,Deaths,Population));
+  ## make sure place really is Washington
+  bad=total$place%-%c('Washington','');
+  if (length(bad)) stop(file," has unexpected place(s): ",paste(collapse=',',bad));
+  total=tail(total,n=1);
+  mort=import_mort_age(mort,file,total,'state');
+  end_mort(mort,'state');
+}
+## import WA places except 'state' by age and 'all'
+imort_wa=function(base='wa',file=NULL) {
+  if (param(verbose)) print(paste('>>> importing WA county mortality'));
+  mort=read_mort_input(
+    base,cq(Notes,Year,County,'County Code','Five-Year Age Groups Code',Deaths,Population),file);
+  ## wa has total line for entire state which we don't need
+  ## total=tail(mort,n=1);
+  mort=head(mort,n=-1);
+  mort$place=sub(' County, WA','',mort$place); # clean county names
   byplace=split(mort,mort$place);
-  BREAKPOINT('before do.call')
-  mort=do.call(rbind,lapply(byplace,function(mort) import_mort_place(mort,file,'wa')));
+  mort=do.call(cbind,lapply(byplace,function(mort) import_mort_age(mort,file)));
+  end_mort(mort,names(byplace));
 }
-import_mort_place=function(mort,place,file) {
-    total=tail(mort,n=1);
-    mort=head(mort,n=-1);
-    mort.age=mort_age(mort$age);
-    mort=mort[,cq(deaths)];
-    age.want=c('0','1_4',
-               sapply(seq(5,95,by=5),function(start) paste0(start,'_',start+4)),
-               '100','NS');
-    bad=age.want%-%mort.age;
-    if (length(bad)) stop(file," is missing ages(s) for ",
-                          nv(place),": ",paste(collapse=',',bad));
-    bad=mort.age%-%c(age.want,NA);
-    if (length(bad)) stop(file," has unexpected ages(s) for ",
-                          nv(place),": ",paste(collapse=',',bad));
-    ## make sure age in expected order
-    bad=age.want!=mort.age;
-    if (any(bad)) stop(file," has ages out of order for ",nv(place));
-    ## add total deaths row as 'all'
-    mort=rbind(total['deaths'],mort);
-    rownames(mort)=c('all',age.want);
-    colnames(mort)=place;
-    ## TODO: find better way to hang onto pop
-    assign(paste(sep='.',desuffix(basename(file)),place,'.age.pop'),total$pop,envir=.GlobalEnv);
-    mort;
+## import non-WA places. no ages, just 'all'
+imort_nonwa=function(base='nonwa',file=NULL) {
+  if (param(verbose)) print(paste('>>> importing non-WA county mortality'));
+  mort=read_mort_input(base,cq(Notes,Year,County,'County Code',Deaths,Population),file);
+  ## nonwa has total line for entire USA which we don't need
+  ## total=tail(mort,n=1);
+  mort=head(mort,n=-1);
+  mort$geoid=paste0('05000US',sprintf("%05i",mort$geoid));
+  if (is.null(param(geo))) geo-load_geo();
+  geoids.want=geoids_nonwa();
+  geoids.mort=unique(mort$geoid);
+  bad=geoids.want%-%geoids.mort;
+  if (length(bad)) stop(file," is missing geoid(s): ",paste(collapse=', ',bad));
+  mort=mort[mort$geoid%in%geoids.want,]
+  mort$place=sapply(mort$geoid,function(geoid) geo[geo$geoid==geoid,'place']);
+  ## for each output, initialize as blank data frame then overlay mort
+  deaths=pop=
+    as.data.frame(
+      matrix(nrow=length(ages_mort()),ncol=nrow(mort), dimnames=list(ages_mort(),mort$place)));
+  deaths['all',]=mort$deaths;
+  pop['all',]=mort$pop;
+  invisible(list(mort=deaths,pop=pop));
 }
-
 ## colwant is vector of column names as they appear in file.
 ## colmap maps external column names from file to internal column names we use
 ## CAUTION: software harcodes internal names
 read_mort_input=
-  function(file,colwant,place.want=NULL,place.extra.ok=TRUE,geoid.want=NULL,geoid.extra.ok=TRUE) {
+  function(base=NULL,colwant,file=NULL) {
+    if (is.null(file)) file=filename(param(inmortdir),base,suffix='txt');
+    if (param(verbose)) print(paste('+++ reading mortality file',file));
     mort=read_(file);
     ## colmap maps column names from file to internal names we use
     ## CAUTION: software harcodes internal names. be mindful if you change them!
     colmap=setNames(
-      cq(notes,year,place,geoid,age,deaths,pop),
-      cq(Notes,Year,County,'County Code','Five-Year Age Groups Code',Deaths,Population)
-    );
+      cq(notes,year,place,geoid,place,geoid,age,deaths,pop),
+      cq(Notes,Year,State,'State Code',County,'County Code','Five-Year Age Groups Code',
+         Deaths,Population));
     ## for sanity, make sure file has columns we need and all columns valid
     bad=colwant%-%colnames(mort);
     if (length(bad)) stop(file," is missing column(s): ",paste(collapse=', ',bad));
@@ -108,8 +127,8 @@ read_mort_input=
     ## select and rename columns we want
     mort=mort[,colwant];
     colnames(mort)=colmap[colwant];
-    ## always need notes,year,age,deaths,pop
-    bad=cq(notes,year,age,deaths,pop)%-%colnames(mort);
+    ## always need notes,year,deaths,pop
+    bad=cq(notes,year,deaths,pop)%-%colnames(mort);
     if (length(bad)) stop("after mapping 'colwant', missing essential column(s): ",
                           paste(collapse=', ',bad));
     ## remove comment rows at bottom of file. all have year=NA
@@ -117,248 +136,137 @@ read_mort_input=
     ## for sanity, make sure all years after i.last1 are NA
     bad=!is.na(mort$year[i.last1:nrow(mort)]);
     if (any(bad)) stop(file," has non-NA years after first NA. first NA row is ",i.last1)
-    ## finally trim comment rows!
+    ## finally trim comment rows
     i.last=i.last1-1;
     mort=mort[1:i.last,];
     ## now check content that remains and convert as needed
-    ##   years are 2019
     bad=mort$year%-%2019;
     if (length(bad)) stop(file," has years other than 2019: ",paste(collapse=', ',bad));
-    ## if ('notes'%in%colnames(mort)) {
     bad=mort$notes%-%c('Total','');
     if (length(bad)) stop(file," has unexpected notes(s): ",paste(collapse=',',bad))
-    ## }
-    if ('place'%in%colnames(mort)) {
-      mort$place=sub(' County, [[:upper:]][[:upper:]]','',mort$place); # remove trailing verbiage
-      if (!is.null(place.want)) {
-        place.mort=unique(mort$place)%-%'';
-        bad=place.want%-%place.mort;
-        if (length(bad)) stop(file," is missing place(s): ",paste(collapse=', ',bad));
-        if (!place.extra.ok) {
-          bad=place.mort%-%place.want
-          if (length(bad)) stop(file," has unexpected place(s): ",paste(collapse=',',bad));
-        }}}
-    if ('geoid'%in%colnames(mort)) {
-      mort$geoid=ifelse(is.na(mort$geoid),NA,paste0('05000US',sprintf("%05i",mort$geoid)));
-      if (!is.null(geoid.want)) {
-        geoid.mort=unique(mort$geoid)%-%NA;
-        bad=geoid.want%-%geoid.mort;
-        if (length(bad)) stop(file," is missing geoid(s): ",paste(collapse=', ',bad));
-        if (!geoid.extra.ok) {
-          bad=geoid.mort%-%geoid.want
-          if (length(bad)) stop(file," has unexpected geoid(s): ",paste(collapse=',',bad));
-        }}}
-    if (all(cq(place,geoid)%in%colnames(mort))) {
-      ## make sure place,geoid pairs match what we have in geo file
-      if (is.null(param(geo))) geo=load_geo();
-      pg.geo=geo[geo$place%in%place.mort&geo$geoid%in%geoid.mort,cq(place,geoid)]
-      pg.geo=pg.geo[order(place.mort),];
-      pg.mort=unique(mort[,cq(place,geoid)])[order(place.mort),]
-      bad=sapply(1:length(place.mort),function(i) any(pg.mort[i,]!=pg.geo[i,]));
-      if (any(bad))
-        stop("Some 'place,geoid' pairs in ",file," don't match geo file: ",
-             cbind(pg.mort[bad,],pg.geo[bad,]));
-    }
-    ## if ('deaths'%in%colnames(mort))
     mort$deaths[mort$deaths=='Suppressed']=NA;
-    ## if ('pop'%in%colnames(mort))
+    mort$deaths=as.integer(mort$deaths);
     mort$pop[mort$pop=='Not Applicable']=NA;
-    mort;
+    mort$pop=as.integer(mort$pop);
+    invisible(mort);
   }
-
-
-mort_age=function(age) {
-  age=ifelse(age==1,0,age);             # convert 1 to 0
-  age=sub('-','_',age,fixed=TRUE);      # convert '-' to '_', eg '1-4' to '1_4'
-  age=sub('+','',age,fixed=TRUE);       # convert 100+ to 100
-  age=ifelse(age=='',NA,age);           # convert "" to NA
-                                        # leave NS as is
+## convert mort ages and add row for 'all' if possible
+import_mort_age=function(mort,file,total=NULL,place=NULL) {
+  ## if not 'total' provided, use total line at end if exists
+  if (is.null(total)&&('notes'%in%colnames(mort))&&('Total'==tail(mort$notes,n=1))) {
+    total=tail(mort,n=1);
+    mort=head(mort,n=-1)
+  }
+  ages.mort=cvt_mort_ages(mort$age);
+  ages.want=ages_mort()%-%'all';
+  if (is.null(place)) place=mort$place[1];
+  bad=ages.want%-%ages.mort;
+  if (length(bad))
+    stop(file," is missing ages(s) for ",nv(place),": ",paste(collapse=',',bad));
+  bad=ages.mort%-%ages.want;
+  if (length(bad))
+    stop(file," has unexpected ages(s) for ",nv(place),": ",paste(collapse=',',bad));
+  ## make sure age in expected order
+  bad=ages.want!=ages.mort;
+  if (any(bad)) stop(file," has ages out of order for ",nv(place));
+  mort=mort[,cq(deaths,pop)];
+  if (!is.null(total)) {
+    ## add total row as 'all'
+    mort=rbind(total[cq(deaths,pop)],mort);
+    rownames(mort)=c('all',ages.want);
+  }
+  mort;
+}
+end_mort=function(mort,places) {
+  deaths=mort[,grep('deaths$',colnames(mort)),drop=FALSE]
+  pop=mort[,grep('pop$',colnames(mort)),drop=FALSE]
+  colnames(deaths)=colnames(pop)=places;
+  invisible(list(mort=deaths,pop=pop));
+}
+cvt_mort_ages=function(age) {
+  age[age==1]=0;                    # convert 1 to 0 for consistency with my 'age' nomenclature
+  age=sub('-','_',age,fixed=TRUE);  # convert '-' to '_', eg '1-4' to '1_4'
+  age=sub('+','',age,fixed=TRUE);   # convert 100+ to 100
+  age[is.na(age)]=NA;               # convert "" to NA
+                                    # leave NS as is
   age;
 }
+## ---- mort 'constants' ----
+ages_mort=function()
+  c('all','0','1_4',
+    sapply(seq(5,95,by=5),function(start) paste0(start,'_',start+4)),
+    '100','NS');
+places_mort=c('USA',places_all());
 
-import_pop1=function(placedir,place,metanames=NULL) {
-  if (is.null(metanames)) metanames=meta_names(param(acsmeta));
-  file=filename(placedir,place,suffix='.json');
-  if (param(verbose)) print(paste('>>> importing pop',file));
-  json=fromJSON(file=file);
-  data=unlist(json$data[[1]]$B01001$estimate);
-  ## import variables from metanames
-  list2env(metanames,environment());
-  names(data)=names;
-  data.all=data[i.all]
-  data.male=data[i.male]
-  data.female=data[i.female]
-  data.both=data.male[-1]+data.female[-1]
-  ## for sanity, make sure totals match individual values
-  if (data.all!=(data.male['male']+data.female['female']))
-    stop("Bad news: data.all != male + female values");
-  if (data.male[1]!=sum(data.male[-1]))
-    stop("Bad news: male total != sum of male values");
-  if (data.female[1]!=sum(data.female[-1]))
-    stop("Bad news: female total != sum of female values");
-  if (data.all!=sum(data.both))
-    stop("Bad news: data.all != sum of combined male + female values");
-  pop=data.frame(pop=c(data.all,data.both));
-  pop;
-}
-age_starts=function(ages) as.integer(sapply(strsplit(ages,'_'),function(ages) ages[1]));
-## create pop for object
-obj_pop=function(obj) {
-  pop=param(pop);
-  if (is.null(pop)) pop=load_pop();
-  places.pop=colnames(pop);
-  places.obj=places(obj)%-%c('Unassigned','Out of WA','Unknown')
-  bad=places.obj%-%places.pop;
-  if (length(bad)) stop("Bad news: object contains unknown place(s): ",paste(collapse=', ',bad));
-  pop=pop[,places.obj];
+## ---- compare mortpop vs main pop ----
+## derived from meta/obj_pop
+chk_mortpop=function() {
+  pop=load_pop();
+  mpop=load_mortpop();
+  places.pop=colnames(pop)%-% cq(Douglas_NE,Washtenaw_MI); # dunno why pop has these extra places
+  places.mpop=colnames(mpop);
+  bad=places.pop%--%places.mpop;
+  if (length(bad)) stop("pop and mortpop differ even after removing known redundant places. bad=",
+                        paste(collapse=', ',bad));
+  pop=pop[,places.mpop];
+  ## check 'NS' row - should be all NA
+  chk.ns=mpop['NS',];
+  bad=!is.na(chk.ns)
+  if (any(bad)) stop("mortpop 'NS' row contains non-NA value(s) for place(s): ",
+                     paste(collapse=', ',places.mpop[bad]));
+  mpop=mpop[rownames(mpop)!='NS',];
+  ## replace NA by 0 everywhere to simplify calculations
+  mpop[is.na(mpop)]=0
+  ## check 'all' row
+  pall=pop['all',];
+  mpall=mpop['all',];
+  chk.all=data.frame(t(mpall),t(pall));
+  colnames(chk.all)=cq(mpop,pop);  
+  chk.all$diff=with(chk.all,pop-mpop);
+  chk.all$ratio=with(chk.all,pop/mpop);
+  chk.all=chk.all[order(abs(chk.all$ratio)),];
+  BREAKPOINT('chk_mortpop: check all');
+  ## now work on ages
+  places.ages=c('USA',places_wa());     # places with age groups
   ages.pop=rownames(pop)%-%'all';
-  ages.obj=ages(obj)%-%'all';
-  if (length(ages.obj)) {
-    starts.pop=age_starts(ages.pop);
-    starts.obj=age_starts(ages.obj);
-    cats=cut(starts.pop,c(starts.obj,100),right=F,labels=ages.obj);
-    groups=split(ages.pop,cats);
-  } else groups=NULL;
-  pop.obj=rbind(pop['all',], t(sapply(groups,function(i) colSums(pop[i,]))));
-  ## colnames(pop.obj)=places.obj;
-  pop.obj;
-}
-## create pop for CDC Case Surveillance Data
-cdc_pop=function() {
-  pop=param(pop);
-  if (is.null(pop)) pop=load_pop();
-  places.pop=colnames(pop);
-  if ('USA'%notin%places.pop) stop('Cannot create CDC pop: USA not in main pop file');
-  pop=pop[,'USA',drop=FALSE];
-  ages.pop=rownames(pop)%-%'all';
-  ## hardcode CDC ages to 10 year ranges
+  ages.mpop=rownames(mpop)%-%'all';
+  ages.doh=c('0_19',paste(sep='_',seq(20,65,by=15),seq(34,79,by=15)),'80_');
   ages.cdc=c(paste(sep='_',seq(0,70,by=10),seq(9,79,by=10)),'80_');
+
   starts.pop=age_starts(ages.pop);
+  starts.mpop=age_starts(ages.mpop);
+  starts.doh=age_starts(ages.doh);
   starts.cdc=age_starts(ages.cdc);
+
+  ## check CDC ages
   cats=cut(starts.pop,c(starts.cdc,100),right=F,labels=ages.cdc);
   groups=split(ages.pop,cats);
-  pop.cdc=c(all=pop['all','USA'],sapply(groups,function(i) sum(pop[i,])));
-  data.frame(USA=pop.cdc);
+  pop.cdc=do.call(rbind,lapply(groups,function(i) colSums(pop[i,places.ages])));
+  cats=cut(starts.mpop,c(starts.cdc,100),right=F,labels=ages.cdc);
+  groups=split(ages.mpop,cats);
+  mpop.cdc=do.call(rbind,lapply(groups,function(i) colSums(mpop[i,places.ages])));
+  diff.cdc=pop.cdc-mpop.cdc;
+  ratio.cdc=pop.cdc/mpop.cdc;
+  ## expect 80_ to be way off because mpop is missing data for 85_89 on up
+  diff.80=diff.cdc['80_',,drop=FALSE];
+  ratio.80=ratio.cdc['80_',,drop=FALSE];
+  diff.non80=diff.cdc[rownames(diff.cdc)!='80_',];
+  ratio.non80=ratio.cdc[rownames(ratio.cdc)!='80_',];
+  BREAKPOINT('chk_mortpop: check CDC');
+  
+  ## check CDC ages
+  cats=cut(starts.pop,c(starts.doh,100),right=F,labels=ages.doh);
+  groups=split(ages.pop,cats);
+  pop.doh=do.call(rbind,lapply(groups,function(i) colSums(pop[i,places.ages])));
+  cats=cut(starts.mpop,c(starts.doh,100),right=F,labels=ages.doh);
+  groups=split(ages.mpop,cats);
+  mpop.doh=do.call(rbind,lapply(groups,function(i) colSums(mpop[i,places.ages])));
+  diff.doh=pop.doh-mpop.doh;
+  ratio.doh=pop.doh/mpop.doh;
+  ## expect 80_ to be way off because mpop is missing data for 85_89 on up
+  diff.80=diff.doh['80_',,drop=FALSE];
+  ratio.80=ratio.doh['80_',,drop=FALSE];
+  diff.non80=diff.doh[rownames(diff.doh)!='80_',];
+  ratio.non80=ratio.doh[rownames(ratio.doh)!='80_',];
+  BREAKPOINT('chk_mortpop: check DOH');
 }
-## process censusreport metadata file
-meta_names=function(metafile=param(acsmeta)) {
-  json=fromJSON(file = metafile);
-  names=sapply(json$tables$B01001$columns,function(col) col$name);
-  names=tolower(names);
-  names[1]='all';
-  names=gsub(':| years','',names);
-  names=gsub('under 5','0_4',names);
-  names=gsub(' and over','',names);
-  names=gsub('( to )|( and )','_',names);
-  i.male1=which('male'==names)
-  i.female1=which('female'==names)
-  list(names=names,i.all=which('all'==names),
-       i.male=i.male1:(i.female1-1),i.female=i.female1:(length(names)));
-}
-## ---- Import geo & stateid metadata files
-## geo - get entries for WA and other, reformat, store in meta directory
-import_geo=function(infile=param(geo.infile),base=param(geo.file)) {
-  if (param(verbose)) print(paste('>>> importing geo',infile));
-  geo=read.delim(infile,stringsAsFactors=FALSE);
-  geo=geo[,cq(USPS,GEOID,NAME)];            # select columms we want
-  colnames(geo)=cq(state,geoid,county);     # change colnames per our convention
-  geo$geoid=paste0('05000US',sprintf("%05i",geo$geoid));
-                                            # CensusReporter county geoids are '05000US'+5 digits 
-  geo$county=sub(' County','',geo$county);  # clean up county names
-  ## get WA entries
-  geo.wa=subset(geo,subset=state=='WA');
-  colnames(geo.wa)[3]='place';
-  geo.wa=rbind(geo.wa,cq(WA,'04000US53',state)); # add entry for WA state
-  ## get 'nonwa' entries
-  places.nonwa=param(places.nonwa);
-  geo.nonwa=merge(geo,places.nonwa);             # join on state, county
-  geo.nonwa=geo.nonwa[,cq(state,geoid,place)];   # rename and reorder columns to match WA
-  geo=rbind(geo.wa,geo.nonwa)
-  save_geo(geo,base=base);
-}
-## stateid - just convert colnames to lower case, store in meta directory
-import_stateid=function(infile=param(stateid.infile),base=param(stateid.file)) {
-  if (param(verbose)) print(paste('>>> importing stateid',infile));
-  stateid=read.delim(infile,stringsAsFactors=FALSE);
-  colnames(stateid)=tolower(colnames(stateid));
-  save_stateid(stateid,base=base);
-}
-## compare pops from multiple, possibly edited, objects
-## returns whether pops all equal
-## CAUTION: make sure places, ages valid for all objects!
-cmp_pops=function(objs,places=NULL,ages=NULL,pop=param(pop),
-                  incompatible.ok=param(incompatible.ok)) {
-  if (length(objs)<=1) return(TRUE);    # trivial case - just one object
-  pops=lapply(objs,function(obj) pop(obj)); # CAUTION: use pop(obj) form to avoid scope problem
-  ## filter, and order by age (for testing equality later)
-  pops=lapply(pops,function(pop) {
-    pop=filter_pop(pop,places,ages);
-    pop=cbind(age=rownames(pop),pop);
-    pop[order(pop$age),];
-  });
-  ## pick one pop to compare others against
-  pop0=pops[[1]];
-  pops=tail(pops,n=-1);
-  ok=all(sapply(pops,function(pop) identical(pop0,pop)));
-  if (!incompatible.ok&&!ok) 
-    stop("Objects are incompatible (edited in conflicting ways). ",
-         "Sorry I can't be more specific");
-  ok;
-}
-## convert data frame of absolute counts into per capita counts
-## express as counts per million. TODO: paramerize scale factor
-## works for multiple age groups for one place or one age group for multiple places
-per_capita=function(data,pop,places='state',ages='all') {
-  if (length(places)>1&&length(ages)>1)
-    stop("Only one of 'places' or 'ages' can have multiple values");
-  pop=if(is.null(pop)) read_pop(places,ages) else filter(pop,places,ages);
-  if (length(ages)>1) pop=data.frame(t(pop[,places,drop=F]),check.names=FALSE);    
-  pop=repr(pop,nrow(data));
-  data.frame(date=data$date,round(1e6*data[,-1]/pop),check.names=FALSE);
-}
-
-## ---- Filter, compare, format population metadata ----
-filter_pop=function(pop,places=NULL,ages=NULL) {
-  places=places%&%colnames(pop);
-  ages=ages%&%rownames(pop);
-  if (!is.null(places)) pop=pop[,places,drop=FALSE];
-  if (!is.null(ages)) pop=pop[ages,,drop=FALSE];
-  pop;
-}
-
-## ---- Access metadata ----
-places_all=function(geo=param(geo)) {
-  if (is.null(geo)) geo=load_geo();
-  geo$place;
-}
-places_wa=function(geo=param(geo)) {
-  if (is.null(geo)) geo=load_geo();
-  geo$place[geo$state=='WA'];
-}
-places_nonwa=function(geo=param(geo)) {
-  if (is.null(geo)) geo=load_geo();
-  geo$place[geo$state!='WA'];
-}
-## convenience function to get WA counties
-counties_wa=function(geo=param(geo)) {
-  if (is.null(geo)) geo=load_geo();
-  geo[geo$state=='WA'&geo$place!='state','place'];
-}
-## convenience function to get WA county populations for 'all'
-pop_wa=function(pop=param(pop),geo=param(geo),ages=NULL) {
-  counties.wa=counties_wa(geo);
-  pop['all',counties.wa];
-}
-## ages_all used for error message and label
-## no easy way to get the correct value. fudge it by hardcoding all ages in uses circa Mar 2021
-ages_all=function() c('all','0_19','20_39','40_59','60_79','20_34','35_49','50_64','65_79','80_')
-
-state_name2id=function(name,stateid=param(stateid)) {
-  if (is.null(stateid)) stateid=load_stateid();
-  sapply(name,function(name) stateid$id[stateid$name==name]);
-}
-state_id2name=function(id,stateid=param(stateid)) {
-  if (is.null(stateid)) stateid=load_stateid();
-  sapply(id,function(id) stateid$name[stateid$id==id]);
-}
-
