@@ -211,6 +211,23 @@ places_nonwa=function(geo=param(geo)) {
   if (is.null(geo)) geo=load_geo();
   geo$place[geo$state!='WA'];
 }
+geoids_all=function(geo=param(geo)) {
+  if (is.null(geo)) geo=load_geo();
+  geo$geoid;
+}
+geoids_wa=function(geo=param(geo)) {
+  if (is.null(geo)) geo=load_geo();
+  geo$geoid[geo$state=='WA'];
+}
+geoids_nonwa=function(geo=param(geo)) {
+  if (is.null(geo)) geo=load_geo();
+  geo$geoid[geo$state!='WA'];
+}
+geoid_state=geoids_state=function(geo=param(geo)) {
+  if (is.null(geo)) geo=load_geo();
+  geo$geoid[geo$place=='state']
+}
+
 ## convenience function to get WA counties
 counties_wa=function(geo=param(geo)) {
   if (is.null(geo)) geo=load_geo();

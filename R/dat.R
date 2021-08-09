@@ -126,6 +126,28 @@ read_stateid=function(base=param(stateid.file)) {
   stateid=read_(base=base);
   param(stateid=stateid);
 }
+## ---- Save and Load mortality data ----
+## base includes path. suffix optional
+## deaths, pop - deaths, population by place, age - for per capita calculations
+save_mort=function(data,base=param(mort.file)) save_pop(data,base=base);
+save_mortpop=function(data,base=param(mortpop.file)) save_pop(data,base=base)
+  
+load_mort=function(base=param(mort.file)) {
+  mort=load_(base=base);
+  param(mort=mort);
+}
+read_mort=function(base=param(mort.file)) {
+  mort=read_(base=base,row.names='age');
+  param(mort=mort);
+}
+load_mortpop=function(base=param(mortpop.file)) {
+  mortpop=load_(base=base);
+  param(mortpop=mortpop);
+}
+read_mortpop=function(base=param(mortpop.file)) {
+  mortpop=read_(base=base,row.names='age');
+  param(mortpop=mortpop);
+}
 
 
 

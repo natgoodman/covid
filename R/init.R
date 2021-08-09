@@ -38,27 +38,26 @@ init=function(
   datadir=filename('data',run.id),          # top level output data files
   logdir=filename('log',run.id),            # top level log directory
   metadir=filename('meta',run.id),          # metadata files
+  ## mortdir=filename(metadir,'mort',run.id),          # mortdata files
   ## NG 20-11-14: figdir, tbldir moved to init_doc
   ## figdir=filename('figure',run.id),         # figures
   ## tbldir=filename('table',run.id),          # tables
   tmpdir=filename(datadir,'tmp'),           # tmp dir if needed
   inmetadir=filename(indir,'meta'),
   placedir=filename(inmetadir,'place'),
-  inmortdir=filename(indir,'meta','mortality'),
+  inmortdir=filename(inmetadir,'mort'),
   ## metadata input URLs and files
   ## acs5yr=filename(inmetadir,'acs2018_5yr_B01001_05000US53041.csv'),
   acsmeta=filename(inmetadir,'metadata.json'),
   geo.infile=filename(inmetadir,'geoid.txt'),         # geoids for all US counties (Census Bureau)
   stateid.infile=filename(inmetadir,'stateid.txt'),   # map state names to IDs(World Pop Review)
-  mort.infiles=                                       # mortality input files
-    sapply(cq(usa_age,usa_county,wa_county_age,wa_county),
-      function(base) filename(inmortdir,base,suffix='txt')),
   ## computed metadata files
   pop.file=filename(metadir,'pop'),         # pop by place, age
   geo.file=filename(metadir,'geo'),         # geoids and place names
   stateid.file=filename(metadir,'stateid'), # map state names to IDs
   mort.file=filename(metadir,'mort'),       # mortality (see mort.R for details)
-  ## descriptors for non-WA places of interest
+  mortpop.file=filename(metadir,'mortpop'), # mortality pop (see mort.R for details)
+ ## descriptors for non-WA places of interest
   ## entries are place, state, county. converted to data frame in code below
   places.nonwa=
     list(cq('Ann Arbor',MI,Washtenaw),
@@ -76,6 +75,8 @@ init=function(
   pop=NULL,                      # base pop by place, age. set by load_pop, read_pop
   geo=NULL,                      # geoids and place names. set by load_geo, read_geo
   stateid=NULL,                  # map state names to IDs. set by load_stateid, read_stateid
+  mort=NULL,                     # mortality by place, age. set by load_mort, read_mort
+  mortpop=NULL,                  # pop from mort files. set by load_mortpop, read_mortpop
   pal.info=NULL,                 # color palette info. set in pal/init_pal
 
   ## import params for specific data sources
@@ -150,7 +151,7 @@ init=function(
   save.txt.meta=is.na(save.txt)|save.txt, # save txt metadata. default T
   save.out=TRUE,                 # save outputs - figures and tables - when called via dofig
   ## NG 20-11-14: save.fig, save.tbl moved to init_doc
-  ## save.fig=save.out,             # save figures (when called via dofig)
+  ## save.fig=save.out,             # save figures (when callsed via dofig)
   ## save.tbl=save.out,             # save tables (when called via dotbl)
   ## save.txt.tbl=T,                # save txt tables. default T
                                  #    
