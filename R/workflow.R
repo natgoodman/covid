@@ -29,7 +29,11 @@ do_dlim=function(datasrc=param(datasrc),version=NULL,
     ok=system('pjtest')==0;
     if (!ok) stop('Reverse tunnel not running; stopping before download');
   }
-  if (do.download) do_download(datasrc,version,url);
+  if (do.download) ok=do_download(datasrc,version,url);
+  if (any(!ok)) {
+    print(paste0('--- skiping ',datasrc[!ok],': download failed'));
+    datasrc=datasrc[ok];
+  }
   if (do.import) {
     if (cmp.prev) datasrc.ok=cmp_prev(datasrc,version);
     if (length(datasrc.ok)) do_import(datasrc.ok,version);
@@ -48,13 +52,16 @@ do_download=function(datasrc=param(datasrc),version=NULL,
   ## if (version>'21-03-07') datasrc=datasrc%-%'trk'; 
   if (param(verbose)) print(paste('+++ running download: version',version));
   filename=dl_filenames(datasrc,version);
-  sapply(datasrc,function(datasrc) {
+  ok=sapply(datasrc,function(datasrc) {
     if (param(verbose)) print(paste('+++ downloading',datasrc));
     if (datasrc=='jhu') {
-      download.file(url$jhu.cases,filename$jhu[1]);
-      download.file(url$jhu.deaths,filename$jhu[2]);
-    } else download.file(url[[datasrc]],filename[[datasrc]]);
+      status=c(
+        download.file(url$jhu.cases,filename$jhu[1]),
+        download.file(url$jhu.deaths,filename$jhu[2]));
+    } else status=download.file(url[[datasrc]],filename[[datasrc]]);
+    all(status==0);
   });
+  ok;
 }
 do_import=function(datasrc=param(datasrc),version=NULL) {
   datasrc=match.arg(datasrc,several.ok=TRUE);
@@ -70,16 +77,24 @@ do_import=function(datasrc=param(datasrc),version=NULL) {
   });
 }
 cmp_prev=function(datasrc,version) {
-  prev=as_version(as_date(version)-7) ;
-  filename=dl_filenames(datasrc,version);
-  prevname=dl_filenames(datasrc,prev);
-  ok=!sapply(datasrc,function(datasrc) {
-    if (datasrc=='jhu') 
-      cmp_files(filename$jhu[1],prevname$jhu[1])&cmp_files(filename$jhu[2],prevname$jhu[2])
-    else cmp_files(filename[[datasrc]],prevname[[datasrc]]);
+  ok=sapply(datasrc,function(datasrc) {
+    versions=list_versions(datasrc);
+    now=which(version==versions);
+    if (!length(now)) {
+      print(paste0("--- skiping ",datasrc,": doesn't have desired version ",version));
+      return(FALSE);
+    }
+    if (now==1) return(TRUE)        # no previous version
+    prev=versions[now-1];
+    filename=dl_filenames(datasrc,version);
+    prevname=dl_filenames(datasrc,prev);
+    same=(if (datasrc=='jhu') 
+            cmp_files(filename$jhu[1],prevname$jhu[1])&cmp_files(filename$jhu[2],prevname$jhu[2])
+          else cmp_files(filename[[datasrc]],prevname[[datasrc]]));
+    if (same)
+      print(paste0('--- skiping ',datasrc,': current version ',version,' same as previous ',prev))
+    !same;
   });
-  sapply(datasrc[!ok],function(datasrc) 
-    print(paste0('--- skiping ',datasrc,': current version ',version,' same as previous ',prev)));
   datasrc=datasrc[ok];
 }
 cmp_files=function(file1,file2) {
