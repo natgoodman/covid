@@ -78,7 +78,7 @@ do_import=function(datasrc=param(datasrc),version=NULL) {
 }
 cmp_prev=function(datasrc,version) {
   ok=sapply(datasrc,function(datasrc) {
-    versions=list_versions(datasrc);
+    versions=list_versions(datasrc,dir=indir(datasrc));
     now=which(version==versions);
     if (!length(now)) {
       print(paste0("--- skiping ",datasrc,": doesn't have desired version ",version));
@@ -95,7 +95,7 @@ cmp_prev=function(datasrc,version) {
       print(paste0('--- skiping ',datasrc,': current version ',version,' same as previous ',prev))
     !same;
   });
-  datasrc=datasrc[ok];
+  datasrc[ok];
 }
 cmp_files=function(file1,file2) {
   if (file.exists(file1)&&file.exists(file2))
