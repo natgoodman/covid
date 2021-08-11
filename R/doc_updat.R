@@ -453,14 +453,18 @@ show_counts=
            places.wa=parent(places.wa),places.nonwa=parent(places.nonwa),
            cases=NULL,deaths=NULL,
            tail.n=c(3,10),round.digits=0,
-           ## wa spring 2020 peak dates
-           do.spring=TRUE,
-           peak.cases.spring=c('2020-03-15','2020-05-01'),
-           peak.deaths.spring=c('2020-03-15','2020-06-01'),
-           ## wa summer 2020 peak dates
-           do.summer=TRUE,
-           peak.cases.summer=c('2020-06-21','2020-08-16'),
-           peak.deaths.summer=c('2020-06-21','2020-09-06'),
+           ## ## wa spring 2020 peak dates
+           ## do.spring=FALSE,
+           ## peak.cases.spring=c('2020-03-15','2020-05-01'),
+           ## peak.deaths.spring=c('2020-03-15','2020-06-01'),
+           ## ## wa summer 2020 peak dates
+           ## do.summer=FALSE,
+           ## peak.cases.summer=c('2020-06-21','2020-08-16'),
+           ## peak.deaths.summer=c('2020-06-21','2020-09-06'),
+           ## cut dates and labels for WA peaks
+           do.peaks=TRUE,
+           cuts=c('2020-01-26','2020-06-01','2020-09-15','2021-03-01','2021-07-01'),
+           labels=cq(spring20,summer20,winter20,spring21,summer21),
            do.print=TRUE) {
     objid=match.arg(objid);
     where=match.arg(where,several.ok=TRUE);
@@ -474,20 +478,24 @@ show_counts=
     cases.nonwa=cases[,c('date',places.nonwa)];
     deaths.nonwa=deaths[,c('date',places.nonwa)];
     assign_global(cases.wa,deaths.wa,cases.nonwa,deaths.nonwa);
-    if (do.print) {
+     if (do.print) {
       if ('wa'%in%where&&'cases'%in%what) {
-        if (do.spring)
-          show_peak(cases.wa,dates=peak.cases.spring,'cases.wa spring 2020');
-        if (do.summer)
-          show_peak(cases.wa,dates=peak.cases.summer,'cases.wa summer 2020');
+        if (do.peaks)
+          show_peaks(cases.wa,cuts,labels=paste('cases.wa',labels),do.print=do.print);
+        ## if (do.spring)
+        ##   show_peak(cases.wa,dates=peak.cases.spring,'cases.wa spring 2020');
+        ## if (do.summer)
+        ##   show_peak(cases.wa,dates=peak.cases.summer,'cases.wa summer 2020');
         show_now(cases.wa,objid,tail.n,'cases.wa');
         print('----------');
       }
       if ('wa'%in%where&&'deaths'%in%what) {
-        if (do.spring)
-          show_peak(deaths.wa,dates=peak.deaths.spring,'deaths.wa spring 2020');
-        if (do.summer)
-          show_peak(deaths.wa,dates=peak.deaths.summer,'deaths.wa summer 2020');
+        if (do.peaks)
+          show_peaks(deaths.wa,cuts,labels=paste('deaths.wa',labels),do.print=do.print);
+        ## if (do.spring)
+        ##   show_peak(deaths.wa,dates=peak.deaths.spring,'deaths.wa spring 2020');
+        ## if (do.summer)
+        ##   show_peak(deaths.wa,dates=peak.deaths.summer,'deaths.wa summer 2020');
         show_now(deaths.wa,objid,tail.n,'deaths.wa');
         print('----------');
       }
@@ -497,18 +505,19 @@ show_counts=
     invisible(list(cases.wa=cases.wa,deaths.wa=deaths.wa,
                    cases.nonwa=cases.nonwa,deaths.nonwa=deaths.nonwa));
   }
-show_peak=function(counts,dates,label=NULL,do.print=TRUE) {
-  if (do.print) print(paste(collapse=' ',c(label,'peak')));
-  peak=subset(counts,subset=btwn_cc(date,dates[1],dates[2]));
-  i=capply(peak[,-1],which.max);
-  peak=peak[i,];
-  smax=capply(peak[,-1],max);
-  peak=rbind(peak,data.frame(date=NA,smax))
-  if (do.print) {
-    print(peak);
-    invisible(peak);
-  } else peak;
-}
+## show_peak obsolete. replaced by show_peaks
+## show_peak=function(counts,dates,label=NULL,do.print=TRUE) {
+##   if (do.print) print(paste(collapse=' ',c(label,'peak')));
+##   peak=subset(counts,subset=btwn_cc(date,dates[1],dates[2]));
+##   i=capply(peak[,-1],which.max);
+##   peak=peak[i,];
+##   smax=capply(peak[,-1],max);
+##   peak=rbind(peak,data.frame(date=NA,smax))
+##   if (do.print) {
+##     print(peak);
+##     invisible(peak);
+##   } else peak;
+## }
 show_now=function(counts,objid,tail.n,label=NULL,do.print=TRUE) {
   if (do.print) print(paste(collapse=' ',c(label,'now')));
   if (objid!='dly') now=tail(subset(counts,subset=weekdays(date)=='Sunday'),n=tail.n[1])
@@ -517,4 +526,26 @@ show_now=function(counts,objid,tail.n,label=NULL,do.print=TRUE) {
     print(now);
     invisible(now);
   } else now;
+}
+show_peaks=function(counts,cuts,labels,do.print=TRUE) {
+  cuts=c(as_date(cuts),Inf);
+  cats=cut(counts$date,cuts,right=F,labels=FALSE);
+  peaks=split(counts,cats);
+  sapply(seq_along(peaks),function(i) {
+    peak=peaks[[i]];
+    label=labels[i];
+    show_peak1(peak,label,do.print);
+  });
+  labels;
+}
+show_peak1=function(peak,label,do.print=TRUE) {
+  if (do.print) print(paste(collapse=' ',c(label,'peak')));
+  i=unique(as.vector(capply(peak[,-1],which.max)));
+  peak=peak[i,];
+  smax=capply(peak[,-1],max);
+  peak=rbind(peak,data.frame(date=NA,smax))
+  if (do.print) {
+    print(peak);
+    invisible(peak);
+  } else peak;
 }
