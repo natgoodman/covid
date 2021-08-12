@@ -14,11 +14,13 @@
 ## WONDER API too limited even for this purpose
 ## Workaround: generate data "manually" using web query tool
 ##
+## See also xper_mort.R which contains 'extra' code needed to check and analyze
+## mortality and pop data
+## 
 ## This software is open source, distributed under the MIT License. See LICENSE
 ## file at https://github.com/natgoodman/NewPro/FDR/LICENSE 
 ##
 #################################################################################
-library("rjson");
 ## ---- Import mortality data ----
 ## input files in input/meta/mortality
 ## output files meta/mort .RData, .txt
@@ -32,21 +34,20 @@ import_mort=function() {
   state=imort_state();
   wa=imort_wa();
   nonwa=imort_nonwa();
-  mort=do.call(cbind,lapply(list(usa,state,wa,nonwa), function(x) x$mort));
-  pop=do.call(cbind,lapply(list(usa,state,wa,nonwa), function(x) x$pop));
+  mort=cbind(usa,state,wa,nonwa);
+  mort=mort[rownames(mort)!='NS',]
   save_mort(mort);
-  save_mortpop(pop);
-  invisible(list(mort=deaths,pop=pop));
+  invisible(mort);
 }
 ## import USA data by age and 'all'
 imort_usa=function(base='usa',file=NULL) {
   if (param(verbose)) print(paste('>>> importing usa mortality'));
-  mort=read_mort_input(base,cq(Notes,Year,'Five-Year Age Groups Code',Deaths,Population),file);
+  mort=read_mort_input(base,cq(Notes,Year,'Five-Year Age Groups Code',Deaths),file);
   ## usa has total lines
   total=tail(mort,n=1);
   mort=head(mort,n=-1);
   mort=import_mort_age(mort,file,total,'USA');
-  end_mort(mort,'USA');
+  invisible(mort);
 }
 ## import WA state data by age and 'all'
 imort_state=function(bases=cq(state_age,state_all),files=NULL) {
@@ -56,36 +57,36 @@ imort_state=function(bases=cq(state_age,state_all),files=NULL) {
   ## state_age has ages but not 'all'
   file=files[1];
   mort=read_mort_input(
-    file=file,colwant=cq(Notes,Year,State,'Five-Year Age Groups Code',Deaths,Population));
+    file=file,colwant=cq(Notes,Year,State,'Five-Year Age Groups Code',Deaths));
   ## make sure place really is Washington
   bad=mort$place%-%'Washington';
   if (length(bad)) stop(file," has unexpected place(s): ",paste(collapse=',',bad));
   file=files[2];
-  total=read_mort_input(file=file,colwant=cq(Notes,Year,State,Deaths,Population));
+  total=read_mort_input(file=file,colwant=cq(Notes,Year,State,Deaths));
   ## make sure place really is Washington
   bad=total$place%-%c('Washington','');
   if (length(bad)) stop(file," has unexpected place(s): ",paste(collapse=',',bad));
   total=tail(total,n=1);
   mort=import_mort_age(mort,file,total,'state');
-  end_mort(mort,'state');
+  invisible(mort);
 }
 ## import WA places except 'state' by age and 'all'
 imort_wa=function(base='wa',file=NULL) {
   if (param(verbose)) print(paste('>>> importing WA county mortality'));
   mort=read_mort_input(
-    base,cq(Notes,Year,County,'County Code','Five-Year Age Groups Code',Deaths,Population),file);
+    base,cq(Notes,Year,County,'County Code','Five-Year Age Groups Code',Deaths),file);
   ## wa has total line for entire state which we don't need
   ## total=tail(mort,n=1);
   mort=head(mort,n=-1);
   mort$place=sub(' County, WA','',mort$place); # clean county names
   byplace=split(mort,mort$place);
   mort=do.call(cbind,lapply(byplace,function(mort) import_mort_age(mort,file)));
-  end_mort(mort,names(byplace));
+  invisible(mort);
 }
 ## import non-WA places. no ages, just 'all'
 imort_nonwa=function(base='nonwa',file=NULL) {
   if (param(verbose)) print(paste('>>> importing non-WA county mortality'));
-  mort=read_mort_input(base,cq(Notes,Year,County,'County Code',Deaths,Population),file);
+  mort=read_mort_input(base,cq(Notes,Year,County,'County Code',Deaths),file);
   ## nonwa has total line for entire USA which we don't need
   ## total=tail(mort,n=1);
   mort=head(mort,n=-1);
@@ -97,13 +98,12 @@ imort_nonwa=function(base='nonwa',file=NULL) {
   if (length(bad)) stop(file," is missing geoid(s): ",paste(collapse=', ',bad));
   mort=mort[mort$geoid%in%geoids.want,]
   mort$place=sapply(mort$geoid,function(geoid) geo[geo$geoid==geoid,'place']);
-  ## for each output, initialize as blank data frame then overlay mort
-  deaths=pop=
+  ## initialize output as blank data frame then overlay mort
+  deaths=
     as.data.frame(
       matrix(nrow=length(ages_mort()),ncol=nrow(mort), dimnames=list(ages_mort(),mort$place)));
   deaths['all',]=mort$deaths;
-  pop['all',]=mort$pop;
-  invisible(list(mort=deaths,pop=pop));
+  invisible(deaths);
 }
 ## colwant is vector of column names as they appear in file.
 ## colmap maps external column names from file to internal column names we use
@@ -116,9 +116,8 @@ read_mort_input=
     ## colmap maps column names from file to internal names we use
     ## CAUTION: software harcodes internal names. be mindful if you change them!
     colmap=setNames(
-      cq(notes,year,place,geoid,place,geoid,age,deaths,pop),
-      cq(Notes,Year,State,'State Code',County,'County Code','Five-Year Age Groups Code',
-         Deaths,Population));
+      cq(notes,year,place,geoid,place,geoid,age,deaths),
+      cq(Notes,Year,State,'State Code',County,'County Code','Five-Year Age Groups Code',Deaths));
     ## for sanity, make sure file has columns we need and all columns valid
     bad=colwant%-%colnames(mort);
     if (length(bad)) stop(file," is missing column(s): ",paste(collapse=', ',bad));
@@ -127,8 +126,8 @@ read_mort_input=
     ## select and rename columns we want
     mort=mort[,colwant];
     colnames(mort)=colmap[colwant];
-    ## always need notes,year,deaths,pop
-    bad=cq(notes,year,deaths,pop)%-%colnames(mort);
+    ## always need notes,year,deaths
+    bad=cq(notes,year,deaths)%-%colnames(mort);
     if (length(bad)) stop("after mapping 'colwant', missing essential column(s): ",
                           paste(collapse=', ',bad));
     ## remove comment rows at bottom of file. all have year=NA
@@ -146,13 +145,11 @@ read_mort_input=
     if (length(bad)) stop(file," has unexpected notes(s): ",paste(collapse=',',bad))
     mort$deaths[mort$deaths=='Suppressed']=NA;
     mort$deaths=as.integer(mort$deaths);
-    mort$pop[mort$pop=='Not Applicable']=NA;
-    mort$pop=as.integer(mort$pop);
     invisible(mort);
   }
 ## convert mort ages and add row for 'all' if possible
 import_mort_age=function(mort,file,total=NULL,place=NULL) {
-  ## if not 'total' provided, use total line at end if exists
+  ## if no 'total' provided, use total line at end if exists
   if (is.null(total)&&('notes'%in%colnames(mort))&&('Total'==tail(mort$notes,n=1))) {
     total=tail(mort,n=1);
     mort=head(mort,n=-1)
@@ -169,12 +166,13 @@ import_mort_age=function(mort,file,total=NULL,place=NULL) {
   ## make sure age in expected order
   bad=ages.want!=ages.mort;
   if (any(bad)) stop(file," has ages out of order for ",nv(place));
-  mort=mort[,cq(deaths,pop)];
+  mort=mort[,cq(deaths),drop=FALSE];
   if (!is.null(total)) {
     ## add total row as 'all'
-    mort=rbind(total[cq(deaths,pop)],mort);
+    mort=rbind(total[cq(deaths)],mort);
     rownames(mort)=c('all',ages.want);
   }
+  colnames(mort)=place;
   mort;
 }
 end_mort=function(mort,places) {
