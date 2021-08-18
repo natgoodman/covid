@@ -26,7 +26,7 @@ The first several figures (1a-2d) show *case* and *death* counts per million for
 
 Figures 1a-b (the top row) show smoothed *case* counts (See [below](#techdetails) for details on the smoothing method). Figures 1c-d (the bottom row) overlay raw data onto the smoothed since May 1 to help explain recent trends.
 
-When comparing the Washington and non-Washington graphs, please note the difference in y-scale: the current raw counts for Washington locations are about 1650-2200 per million; non-Washington raw counts are about 600-2300 per million.
+When comparing the smoothed Washington and non-Washington graphs (Figures 1a-b), please note the difference in y-scale; the graphs with raw data (Figures 1c-d) have the same y-scale and are better for comparing Washington and non-Washington locations. The current raw counts for Washington locations are about 1900-2850 per million; non-Washington raw counts are about 950-2600 per million.
 
 ```{r out.width="50%",echo=FALSE,fig.show='asis',include=TRUE}
 knitr::include_graphics(file.path(figdir,'figure_001a_cases_wa.png'));
@@ -41,7 +41,7 @@ The smoothed graphs for Washington and non-Washington locations (Figures 1a-b) s
 
 Figures 2a-d show *deaths* per million for the same locations. As with the *cases* graphs, the top row (Figures 2a-b) show smoothed data (see details [below](#techdetails)) and the bottom row (Figures 2c-d) overlays raw data onto the smoothed since May 1.
 
-When comparing the Washington and non-Washington graphs, again please note the difference in y-scale: the current Washington rates are 2-6 per million and non-Washington rates are 0-4 per million.
+As with the cases data, when comparing the Washington and non-Washington graphs, the graphs with raw data (Figures 2c-d) are probably more useful as they have similar y-scales. The current Washington rates are 2-9 per million and non-Washington rates are 1-5 per million.
 
 ```{r out.width="50%",echo=FALSE,fig.show='asis',include=TRUE}
 knitr::include_graphics(file.path(figdir,'figure_002a_deaths_wa.png'));
@@ -52,9 +52,11 @@ knitr::include_graphics(file.path(figdir,'figure_002c_deaths_wa_ragged.png'));
 knitr::include_graphics(file.path(figdir,'figure_002d_deaths_nonwa_ragged.png'));
 ```
 
-The smoothed graphs for Washington and non-Washington locations (Figures 2a-b) show rates bouncing around. Trend analysis and raw data (Figures 2c-d) suggest that rates everywhere are variable but the trend is flat. The long flat line for Pierce in late May-June 2021 is due to negative counts for two weeks in early June: this arises when JHU discovers they overcounted previous weeks and are catching up; my software clamps the fit to zero reasoning that negative counts are meaningless.
+The smoothed graphs for Washington locations (Figure 2a) show some rates up and some down. Trend analysis and raw data (Figure 2c) suggest that Washington rates are heading up everywhere except Pierce; the Pierce downward trend may be artifacts of a few very high data points in early summer. The long flat line for Pierce in late May-June 2021 is due to negative counts for two weeks in early June: this arises when JHU discovers they overcounted previous weeks and are catching up; my software clamps the fit to zero reasoning that negative counts are meaningless.
 
-The next graphs show the Washington results broken down by age. This data is from Washington State Department of Health (DOH) weekly downloads, described [below](#doh). An important caveat is that the DOH download systematically undercounts events in recent weeks due to manual curation. I extrapolate data for late time points as discussed [below](#techdetails). A further caveat is that DOH *deaths* have been consistently lower than JHU since mid-May (see Figure 5b [below](#dohjhu)).
+The smoothed graphs for non-Washington locations (Figure 2b) show rates going up everywhere except Washington DC. Trend analysis and raw data (Figure 2d) suggest that the data are variable, but the trends remain flat.
+
+The next graphs show the Washington results broken down by age. This data is from Washington State Department of Health (DOH) weekly downloads, described [below](#doh). An important caveat is that the DOH download systematically undercounts events in recent weeks due to manual curation. I extrapolate data for late time points as discussed [below](#techdetails).
 
 Figure 3 is *cases* and figure 4 shows hospital admissions (*admits*) and *deaths*.
 
@@ -78,7 +80,7 @@ Early on, the pandemic struck older age groups most heavily, but *cases* quickly
 
 Throughout the pandemic, the death rate for the 80+ group was much higher than any other group, but thankfully deaths even in this group have dropped to near zero. 
 
-*Admits* are increasing for all age groups, even the young, and are now above their spring 2021 levels. *Admit* rates vary with age groups exactly as one would expect: lowest in the young and increasing with age.
+*Admits* are increasing for all age groups, even the young, and are now above their spring 2021 levels and near or above their spring 2020 levels. *Admit* rates vary with age groups exactly as one would expect: lowest in the young and increasing with age.
 
 It remains to be seen whether the increasing *case* and *admit* rates will lead to higher *deaths* in the coming weeks.
 
@@ -129,7 +131,7 @@ The weekly DOH download reports data by age group. In past, the groups were 20-y
 
 #### Issues with DOH Undercounting {#dohjhu}
 
-Figures 5a-b compare DOH and JHU *cases* and *deaths* for Washington state to illustrate the undercount in the raw DOH data. The *cases* data matches well except for a few periods spanning several weeks, including most of May 2020. The *deaths* data matches less well and is presently much lower than JHU. I have no explanation for the discrepancies.
+Figures 5a-b compare DOH and JHU *cases* and *deaths* for Washington state to illustrate the undercount in the raw DOH data. The *cases* data matches well except for a few periods spanning several weeks, including most of May 2020. The *deaths* data matches less well and is presently much lower than JHU. I believe the discrepancy in the *deaths* date reflects the consistent undercount of recent DOH data. 
 
 ```{r out.width="50%",echo=FALSE,fig.show='asis',include=TRUE}
 knitr::include_graphics(file.path(figdir,'figure_005a_cases_dohjhu.png'));
