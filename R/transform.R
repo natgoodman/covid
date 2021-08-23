@@ -279,7 +279,9 @@ extra.cvdat=function(obj,...)
 extra.cvdoh=
   function(obj,fun=NULL,objs=NULL,versions=NULL,method='lm',args=list(fmla=param(extra.fmla)),
            err.type=param(extra.errtype),wmax=param(extra.wmax),mulmax=param(extra.mulmax),
-           mdl.ages=param(extra.ages),mdl.places=param(extra.places),
+           mdl.places=param(extra.places),mdl.ages=param(extra.ages),
+           mdl.minobjs=param(extra.minobjs)*wmax,
+           mdl.maxobjs=param(extra.maxobjs)*wmax,
            incompatible.ok=param(incompatible.ok),...) {
     args=cl(args,...);
     err.type=match.arg(err.type);
@@ -287,11 +289,15 @@ extra.cvdoh=
     places=places(obj);
     ages=ages(obj);
     vdate=vdate(obj);
-    if (is.null(mdl.ages)) mdl.ages=if(vdate<='2021-03-07') ages else 'all';
-    if (!length(mdl.ages%&%ages)) stop("ages does not contain mdl.ages: ",nv(mdl.ages));
+    ## NG 21-08-20: now have enough objects with new ages to compute models for each ages
+    ## if (is.null(mdl.ages)) mdl.ages=if(vdate<='2021-03-07') ages else 'all';
+    if (is.null(mdl.ages)) mdl.ages=ages;
     if (is.null(mdl.places)) mdl.places=places(obj);
-    if (!length(mdl.places%&%places)) stop("places does not contain mdl.places: ",nv(mdl.places));
     if (is.null(fun)) {
+      bad=mdl.ages%-%ages;
+      if (length(bad)) stop("obj missing mdl.age(s): ",paste(collapse=', ',bad));
+      bad=mdl.places%-%places;
+      if (length(bad)) stop("obj missing mdl.place(s): ",paste(collapse=', ',bad));
       if (is.null(objs)) {
         ## read objects
         what=what(obj);
@@ -301,6 +307,11 @@ extra.cvdoh=
         }
         objs=lapply(versions,function(version) raw(what,'doh',version));
       }
+      ## limit objs to ones with correct ages and make sure this leaves enough
+      objs.ok=objs[sapply(objs,function(obj) ages(obj)%>=%mdl.ages)];
+      if (length(objs.ok)>=mdl.minobjs) objs=tail(objs.ok,n=mdl.maxobjs)
+      else stop("Too few objects have required ages: have ",length(objs.ok)," objects, need ",
+                mdl.minobjs," objects. ages= ",paste(collapse=', ',ages));
       ## check whether edited objects are compatible
       cmp_pops(c(list(obj),objs),places=mdl.places,ages=mdl.ages,incompatible.ok=incompatible.ok);
       ## compute models

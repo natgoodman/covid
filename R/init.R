@@ -115,10 +115,11 @@ init=function(
   extra.errtype=cq('*','+',multiplicative,additive),  # error type for models
   extra.wmax=6,                  # max weeks for computing models
   extra.mulmax=4,                # max multiplicative error. larger values expand counts too much
-  extra.ages=NULL,               # ages used to compute models
-                                 #   default: ages(obj) if version<=21-03-07 else 'all'
-  extra.places='state',          # places used to compute models. default is fast and close enough
-                                 #   places(obj) also sensible choice
+                                 # ages, places for models defaults fast and close enough
+  extra.ages='all',              #   NULL means ages(obj)
+  extra.places='state',          #   NULL means places(obj)
+  extra.minobjs=2.5,             # how many objs do we need to compute model. multiple of wmax
+  extra.maxobjs=4,               # max number of objs used to compute model. multiple of wmax
   incompatible.ok=FALSE,         # require edited objects to be compatible
 
   age.label=list(),              # labels for custom ages. each entry is vector of labels for fmts

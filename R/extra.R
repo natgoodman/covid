@@ -33,7 +33,6 @@ extrafun=function(obj,objs,places,ages,method=cq(lm,wfun),args=list(),err.type,w
   vdates=as_date(sapply(objs,vdate));
   d.first=min(vdates)-7;
   d.last=max(vdates)-7*wmax;
-
   fun=sapply(ages,simplify=FALSE,function(age)
     sapply(places,simplify=FALSE,function(place) {
       wmat=extra_wmat(obj,objs,place,age,vdates,wmax,d.first,d.last);
