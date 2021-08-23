@@ -33,6 +33,7 @@ raw=function(what=cq(cases,admits,icus,deaths),datasrc=param(datasrc),version='l
   obj=newobj(data=data,datasrc=datasrc,what=what,version=version,
              id=FALSE,fit=FALSE,roll=FALSE,extra=FALSE,edit=FALSE);
   obj$pop=if(datasrc!='cdc') obj_pop(obj) else cdc_pop();
+  obj$mort=obj_mort(obj);
   clc(obj,switch(datasrc,
                  doh=list(unit=7,start.on='Sunday',center=FALSE,cumulative=FALSE),
                  jhu=list(unit=1,cumulative=TRUE),
@@ -358,19 +359,21 @@ edit_places_.cvdat=function(obj,EXPR=list(),KEEP=NULL,DROP=NULL) {
   EXPR=edit_fixneg(EXPR,'state',places(obj));
   data=edit_places1(obj$data,EXPR,KEEP,DROP);
   pop=edit_popp(obj$pop,EXPR,KEEP,DROP);
-  clc(obj,list(data=data,pop=pop,edit.places=TRUE));
+  mort=edit_mortp(obj$mort,EXPR,KEEP,DROP);
+  clc(obj,list(data=data,pop=pop,mort=mort,edit.places=TRUE));
 }
 edit_places_.cvdoh=function(obj,EXPR=list(),KEEP=NULL,DROP=NULL) {
   EXPR=edit_fixneg(EXPR,'state',places(obj));
   ages=ages(obj);
   data=sapply(ages,function(age) edit_places1(obj$data[[age]],EXPR,KEEP,DROP),simplify=FALSE);
   pop=edit_popp(obj$pop,EXPR,KEEP,DROP);
-  clc(obj,list(data=data,pop=pop,edit.places=TRUE));
+  mort=edit_popp(obj$mort,EXPR,KEEP,DROP);
+  clc(obj,list(data=data,pop=pop,mort=mort,edit.places=TRUE));
 }
 edit_places_.cvcdc=function(obj,EXPR=list(),KEEP=NULL,DROP=NULL) {
   EXPR=edit_fixneg(EXPR,'state',places(obj));
   ages=ages(obj);
-  ## edit data but not pop: USA has only one real place
+  ## edit data but not pop or mort: USA has only one real place
   data=sapply(ages,function(age) edit_places1(obj$data[[age]],EXPR,KEEP,DROP),simplify=FALSE);
   clc(obj,list(data=data,edit.places=TRUE));
 }
@@ -383,7 +386,8 @@ edit_ages_.cvdoh=function(obj,EXPR=list(),KEEP=NULL,DROP=NULL) {
   EXPR=edit_fixneg(EXPR,'all',ages(obj));
   data=edit_ages1(obj$data,EXPR,KEEP,DROP);
   pop=edit_popa(obj$pop,EXPR,KEEP,DROP);
-  clc(obj,list(data=data,pop=pop,edit.ages=TRUE));
+  mort=edit_morta(obj$mort,EXPR,KEEP,DROP);
+  clc(obj,list(data=data,pop=pop,mort=mort,edit.ages=TRUE));
 }
 edit_ages_.cvcdc=edit_ages_.cvdoh;
 ## edit_dates
