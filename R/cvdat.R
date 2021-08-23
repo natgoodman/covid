@@ -85,6 +85,7 @@ extra_method=function(obj) {
   if (extra==FALSE) 'raw' else extra;
 }
 pop=function(obj) obj$pop
+mort=function(obj) obj$mort
 
 ## simple attribute testers
 is_fit=function(obj) if (obj$fit==FALSE) FALSE else TRUE
