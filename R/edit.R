@@ -23,8 +23,11 @@ edit_places1=function(data,EXPR=list(),KEEP=NULL,DROP=NULL) {
 }
 ## edit places for pop metadata
 edit_popp=function(pop,EXPR=list(),KEEP=NULL,DROP=NULL) {
-  if (is.null(pop)) pop=load_pop();
   edit_df1(pop,EXPR,KEEP,DROP,'state');
+}
+## edit places for mort metadata
+edit_mortp=function(mort,EXPR=list(),KEEP=NULL,DROP=NULL) {
+  edit_df1(mort,EXPR,KEEP,DROP,'state');
 }
 ## edit columns for one data.frame of counts (counts from object or all of pop)
 ## 'total' is var that represents everything
@@ -85,13 +88,21 @@ edit_ages1=function(data,EXPR=list(),KEEP=NULL,DROP=NULL) {
 }
 ## edit ages for pop metadata
 edit_popa=function(pop,EXPR=list(),KEEP=NULL,DROP=NULL) {
-  if (is.null(pop)) pop=load_pop();
   ## transpose then process as data frame
   tpop=as.data.frame(t(pop));
   tpop=edit_df1(tpop,EXPR,KEEP,DROP,'all','ages');
   ## transpose back
   pop=as.data.frame(t(tpop));
   pop; 
+}
+## edit ages for mort metadata
+edit_morta=function(mort,EXPR=list(),KEEP=NULL,DROP=NULL) {
+  ## transpose then process as data frame
+  tmort=as.data.frame(t(mort));
+  tmort=edit_df1(tmort,EXPR,KEEP,DROP,'all','ages');
+  ## transpose back
+  mort=as.data.frame(t(tmort));
+  mort; 
 }
 ## parse dots and combine with explicit args. set EXPR, KEEP, DROP variables in parent
 ## edit_args=function(...,KEEP=NULL,DROP=NULL,SUM=list(),NEGATE=list(),SUB=list(),EXPR=list()) {
