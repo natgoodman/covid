@@ -35,7 +35,8 @@ import_mort=function() {
   wa=imort_wa();
   nonwa=imort_nonwa();
   mort=cbind(usa,state,wa,nonwa);
-  mort=mort[rownames(mort)!='NS',]
+  mort=mort[rownames(mort)!='NS',];
+  mort[is.na(mort)]=0;
   save_mort(mort);
   invisible(mort);
 }
@@ -196,132 +197,27 @@ ages_mort=function()
     '100','NS');
 places_mort=c('USA',places_all());
 
-## ---- compare mortpop vs main pop ----
-## derived from meta/obj_pop
-chk_mortpop=function() {
-  pop=load_pop();
-  mpop=load_mortpop();
-  places.pop=colnames(pop)%-% cq(Douglas_NE,Washtenaw_MI); # dunno why pop has these extra places
-  places.mpop=colnames(mpop);
-  bad=places.pop%--%places.mpop;
-  if (length(bad)) stop("pop and mortpop differ even after removing known redundant places. bad=",
-                        paste(collapse=', ',bad));
-  pop=pop[,places.mpop];
-  ## check 'NS' row - should be all NA
-  chk.ns=mpop['NS',];
-  bad=!is.na(chk.ns)
-  if (any(bad)) stop("mortpop 'NS' row contains non-NA value(s) for place(s): ",
-                     paste(collapse=', ',places.mpop[bad]));
-  mpop=mpop[rownames(mpop)!='NS',];
-  ## replace NA by 0 everywhere to simplify calculations
-  mpop[is.na(mpop)]=0
-  ## check 'all' row
-  pall=pop['all',];
-  mpall=mpop['all',];
-  chk.all=data.frame(t(mpall),t(pall));
-  colnames(chk.all)=cq(mpop,pop);  
-  chk.all$diff=with(chk.all,pop-mpop);
-  chk.all$ratio=with(chk.all,pop/mpop);
-  chk.all=chk.all[order(abs(chk.all$ratio)),];
-  BREAKPOINT('chk_mortpop: check all');
-  ## now work on ages
-  places.ages=c('USA',places_wa());     # places with age groups
-  ages.pop=rownames(pop)%-%'all';
-  ages.mpop=rownames(mpop)%-%'all';
-  ages.doh=c('0_19',paste(sep='_',seq(20,65,by=15),seq(34,79,by=15)),'80_');
-  ages.cdc=c(paste(sep='_',seq(0,70,by=10),seq(9,79,by=10)),'80_');
-
-  starts.pop=age_starts(ages.pop);
-  starts.mpop=age_starts(ages.mpop);
-  starts.doh=age_starts(ages.doh);
-  starts.cdc=age_starts(ages.cdc);
-
-  ## check CDC ages
-  cats=cut(starts.pop,c(starts.cdc,200),right=F,labels=ages.cdc);
-  groups=split(ages.pop,cats);
-  pop.cdc=do.call(rbind,lapply(groups,function(i) colSums(pop[i,places.ages])));
-  cats=cut(starts.mpop,c(starts.cdc,200),right=F,labels=ages.cdc);
-  groups=split(ages.mpop,cats);
-  mpop.cdc=do.call(rbind,lapply(groups,function(i) colSums(mpop[i,places.ages])));
-  diff.cdc=pop.cdc-mpop.cdc;
-  ratio.cdc=pop.cdc/mpop.cdc;
-  ## expect 80_ to be way off because mpop is missing data for 85_89 on up
-  diff.80=diff.cdc['80_',,drop=FALSE];
-  ratio.80=ratio.cdc['80_',,drop=FALSE];
-  diff.non80=diff.cdc[rownames(diff.cdc)!='80_',];
-  ratio.non80=ratio.cdc[rownames(ratio.cdc)!='80_',];
-  BREAKPOINT('chk_mortpop: check CDC');
-  
-  ## check DOH ages
-  cats=cut(starts.pop,c(starts.doh,200),right=F,labels=ages.doh);
-  groups=split(ages.pop,cats);
-  pop.doh=do.call(rbind,lapply(groups,function(i) colSums(pop[i,places.ages])));
-  cats=cut(starts.mpop,c(starts.doh,200),right=F,labels=ages.doh);
-  groups=split(ages.mpop,cats);
-  mpop.doh=do.call(rbind,lapply(groups,function(i) colSums(mpop[i,places.ages])));
-  diff.doh=pop.doh-mpop.doh;
-  ratio.doh=pop.doh/mpop.doh;
-  ## expect 80_ to be way off because mpop is missing data for 85_89 on up
-  diff.80=diff.doh['80_',,drop=FALSE];
-  ratio.80=ratio.doh['80_',,drop=FALSE];
-  diff.non80=diff.doh[rownames(diff.doh)!='80_',];
-  ratio.non80=ratio.doh[rownames(ratio.doh)!='80_',];
-  BREAKPOINT('chk_mortpop: check DOH');
-}
-## ---- quick look at mortality rates across ages and places ----
-## derived from meta/obj_pop
-chk_mort=function() {
-  pop=load_pop();
-  mort=load_mort();
-  places.pop=colnames(pop)%-% cq(Douglas_NE,Washtenaw_MI); # dunno why pop has these extra places
+## --- Aceess mort data ---
+## create mort for object
+obj_mort=function(obj) {
+  mort=param(mort);
+  if (is.null(mort)) mort=load_mort();
   places.mort=colnames(mort);
-  bad=places.pop%--%places.mort;
-  if (length(bad)) stop("pop and mort differ even after removing known redundant places. bad=",
-                        paste(collapse=', ',bad));
-  pop=pop[,places.mort];
-  ## check 'NS' row - should be all NA or small
-  chk.ns=mort['NS',];
-  BREAKPOINT('chk_mortpop: check NS - should be all NA or small');
-  mort=mort[rownames(mort)!='NS',];
-  ## replace NA by 0 everywhere to simplify calculations
-  mort[is.na(mort)]=0
-  ## check 'all' row
-  pall=pop['all',];
-  mall=mort['all',];
-  chk.all=as.data.frame(t(rbind(mall,pall,round(1e6*mall/pall))))
-  colnames(chk.all)=cq(mort,pop,ratio);  
-  BREAKPOINT('chk_mort: check all');
-  ## now work on ages
-  places.ages=c('USA',places_wa());     # places with age groups
-  ages.pop=rownames(pop)%-%'all';
+  places.obj=places(obj)%-%c('Unassigned','Out of WA','Unknown','USA F','USA U');
+  bad=places.obj%-%places.mort;
+  if (length(bad)) stop("Bad news: object contains unknown place(s): ",paste(collapse=', ',bad));
+  mort=mort[,places.obj,drop=FALSE];
   ages.mort=rownames(mort)%-%'all';
-  ages.doh=c('0_19',paste(sep='_',seq(20,65,by=15),seq(34,79,by=15)),'80_');
-  ages.cdc=c(paste(sep='_',seq(0,70,by=10),seq(9,79,by=10)),'80_');
-
-  starts.pop=age_starts(ages.pop);
-  starts.mort=age_starts(ages.mort);
-  starts.doh=age_starts(ages.doh);
-  starts.cdc=age_starts(ages.cdc);
-
-  ## check CDC ages
-  cats=cut(starts.pop,c(starts.cdc,200),right=F,labels=ages.cdc);
-  groups=split(ages.pop,cats);
-  pop.cdc=do.call(rbind,lapply(groups,function(i) colSums(pop[i,places.ages])));
-  cats=cut(starts.mort,c(starts.cdc,200),right=F,labels=ages.cdc);
-  groups=split(ages.mort,cats);
-  mort.cdc=do.call(rbind,lapply(groups,function(i) colSums(mort[i,places.ages])));
-  chk.cdc=round(1e6*mort.cdc/pop.cdc);
-  rat.cdc=chk.cdc/chk.cdc[,c('USA')];
-  BREAKPOINT('chk_mort: check CDC');
-
-  ## check DOH ages
-  cats=cut(starts.pop,c(starts.doh,200),right=F,labels=ages.doh);
-  groups=split(ages.pop,cats);
-  pop.doh=do.call(rbind,lapply(groups,function(i) colSums(pop[i,places.ages])));
-  cats=cut(starts.mort,c(starts.doh,200),right=F,labels=ages.doh);
-  groups=split(ages.mort,cats);
-  mort.doh=do.call(rbind,lapply(groups,function(i) colSums(mort[i,places.ages])));
-  chk.doh=round(1e6*mort.doh/pop.doh);
-  rat.doh=chk.doh/chk.doh[,c('USA')];
-  BREAKPOINT('chk_mort: check DOH');
+  ages.obj=ages(obj)%-%'all';
+  if (length(ages.obj)) {
+    starts.mort=age_starts(ages.mort);
+    starts.obj=age_starts(ages.obj);
+    cats=cut(starts.mort,c(starts.obj,200),right=F,labels=ages.obj);
+    groups=split(ages.mort,cats);
+  } else groups=NULL;
+   mort.obj=if(datasrc(obj)=='cdc')
+              data.frame(USA=c(all=mort['all',],sapply(groups,function(i) sum(mort[i,,drop=F]))))
+            else rbind(mort['all',], t(sapply(groups,function(i) colSums(mort[i,]))));
+  ## colnames(mort.obj)=places.obj;
+  mort.obj;
 }
