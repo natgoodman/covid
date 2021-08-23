@@ -7,16 +7,194 @@
 ## Copyright (C) 2021 Nat Goodman.
 ##
 ## Experiment with 'extra' transform: check, validate, compare
-## Could be generalized to other transforms
+## New version circa 21-08-21
 ##
 ## This software is open source, distributed under the MIT License. See LICENSE
 ## file at https://github.com/natgoodman/NewPro/FDR/LICENSE 
 ##
 ###################################################################################
-## Make base objects.
+## make wmats using 'extra' objs for all but final column
+make_wmats=
+  function(what=cq(cases,admits,deaths),need.objs=TRUE,
+           ## places, ages for building model
+           mdl.places=param(extra.places),mdl.ages=param(extra.ages),
+           wmax=param(extra.wmax),
+           minobjs=param(extra.minobjs)*wmax,
+           maxobjs=param(extra.maxobjs)*wmax,
+           ## places, ages for testing model
+           places=cq(state,King,Snohomish,Pierce,Adams,'San Juan'),
+           ages=c('0_19','80_','all'),
+           ## places=cq(state),ages=c('all'),
+           ## min, max versions. NULL means compute from mdl.minobjs, mdl.maxobjs
+           vsn.min=NULL,vsn.max=NULL) {
+    what=match.arg(what);
+    versions=list_versions('doh',what);
+    n=length(versions);
+    if (is.null(vsn.min)) vsn.min=versions[minobjs+1];
+    if (is.null(vsn.max)) vsn.max=versions[n];
+    places.keep=unique(c(mdl.places,places));
+    ages.keep=unique(c(mdl.ages,ages));
+    keep=unique(c(places.keep,ages.keep));
+    ## BREAKPOINT('xper_objs: before filtering versions')
+    versions=btwn_vsn(versions,vsn.min,vsn.max);
+    if (need.objs) {
+      objs.src=lapply(versions,function(vsn) raw(what,'doh',vsn));
+      ## filter to ones with desired ages
+      ## BREAKPOINT('xper_objs: before filtering objs.src')
+      objs.src=objs.src[sapply(objs.src,function(obj) ages.keep%<=%ages(obj))];
+      ## BREAKPOINT('xper_objs: after filtering objs.src')
+      objs.raw=lapply(objs.src,function(obj) edit(obj,KEEP=keep));
+      objs.extra=lapply(objs.raw,function(obj)
+        extra(obj,mdl.places=mdl.places,mdl.ages=mdl.ages,
+              wmax=wmax,mdl.minobjs=minobjs,mdl.maxobjs=maxobjs));
+      assign_global(objs.src,objs.raw,objs.extra);
+    }
+    n=length(objs.src);
+    versions=sapply(objs.src,version);
+    vdates=as_date(versions);
+    ## BREAKPOINT('xper_objs: after making objects')
+    d.first=min(vdates);
+    ## d.last=max(vdates)-7*wmax;
+    d.last=max(vdates);
+    obj=objs.raw[[n]];
+    objs=objs.extra[-n];
+    wmats=sapply(places,simplify=FALSE,function(place) 
+      sapply(ages,simplify=FALSE,function(age) {
+        ## BREAKPOINT('xper_objs: before wmat ',nv(age,place))
+        wmat=extra_wmat(obj,objs,place,age,wmax=wmax,d.first=d.first,d.last=d.last);
+        ## BREAKPOINT('xper_objs: after wmat ',nv(age,place))
+        wmat;
+      }));
+    ## BREAKPOINT('xper_objs: after wmats loop');
+    invisible(wmats);
+  }
+make_emats=function(wmats,err.type=param(extra.errtype)) {
+  err.type=match.arg(err.type);
+  err.type=switch(err.type,multiplicative='*',additive='+',err.type);
+  emats=lapply(wmats,function(wmats) lapply(wmats,function(wmat) make_emat(wmat,err.type)));
+  invisible(emats);
+}
+make_emat=function(wmat,err.type=param(extra.errtype)) {
+  err.type=match.arg(err.type);
+  err.type=switch(err.type,multiplicative='*',additive='+',err.type);
+  emat=if(err.type=='*') wmat/wmat[,'final'] else wmat-wmat[,'final'];
+  invisible(emat);
+}
+    
+## plot one wmat or emat
+plot_mat=plot_wmat=plot_emat=
+  function(mats,place='state',age='all',ws=cq(1,3,5),xmin=NULL,
+           what=cq(cases,admits,deaths),
+           type.mat=c('wmat','mul emat','add emat',param(extra.errtype))) {
+    if (is_list(mats)) {
+      mat=mats[[place]][[age]];
+      if (is.null(mat)) stop("Invalid place, age for 'mats': ",nv(place,age));
+    } else mat=mats;
+    if (!is.matrix(mat)) stop("'mat' has incorrect type. Should be matrix. Is ",class(wmat));
+    ws=c(ws%-%'final','final');           # make sure 'final' is last
+    if (length(ws%-%colnames(mat))) {
+      valid=colnames(mat);
+      bad=ws%-%valid;
+      stop("'mat' missing w(s): ",paste(collapse=', ',bad),
+           ". colnames(mat): ",paste(collapse=', ',valid));
+    }
+    if (!is.null(xmin)) mat=mat[rownames(wmat)>=xmin,];
+    what=match.arg(what);
+    type.mat=match.arg(type.mat);
+    type.mat=switch(type.mat,
+                    multiplicative='*','mul emat'='*',additive='+','add emat'='+',type.mat);
+    title.mat=switch(type.mat,
+                    '*'='multiplicative emat','+'='additive emat',type.mat);
+    title=paste(title.mat,what,nv(SEP=', ',place,age));
+    x=as_date(rownames(mat));
+    y=mat[,ws];
+    col=col_mat(ws);
+    lwd=lwd_mat(ws);
+    lty=lty_mat(ws);
+    ylab=switch(type.mat, wmat='count','*'='extra / final','+'='extra - final');
+    plotm(x=x,y=y,legend='topright',col=col,lwd=lwd,lty=lty,title=title,xlab='date',ylab=ylab);
+  }
+## plot one 'w' for one place, multiple ages across multiple wmats or emats
+## works best for multiplicative emats
+plot_w=
+  function(mats,place='state',ages=NULL,w=1,xmin=NULL,
+           what=cq(cases,admits,deaths),mulemat.only=TRUE,
+           type.mat=c('*','wmat','mul emat','add emat',param(extra.errtype))) {
+    if (!is_list(mats)) stop("'plot_w' needs list of 'mats'");
+    ## grab first mat to check 'w'. blithely assume all mats have same structure
+    mat=mats[[1]][[1]];
+    if (is.null(mat)) stop("Looks like 'mats' empty or has wrong structure");
+    if (!is.matrix(mat)) stop("'mat' has incorrect type. Should be matrix. Is ",class(wmat));
+    if (w%notin%colnames(mat)) {
+      valid=colnames(mat);
+      stop("'w' not column of 'mat': ",nv(w),". colnames(mat): ",paste(collapse=', ',valid));
+    }
+    if (is.null(ages)) ages=names(mats[[1]]);
+    what=match.arg(what);
+    type.mat=match.arg(type.mat);
+    type.mat=switch(type.mat,
+                    multiplicative='*','mul emat'='*',additive='+','add emat'='+',type.mat);
+    if (mulemat.only&&type.mat!='*')
+      stop("'plot_w' works best for multiplicative emats. 'mulemat.only' is TRUE, but 'type.mat' is not '*'",nv(type.emat));
+    title.mat=switch(type.mat,
+                    '*'='multiplicative emat','+'='additive emat',type.mat);
+    title=paste(title.mat,what,nv(SEP=', ',place,w));
+    x=as_date(rownames(mat));
+    y=do.call(cbind,lapply(emats[[place]],function(mat) mat[,w]));
+    if (!is.null(xmin)) y=y[rownames(y)>=xmin,];
+    x=as_date(rownames(y));
+    col=col_ages(ages);
+    lwd=2;
+    lty='solid';
+    ylab=switch(type.mat, wmat='count','*'='extra / final','+'='extra - final');
+    plotm(x=x,y=y,legend='bottomleft',col=col,lwd=lwd,lty=lty,title=title,xlab='date',ylab=ylab);
+  }
+## make line properties (col, lwd, lty) for mat (emat or emat)
+col_mat=col_wmat=col_emat=
+  function(ws=cq(1,3,5,final),wmax=param(extra.wmax),do.final=TRUE,
+           col.pal='rainbow',col.final='grey50',skip.beg=0,skip.end=0) {
+    col=if(do.final) c(col_brew(wmax,col.pal,skip.beg=skip.beg,skip.end=skip.end),col.final)
+        else col_brew(wmax+1,col.pal,skip.beg=skip.beg,skip.end=skip.end);
+    col=setNames(col,c(seq_len(wmax),'final'));
+    if (is.null(ws)) col else col[ws];
+  }
+lwd_mat=lwd_wmat=lwd_emat=
+  function(ws=cq(1,3,5,final),wmax=param(extra.wmax),do.final=TRUE,
+           lwd=2,lwd.ws=lwd,lwd.final=(lwd.ws+1)[1]) {
+    lwd=if(do.final) c(rep(lwd.ws,wmax),lwd.final)
+        else rep(lwd.ws,wmax+1);
+    lwd=setNames(lwd,c(seq_len(wmax),'final'));
+    if (is.null(ws)) lwd else lwd[ws];
+  }
+lty_mat=lty_wmat=lty_emat=
+  function(ws=cq(1,3,5,final),wmax=param(extra.wmax),do.final=TRUE,
+           lty='dotted',lty.ws=lty,lty.final='solid') {
+    lty=if(do.final) c(rep(lty.ws,wmax),lty.final)
+        else rep(lty.ws,wmax+1);
+    lty=setNames(lty,c(seq_len(wmax),'final'));
+    if (is.null(ws)) lty else lty[ws];
+  }
+col_ages=
+  function(ages,do.all=TRUE,col.pal='rainbow',col.all='black',skip.beg=0,skip.end=0) {
+    n=length(ages);
+    col=if(do.all) c(col.all,col_brew(n-1,col.pal,skip.beg=skip.beg,skip.end=skip.end))
+        else col_brew(n,col.pal,skip.beg=skip.beg,skip.end=skip.end);
+    setNames(col,ages);
+  }
+
+## between allowing missing endpoint. used in new and old code
+btwn_vsn=function(vsn,vsn.min=NULL,vsn.max=NULL) {
+  want=if(is.null(vsn.min)&&is.null(vsn.max)) vsn
+       else if (is.null(vsn.min)) vsn<=vsn.max
+       else if (is.null(vsn.max)) vsn>=vsn.min
+       else btwn_cc(vsn,vsn.min,vsn.max);
+  vsn[want];
+}
+#################### OLD CODE below here. Last used 21-03-19 ####################
+## Make base objects. 
 ## vsn.min default is min version with enough earlier versions for 'extra'
 ## vsn.max default is max version with original age groups
-xper_objs=
+make_xper_objs=
   function(vsn.min='20-05-31',vsn.max='21-02-28',
            places=cq(state,King,Snohomish,Pierce,Adams,'San Juan'),ages=NULL,
            idx=list(xorig=TRUE,xa=TRUE,xas=TRUE,xs=TRUE,
@@ -78,6 +256,7 @@ xper_objs=
     xper_global(ids);
     ids;
   }
+
 ## pick objects from object lists. all must be same length
 xper_pick=function(objs,i.pick=NULL,n.pick=NULL,vsn.pick=NULL) {
   n1=length(objs[[1]]);
@@ -150,14 +329,5 @@ xper_global=function(ids) {
     assign(name,objs,globalenv())});
   invisible();
 }
-## between allowing missing endpoint
-btwn_vsn=function(vsn,vsn.min=NULL,vsn.max=NULL) {
-  want=if(is.null(vsn.min)&&is.null(vsn.max)) vsn
-       else if (is.null(vsn.min)) vsn<=vsn.max
-       else if (is.null(vsn.max)) vsn>=vsn.min
-       else btwn_cc(vsn,vsn.min,vsn.max);
-  vsn[want];
-}
-
   
 
