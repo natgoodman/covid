@@ -30,9 +30,10 @@ doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',figs.all=TRUE,
   }
   if (need.init) init_doc(doc='updat',version=version,...);
   ## if (is.null(xmin.raw)&&version>='21-05-30') xmin.raw='2021-02-15';
-  if (is.null(xmin.raw))
+  if (missing(xmin.raw))
     if (btwn_co(version,'21-05-30','21-07-11')) xmin.raw='2021-02-15'
-    else if (version>='21-07-11') xmin.raw='2021-05-01';  
+    else if (btwn_co(version,'21-07-11','21-08-22')) xmin.raw='2021-05-01'
+    else xmin.raw='2021-06-01';
   places.wa<<-cq(state,King,Snohomish,Pierce);
   labels.wa=setNames(c('Washington state','Seattle (King County)',
                        'Snohomish (North of Seattle)','Pierce (South of Seattle)'),
@@ -79,8 +80,10 @@ doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',figs.all=TRUE,
     dotbl('counts_deaths_dly',counts.deaths.dly);
 
     assign_global(
-      trend.cases,trend.deaths,trend.cases.raw,trend.deaths.raw,trend.cases.dly,trend.deaths.dly,
-      counts.cases,counts.deaths,counts.cases.raw,counts.deaths.raw,
+      trend.cases,trend.deaths,trend.cases.std,trend.deaths.std,
+      trend.cases.raw,trend.deaths.raw,trend.cases.dly,trend.deaths.dly,
+      counts.cases,counts.deaths,counts.cases.std,counts.deaths.std,
+      counts.cases.raw,counts.deaths.raw,
       counts.cases.dly,counts.deaths.dly);
   }
   if (!do.fig) return(version);
@@ -97,49 +100,49 @@ doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',figs.all=TRUE,
           jhu.cases,places=places.nonwa,ages='all',per.capita=TRUE,lwd=2,
           title=figtitle("Weekly cases per million in non-Washington locations"),
           legends=list(labels=labels.nonwa)));
-  ## recent raw data very ragged in some versions. include figures showing this  
+  ## recent raw data very ragged in some versions. include figures showing this
   dofig('cases_wa_ragged',
         plot_finraw(
           datasrc='jhu',what='cases',places=places.wa,ages='all',per.capita=TRUE,lwd=2,
-          xmin=xmin.raw,
+          xmin=xmin.raw,ymax=3100,
           title=figtitle(
             "Weekly cases per million in Washington locations showing recent raw data"),
-          legends=list(labels=labels.wa)));
+          where.legend='topleft',legends=list(labels=labels.wa)));
   dofig('cases_nonwa_ragged',
         plot_finraw(
           datasrc='jhu',what='cases',places=places.nonwa,ages='all',per.capita=TRUE,lwd=2,
-          xmin=xmin.raw,
+          xmin=xmin.raw,ymax=3100,
           title=figtitle(
             "Weekly cases per million in non-Washington locations showing recent raw data"),
-          legends=list(labels=labels.nonwa)));
+          where.legend='topleft',legends=list(labels=labels.nonwa)));
   ## Figures 2a-b deaths
   figblk_start();
   dofig('deaths_wa',
         plot_cvdat(
           jhu.deaths,places=places.wa,ages='all',per.capita=TRUE,lwd=2,
           title=figtitle("Weekly deaths per million in Washington locations"),
-          legend='top',legends=list(labels=labels.wa)));
+           where.legend='topright',legends=list(labels=labels.wa)));
   dofig('deaths_nonwa',
         plot_cvdat(
           jhu.deaths,places=places.nonwa,
           ages='all',per.capita=TRUE,lwd=2,
           title=figtitle("Weekly deaths per million in non-Washington locations"),
-          legend='top',legends=list(labels=labels.nonwa)));
+          where.legend='topright',legends=list(labels=labels.nonwa)));
   ## recent raw data very ragged in some versions. include figures showing this
   dofig('deaths_wa_ragged',
         plot_finraw(
           datasrc='jhu',what='deaths',places=places.wa,ages='all',per.capita=TRUE,lwd=2,
-          xmin=xmin.raw,
+          xmin=xmin.raw,ymax=15,
           title=figtitle(
             "Weekly deaths per million in Washington locations showing recent raw data"),
-          legends=list(labels=labels.wa)));
+          where.legend='top',legends=list(labels=labels.wa)));
   dofig('deaths_nonwa_ragged',
         plot_finraw(
           datasrc='jhu',what='deaths',places=places.nonwa,ages='all',per.capita=TRUE,lwd=2,
-          xmin=xmin.raw,
+          xmin=xmin.raw,ymax=15,
           title=figtitle(
             "Weekly deaths per million in non-Washington locations showing recent raw data"),
-          legends=list(labels=labels.nonwa)));
+           where.legend='top',legends=list(labels=labels.nonwa)));
   if ('doh'%notin%datasrc) return();
   ## Figures 3,4  WA DOH cases, deaths by age
   ages=sort(ages(doh.cases)%-%'all');
