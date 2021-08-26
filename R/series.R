@@ -3,7 +3,7 @@
 ## Author:  Nat Goodman
 ## Created: 20-07-13
 ##
-## Copyright (C) 2020 Nat Goodman.
+## Copyright (C) 2020-2021 Nat Goodman.
 ## 
 ## Generate data series and blocks from cvdat objects
 ## Used by plot_cvdat and data_cvdat
@@ -69,7 +69,21 @@ series_percap=function(series) {
   });
   list(objs=objs,xattr=xattr,series=series);
 }
-
+series_permort=function(series) {
+  xattr=series$xattr;
+  objs=series$objs;
+  if ('age' %notin% colnames(xattr)) age='all';
+  data=series$series;
+  series=withrows(xattr,row,{
+    data=data[[series]];
+    mort=mort(objs[[obj]]);
+    mort=if(datasrc=='cdc') mort[age,'USA'] else mort[age,place];
+    if (is.null(mort)) mort=NA;
+    if (!cumulative) mort=(mort/365)*unit;               # cumulative, unit set in xattr
+    data.frame(date=data$date,y=data$y/mort);
+  });
+  list(objs=objs,xattr=xattr,series=series);
+}
 ## there can be up to 3 lines blocks
 ## with the caution that graphs with more than 2 blocks may be inscrutable
 ## block names can include final 's' - seems a likely typo otherwise
