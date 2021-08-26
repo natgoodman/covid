@@ -195,7 +195,7 @@ ages_mort=function()
   c('all','0','1_4',
     sapply(seq(5,95,by=5),function(start) paste0(start,'_',start+4)),
     '100','NS');
-places_mort=c('USA',places_all());
+places_mort=function() c('USA',places_all());
 
 ## --- Aceess mort data ---
 ## create mort for object
