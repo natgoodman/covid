@@ -5,7 +5,7 @@
 ##          from plot.R (now in R.BAK) created 20-05-06
 ##          from covid.R created circa 20-04-26
 ##
-## Copyright (C) 2020 Nat Goodman.
+## Copyright (C) 2020-2021 Nat Goodman.
 ## 
 ## Plot cvdat objects
 ##
@@ -35,7 +35,8 @@
 ## vlab, hlab contol writing vline, hline values along axes
 ## vhdigits is number of digits for these values (only used for horizontal (y-axis) values)
 plot_cvdat=
-  function(objs,places='state',ages=NULL,per.capita=FALSE,incompatible.ok=param(incompatible.ok),
+  function(objs,places='state',ages=NULL,per.capita=FALSE,per.mort=FALSE,
+           incompatible.ok=param(incompatible.ok),
            type='l',add=FALSE,xlim=NULL,xmin=NULL,xmax=NULL,ylim=NULL,ymin=NULL,ymax=NULL,
            col=NULL,lty=NULL,lwd=NULL,
            col1='black',lty1='solid',lwd1=2,
@@ -48,7 +49,7 @@ plot_cvdat=
            vline=NULL,hline=NULL,vhlty='dashed',vhcol='grey50',
            vhlwd=1,vlab=TRUE,hlab=TRUE,vhdigits=2,
            attrs=cq(unit,cumulative,what,datasrc,version,id,fit,roll,extra,edit),
-           attrs.ylab=cq(unit,cumulative,what),
+           attrs.ylab=cq(what),
            attrs.legend=attrs,
            blocks.order=cq(obj,place,age,objs,places,ages),
            legend.order=NULL) {
@@ -71,8 +72,10 @@ plot_cvdat=
         stop("Invalid ages: ",paste(collapse=', ',bad),
              ".\nValid ages for these objects are: ",paste(collapse=', ',ages.all));
     }
+    if (per.capita&&per.mort) stop ("Cannot specify both 'per.capita' and 'per.mort'");
     series=data_series(objs,places,ages,incompatible.ok,attrs);
     if (per.capita) series=series_percap(series);
+    if (per.mort) series=series_permort(series);
     ct=ct_attrs(series,attrs);
     blocks=series_blocks(series,ct,blocks.order,attrs);
     
@@ -85,8 +88,8 @@ plot_cvdat=
       ## new plot. do everything
       if (is.null(xlim)) xlim=auto_xlim(series,xlim,xmin,xmax);
       if (is.null(ylim)) ylim=auto_ylim(series,ylim,ymin,ymax);
-      if (is.null(ylab)) ylab=auto_ylab(series,attrs.ylab,per.capita);
-      if (is.null(title)) title=auto_title(series,ct,attrs,per.capita);
+      if (is.null(ylab)) ylab=auto_ylab(series,attrs.ylab,per.capita,per.mort);
+      if (is.null(title)) title=auto_title(series,ct,attrs,per.capita,per.mort);
       if (is.na(cex.title)) cex.title=cex_title(title);
       ## setup new plot
       plot(x=xlim,y=ylim,type='n',xaxt='n',xlab=NA,ylab=ylab,main=title,cex.main=cex.title);
@@ -136,17 +139,15 @@ plot_cvdat=
 
 auto_title=
   function(series,ct=NULL,attrs=cq(unit,cumulative,what,datasrc,version,id,fit,roll,extra),
-           per.capita=FALSE,SEP='&') {
+           per.capita=FALSE,per.mort=FALSE,SEP='&') {
     if (is.null(ct)) ct=ct_attrs(series,attrs);
     ## attrs=ct$sv.attrs[ct$sv.attrs!='obj'];    # don't want 'obj' in title
     attrs=ct$sv.attrs %-% cq(obj,series);     # don't want 'obj' or 'series' in title
     xattr=unique(series$xattr[,attrs]);
-    if (xattr$cumulative) xattr$unit=FALSE; # unit doesn't matter for cum
+    if (('cumulative'%in%attrs)&&xattr$cumulative) xattr$unit=FALSE; # unit doesn't matter for cum
     vals=sapply(attrs,function(attr) name_label(attr,xattr[[attr]],fmt='title'),simplify=FALSE);
-    if (per.capita&&'what'%in%attrs) {
-      ## add per capita label to what
-      vals$what=paste(vals$what,'per Million')
-    }
+    if (per.capita&&'what'%in%attrs) vals$what=paste(vals$what,'per Million');
+    if (per.mort&&'what'%in%attrs) vals$what=paste(vals$what,'Relative to All-Cause Mortality');
     terms=unlist(sapply(attrs,function(attr) paste_title(attr,vals[[attr]],SEP=SEP)));
     paste(collapse=' ',terms);
   }
@@ -250,16 +251,15 @@ auto_ylim=function(series,ylim=NULL,ymin=NULL,ymax=NULL) {
     }}
  ylim;
 }
-auto_ylab=function(series,attrs=cq(unit,cumulative,what),per.capita=FALSE,SEP='&') {
+## NG 21-08-26: simplify ylab to just 'what' and per.capita,per.mort
+auto_ylab=function(series,attrs=cq(what),per.capita=FALSE,per.mort=FALSE,SEP='&') {
   xattr=series$xattr;
-  attrs=attrs %&% colnames(xattr);
-  xattr=unique(xattr[,attrs]);
-  if (all(xattr$cumulative)) xattr$unit=FALSE; # unit doesn't matter for cum
+  attrs=attrs%&%colnames(xattr);
+  xattr=unique(xattr[,attrs,drop=FALSE]);
+  ## if (all(xattr$cumulative)) xattr$unit=FALSE; # unit doesn't matter for cum
   vals=sapply(attrs,function(attr) name_label(attr,xattr[[attr]],fmt='ylab'),simplify=FALSE);
-  if (per.capita&&'what'%in%attrs) {
-    ## add per capita label to what
-    vals$what=paste(vals$what,'per million')
-  }
+  if (per.capita) vals$what=paste(vals$what,'per million');
+  if (per.mort) vals$what=paste(vals$what,'relative to mortality');
   terms=unlist(sapply(attrs,function(attr) paste_label(vals[[attr]],SEP=SEP)));
   paste(collapse=' ',terms);
 }
