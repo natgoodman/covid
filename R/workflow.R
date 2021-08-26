@@ -34,11 +34,11 @@ do_dlim=function(datasrc=param(datasrc),version=NULL,
     print(paste0('--- skiping ',datasrc[!ok],': download failed'));
     datasrc=datasrc[ok];
   }
-  if (do.import) {
-    if (cmp.prev) datasrc.ok=cmp_prev(datasrc,version);
-    if (length(datasrc.ok)) do_import(datasrc.ok,version);
+  if (cmp.prev) datasrc=cmp_prev(datasrc,version);
+  if (length(datasrc)) {
+    if (do.import) do_import(datasrc,version);
+    if (do.pjto) pjto(datasrc,version);
   }
-  if (do.pjto) pjto(datasrc,version);
   version;
 }
 do_download=function(datasrc=param(datasrc),version=NULL,
