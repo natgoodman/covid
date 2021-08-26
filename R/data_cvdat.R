@@ -4,7 +4,7 @@
 ## Created: 20-07-13
 ##          from code in transform.R
 ##
-## Copyright (C) 202 Nat Goodman.
+## Copyright (C) 2020-2021 Nat Goodman.
 ## 
 ## Generate data frame cvdat objects
 ##
@@ -16,7 +16,7 @@
 ## like plot_cvdat but generates data frome
 ## cnm is optional list of colnames
 data_cvdat=
-  function(objs,places='state',ages=NULL,per.capita=FALSE,cnm=NULL,
+  function(objs,places='state',ages=NULL,per.capita=FALSE,per.mort=FALSE,cnm=NULL,
            incompatible.ok=param(incompatible.ok),
            attrs=cq(unit,cumulative,what,datasrc,version,fit,roll,extra,edit)) {
     if (is_cvdat(objs)) objs=list(objs);
@@ -38,14 +38,20 @@ data_cvdat=
         stop("Invalid ages: ",paste(collapse=', ',bad),
              ".\nValid ages for these objects are: ",paste(collapse=', ',ages.all));
     }
+    if (per.capita&&per.mort) stop ("Cannot specify both 'per.capita' and 'per.mort'");
     series=data_series(objs,places,ages,incompatible.ok,attrs);
     if (per.capita) series=series_percap(series);
+    if (per.mort) series=series_permort(series);
     ct=ct_attrs(series,attrs)
     ## construct colnames. apply to series so merge won't complain about duplicate colnames
     nattr=series$xattr[,ct$mv.attrs%-%cq(series,obj),drop=FALSE];
+    ## NG 21-08-26: colnames from paste_legend too verbose. try something closer to first try
     ## names=apply(nattr,1,function(row) paste(collapse=';',row));
     ## adapt code from plot_cvdat - produces nicer colnames
-    if (is.null(cnm)) cnm=unlist(withrows(nattr,row,paste_legend(row,SEP=';')))
+    ## if (is.null(cnm)) cnm=unlist(withrows(nattr,row,paste_legend(row,SEP=';')))
+    if (is.null(cnm))
+      cnm=apply(nattr,1,function(row)
+        row=paste(collapse=';',do.call(c,lapply(row,function(x) if (x=='FALSE') NULL else x))))
     else if (length(cnm)<nrow(nattr))
       stop("'cnm' too short: result has ",nrow(nattr),
            " columns; cnm=c(",paste(collapse=',',cnm),") has only ",length(cnm)," names");
