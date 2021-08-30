@@ -21,20 +21,23 @@
 ## --- Functions for updatsupp sections ---
 sect_byage=
   function(ageid=1:4,where=param(where),what=param(what),datasrc=param(datasrc),
-           objid='std',conf.prob=cq(conf,prob),
+           objid='std',conf.prob=cq(conf,prob),do.mort=FALSE,
            ages=NULL,places=NULL,col=NULL) {
     what=what_var(what,choices=cq(cases,admits,icus,deaths,admdea));
     datasrc=datasrc_var(datasrc,choices=cq(cdc,doh));
     objid=match.arg(objid,choices=cq(std,cum,inc),several.ok=TRUE);
     objid=unique(ifelse(objid=='inc','std',objid));
     conf.prob=match.arg(conf.prob,choice=cq(conf,prob),several.ok=TRUE);
-    ## expand variables and add conf.prob to cdc cases
-    cases=merge(expand.grid(ageid=ageid,where=where,what=what,datasrc=datasrc,objid=objid,
-                            stringsAsFactors=FALSE),
-                data.frame(what='cases',datasrc='cdc',conf.prob,stringsAsFactors=FALSE),
+    ## expand variables and tack-on conf.prob to cdc cases
+    cases=expand.grid(ageid=ageid,where=where,what=what,datasrc=datasrc,objid=objid,
+                      per.mort=if(do.mort) c(TRUE,FALSE) else FALSE,
+                      stringsAsFactors=FALSE);
+    cases=merge(cases,data.frame(what='cases',datasrc='cdc',conf.prob,stringsAsFactors=FALSE),
                 all.x=TRUE);
-    ## prune invalid what, datasrc combinations
+    ## prune invalid combinations
     cases=subset(cases,subset=(what!='icus'|datasrc=='cdc'));  
+    cases=subset(cases,subset=(what=='deaths'|!per.mort));
+    cases$per.capita=!cases$per.mort;
     withrows(cases,case,{
       ages=ageid_var(ageid,datasrc);
       places=where_var(where,places);
@@ -52,19 +55,23 @@ sect_byage=
         if(what=='cases'&datasrc=='cdc'&conf.prob=='prob') paste('confirmed+probable',what)
         else if(what=='admdea') 'admits and deaths' else what;
       if (param(verbose))
-        print(paste('+++ plotting',datasrc,what.label,objid.label,'by age',nv(ageid)));
+        print(paste('+++ plotting',datasrc,what.label,objid.label,'by age',nv(ageid,per.mort)));
       pfx=paste(sep='_','byage',what.label,objid.label,datasrc,ageid);
-      title.pfx=paste(objid.title,what.title,"per million by age in");
+      title.pfx=paste(objid.title,what.title,
+                      if(per.capita) "per million" else "relative to expected mortality",
+                      "by age in");
       if (what!='admdea') {
         obj=objs[[1]];
         if (what=='cases'&datasrc=='cdc') obj=cdc_cases(obj,conf.prob);
-        data=data_cvdat(obj,places=places,ages=ages,per.capita=TRUE);
+        data=data_cvdat(obj,places=places,ages=ages,per.capita=per.capita,per.mort=per.mort);
         ymax=max(data[,-1],na.rm=TRUE);
         figblk_start();
         sapply(places,function(place) {
-          dofig(paste(sep='_',pfx,place),
+          fname=paste(collapse='_',c(pfx,place,if(per.mort) 'permort'));
+          dofig(fname,
                 plot_cvdat(
-                  obj,places=place,ages=ages,col=col,per.capita=TRUE,lwd=2,ymax=ymax,
+                  obj,places=place,ages=ages,col=col,per.capita=per.capita,per.mort=per.mort,
+                  lwd=2,ymax=ymax,
                   title=figtitle(paste(title.pfx,labels[place]))));
         });
       } else {
@@ -84,7 +91,7 @@ sect_byage=
   }
 sect_byplace=
   function(where=param(where),what=param(what),datasrc=param(datasrc),
-           objid='std',conf.prob=cq(conf,prob),
+           objid='std',conf.prob=cq(conf,prob),do.mort=FALSE,
            places=NULL,col=NULL) {
     what=what_var(what,choices=cq(cases,admits,icus,deaths));
     datasrc=datasrc_var(datasrc);
@@ -92,8 +99,10 @@ sect_byplace=
     objid=unique(ifelse(objid=='inc','std',objid));
     conf.prob=match.arg(conf.prob,choice=cq(conf,prob),several.ok=TRUE);
     ## expand variables and tack-on conf.prob to cdc cases
-    cases=merge(expand.grid(where=where,what=what,datasrc=datasrc,objid=objid,
-                            stringsAsFactors=FALSE),
+    cases=expand.grid(where=where,what=what,datasrc=datasrc,objid=objid,
+                      per.mort=if(do.mort) c(TRUE,FALSE) else FALSE,
+                      stringsAsFactors=FALSE);
+    cases=merge(cases,
                 data.frame(what='cases',datasrc='cdc',conf.prob,stringsAsFactors=FALSE),
                 all.x=TRUE);
     ## prune invalid what, datasrc combinations
@@ -101,8 +110,8 @@ sect_byplace=
                  subset=((what%in%cq(cases,deaths)) |              # all have cases, deaths
                          (what%in%cq(admits,admdea)&datasrc%in%cq(doh,cdc)) | 
                          (what=='icus'&datasrc=='cdc')));
-    ## prune invalid what, datasrc combinations
-    cases=subset(cases,subset=(what!='icus'|datasrc=='cdc'));  
+    cases=subset(cases,subset=(what=='deaths'|!per.mort));
+    cases$per.capita=!cases$per.mort;
     withrows(cases,case,{
       places=where_var(where,places);
       obj=get_obj(datasrc,what,objid);
@@ -119,20 +128,28 @@ sect_byplace=
                   else {if(grepl('^nonwa',where)) 'non-Washington'
                   else {if(where=='fav')'Favorite' else 'USA'}}}
       labels=names(places);
-      if (param(verbose)) print(paste('+++ plotting',datasrc,what.label,objid.label,where));
+      if (param(verbose)) print(paste('+++ plotting',datasrc,what.label,objid.label,where,
+                                      nv(per.mort)));
       pfx=paste(sep='_','byplace',what.label,objid.label,datasrc,where);
-      title.pfx=paste(objid.title,what.title,"per million from",toupper(datasrc));
+      title.pfx=paste(objid.title,what.title,
+                      if(per.capita) "per million" else "relative to expected mortality",
+                      "from",toupper(datasrc));
       figblk_start();
-      dofig(pfx,
+      fname=paste(collapse='_',c(pfx,if(per.mort) 'permort'));
+      dofig(fname,
             plot_cvdat(
-              obj,places=places,ages='all',per.capita=TRUE,lwd=2,col=col,
+              obj,places=places,ages='all',per.capita=per.capita,per.mort=per.mort,
+              lwd=2,col=col,
               title=figtitle(paste(title.pfx,"in",where.title,"locations")),
               legends=list(labels=labels)));
       if (objid.label=='inc') {
         ## incude figures showing ragged raw data
-        dofig(paste(sep='_',pfx,'ragged'),
+        fname=paste(collapse='_',c(pfx,'ragged',if(per.mort) 'permort'));
+        dofig(fname,
               plot_finraw(
-                datasrc=datasrc,what=what,places=places,ages='all',per.capita=TRUE,lwd=2,col=col,
+                datasrc=datasrc,what=what,places=places,ages='all',
+                per.capita=per.capita,per.mort=per.mort,
+                lwd=2,col=col,
                 title=figtitle(paste(title.pfx,"in",where.title,"locations showing raw data")),
                 legends=list(labels=labels)));
       }
@@ -141,7 +158,7 @@ sect_byplace=
   }
 sect_bysrc=
   function(where=param(where),what=param(what),datasrc=param(datasrc),
-           objid='std',conf.prob=cq(conf,prob),do.raw='auto',
+           objid='std',conf.prob=cq(conf,prob),do.raw='auto',do.mort=FALSE,
            places=NULL,col=NULL,col.pal='d3') {
     if (is.null(where)&&is.null(places)) stop("'where' and 'places' both NULL. Nothing to plot");
     if (is.null(places)) places=unique(unlist(lapply(where,where_var)));
@@ -157,16 +174,21 @@ sect_bysrc=
     }
     do.raw=setNames(rep(do.raw,len=length(datasrc)),datasrc);
     ## expand variables
-    cases=expand.grid(place=places,what=what,objid=objid,stringsAsFactors=FALSE);
+    cases=expand.grid(place=places,what=what,objid=objid,
+                      per.mort=if(do.mort) c(TRUE,FALSE) else FALSE,
+                      stringsAsFactors=FALSE);
     if (all(do.raw=='auto'))
       ## tack-on ragged to cases (only used for cdc)
       cases=merge(cases,data.frame(what='cases',ragged=c(TRUE,FALSE),stringsAsFactors=FALSE),
                   all.x=TRUE)
     else cases$ragged=NA;
+    ## prune invalid combinations
+    cases=subset(cases,subset=(what=='deaths'|!per.mort));
+    cases$per.capita=!cases$per.mort;
     withrows(cases,case,{
       objid.label=if(objid=='std') 'inc' else objid;
       objid.title=if(objid.label=='inc') 'Weekly' else 'Cumulative';
-      if (param(verbose)) print(paste('+++ plotting',what,objid.label,'bysrc',place));
+      if (param(verbose)) print(paste('+++ plotting',what,objid.label,'bysrc',place,nv(per.mort)));
       objs=lapply(datasrc,function(datasrc) get_obj(datasrc,what,objid));
       ## prune datasrc's and objs that don't contain place
       keep=sapply(seq_along(objs),function(i) place%in%places(objs[[i]]));
@@ -175,7 +197,9 @@ sect_bysrc=
       datasrc.title=paste(collapse=", ",toupper(datasrc));
       labels=setNames(toupper(datasrc),datasrc);
       fname=paste(sep='_','bysrc',what,objid.label,place);
-      ftitle=paste(objid.title,what,"per million from",datasrc.title,"in",place);
+      ftitle=paste(objid.title,what,
+                   if(per.capita) "per million" else "relative to expected mortality",
+                   "from",datasrc.title,"in",place);                  
       col=col[keep];
       do.raw=do.raw[keep];
       do.raw=if(is.na(ragged)) ifelse(do.raw=='auto',sapply(objs,is_incremental),do.raw)
@@ -200,9 +224,10 @@ sect_bysrc=
         fname=paste(sep='_',fname,'ragged');
         ftitle=paste(ftitle,'showing raw data');
       }
+      fname=paste(collapse='_',c(fname,if(per.mort) 'permort'));
       dofig(fname,
-              plot_pairs(objpairs=objpairs,places=place,per.capita=TRUE,title=figtitle(ftitle),
-                col=col,legends=list(title='Source',labels=labels)));
+            plot_pairs(objpairs=objpairs,places=place,per.capita=per.capita,per.mort=per.mort,
+                       title=figtitle(ftitle),col=col,legends=list(title='Source',labels=labels)));
     });
     cases;
   }
@@ -513,7 +538,8 @@ plot_admdeasupp=
 ## datasrc, what, ids define obj pairs 
 ## objpairs is list of object pairs (or NA): overrides choices from previous args
 plot_pairs=
-  function(what=param(what),datasrc=param(datasrc),places='state',ages='all',per.capita=TRUE,
+  function(what=param(what),datasrc=param(datasrc),places='state',ages='all',
+           per.capita=TRUE,per.mort=FALSE,
            objid=NULL,objpairs=list(),
            ## id=cq(src,edit,raw,cum,dly,roll,fit,extra,fitx,std),
            col=NULL,col.pal='d3',
@@ -560,7 +586,7 @@ plot_pairs=
     ## flatten objpairs to get y range
     objs=do.call(c,objpairs);
     objs=objs[!is.na(objs)];
-    data=data_cvdat(objs,places=places,ages=ages,per.capita=per.capita);
+    data=data_cvdat(objs,places=places,ages=ages,per.capita=per.capita,per.mort=per.mort);
     ymax=max(data[,-1],na.rm=TRUE);
     objs1=do.call(c,lapply(objpairs,function(pair) pair[1]));
     objs2=do.call(c,lapply(objpairs,function(pair) pair[2]));
@@ -573,10 +599,10 @@ plot_pairs=
     objs1=objs1[!is.na(objs1)];
     col2=col[!is.na(objs2)];
     objs2=objs2[!is.na(objs2)];
-    plot_cvdat(objs1,places=places,ages=ages,per.capita=per.capita,ymax=ymax,col=col1,
-               type=type[1],lwd=lwd[1],lty=lty[1],pch=pch1,...);
+    plot_cvdat(objs1,places=places,ages=ages,per.capita=per.capita,per.mort=per.mort,
+               ymax=ymax,col=col1,type=type[1],lwd=lwd[1],lty=lty[1],pch=pch1,...);
     if (length(objs2))
-      plot_cvdat(objs2,places=places,ages=ages,per.capita=per.capita,add=TRUE,col=col2,
-                 type=type[2],lwd=lwd[2],lty=lty[2],pch=pch2,...);
+      plot_cvdat(objs2,places=places,ages=ages,per.capita=per.capita,per.mort=per.mort,add=TRUE,
+                 col=col2,type=type[2],lwd=lwd[2],lty=lty[2],pch=pch2,...);
     length(objpairs);
   }
