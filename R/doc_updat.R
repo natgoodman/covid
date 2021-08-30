@@ -40,7 +40,6 @@ doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',figs.all=TRUE,
                      places.wa);
   places.nonwa<<-cq('Ann Arbor',Boston,'San Diego',DC);
   labels.nonwa=setNames(c('Ann Arbor','Boston','San Diego','Washington DC'),places.nonwa);
-
   if (do.tbl) {
     ## Tables 1-2 trend analysis. Tables 3-4 data counts. not used in document.
     if (param(verbose)) print(paste('+++ making tables'));
@@ -240,7 +239,8 @@ col_ages=
 plot_finraw=
   function(datasrc=param(datasrc),what=cq(cases,admits,deaths),
            title,legends,where.legend='topright',raw.plot=cq(lines,points),
-           places,ages='all',per.capita=TRUE,xmin=NULL,xmax=NULL,ymin=NULL,ymax='auto',
+           places,ages='all',per.capita=TRUE,per.mort=FALSE,
+           xmin=NULL,xmax=NULL,ymin=NULL,ymax='auto',
            col=NULL,
            lwd=2,lwd.fin=lwd,lwd.raw=0.375*lwd.fin,lty.fin='solid',lty.raw='dotted',pch=20) {
     datasrc=match.arg(datasrc);
@@ -260,20 +260,21 @@ plot_finraw=
       ymax=NULL;
     }
     if (is.null(ymax)) {
-      data=data_cvdat(list(fin,raw),places=places,ages=ages,per.capita=per.capita);
+      data=data_cvdat(list(fin,raw),places=places,ages=ages,
+                      per.capita=per.capita,per.mort=per.mort);
       ymax=max(data[,-1],na.rm=TRUE);
     }
-    plot_cvdat(fin,places=places,ages=ages,per.capita=per.capita,
+    plot_cvdat(fin,places=places,ages=ages,per.capita=per.capita,per.mort=per.mort,
                xmin=xmin,xmax=xmax,ymin=ymin,ymax=ymax,
                title=title,legends=legends,where.legend=where.legend,
                col=col,lwd=lwd.fin,lty=lty.fin);
     if ('lines'%in%raw.plot)
       plot_cvdat(
-        raw,places=places,ages=ages,per.capita=per.capita,add=TRUE,
+        raw,places=places,ages=ages,per.capita=per.capita,per.mort=per.mort,add=TRUE,
         col=col,lwd=lwd.raw,lty=lty.raw);
     if ('points'%in%raw.plot)
       plot_cvdat(
-        raw,places=places,ages=ages,per.capita=per.capita,add=TRUE,
+        raw,places=places,ages=ages,per.capita=per.capita,per.mort=per.mort,add=TRUE,
         col=col,lwd=lwd.raw,lty=lty.raw,type='p',pch=rep(pch,length(places)*length(ages)))
   }
 ## hack to plot admits and deaths data together
