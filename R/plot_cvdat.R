@@ -147,7 +147,7 @@ auto_title=
     if (('cumulative'%in%attrs)&&xattr$cumulative) xattr$unit=FALSE; # unit doesn't matter for cum
     vals=sapply(attrs,function(attr) name_label(attr,xattr[[attr]],fmt='title'),simplify=FALSE);
     if (per.capita&&'what'%in%attrs) vals$what=paste(vals$what,'per Million');
-    if (per.mort&&'what'%in%attrs) vals$what=paste(vals$what,'Relative to All-Cause Mortality');
+    if (per.mort&&'what'%in%attrs) vals$what=paste(vals$what,'Relative to Expected Mortality');
     terms=unlist(sapply(attrs,function(attr) paste_title(attr,vals[[attr]],SEP=SEP)));
     paste(collapse=' ',terms);
   }
