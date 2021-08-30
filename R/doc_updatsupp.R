@@ -21,7 +21,7 @@
 doc_updatsupp=
   function(sect=NULL,need.objs=TRUE,need.places=TRUE,need.ages=TRUE,need.init=TRUE,
            where=param(where),what=param(what),datasrc=param(datasrc),
-           ageid=1:4,objid=cq(inc,std),conf.prob=cq(conf,prob),do.raw='auto',
+           ageid=1:4,objid=cq(inc,std),conf.prob=cq(conf,prob),do.raw='auto',do.mort=FALSE,
            ages=NULL,places=NULL,col=NULL,col.pal='d3',
            byage.args=list(),byplace.args=list(),bysrc.args=list(),
            doc='updatsupp',version='latest',pjto=cq(dir,file),...) {
@@ -32,16 +32,16 @@ doc_updatsupp=
     conf.prob=match.arg(conf.prob,several.ok=TRUE);
     defaults=
       list(ageid=ageid,where=where,what=what,datasrc=datasrc,objid=objid,
-           conf.prob=conf.prob,do.raw=do.raw,
+           conf.prob=conf.prob,do.raw=do.raw,do.mort=do.mort,
            ages=ages,places=places,col=col,col.pal='d3');
     byage.args=fill_defaults(defaults,byage.args)[names(formals(sect_byage))];
     byplace.args=fill_defaults(defaults,byplace.args)[names(formals(sect_byplace))];
     bysrc.args=fill_defaults(defaults,bysrc.args)[names(formals(sect_bysrc))];
     pjto=match.arg(pjto);
+    if (need.init) init_doc(doc=doc,version=version,figlabel=FALSE,pjto=pjto,...);
     if (need.objs) make_updatsupp_objs(what=what,datasrc=datasrc,version=version);
     if (need.places) make_updatsupp_places();
     if (need.ages) make_updatsupp_ages();
-    if (need.init) init_doc(doc=doc,version=version,figlabel=FALSE,pjto=pjto,...);
     sect.all=cq(byage,byplace,bysrc);
     if (is.null(sect)) sect=sect.all else sect=pmatch_choice(sect,sect.all,start=FALSE);
      sapply(sect,function(sect) {
