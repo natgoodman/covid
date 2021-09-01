@@ -32,6 +32,7 @@ import_doh=function(file) {
     data=suppressMessages(read_excel(file,sheet=Sheet));
     data=as.data.frame(data,stringsAsFactors=F);
     data$County=sub(' County','',data$County);
+    cols.age=grep('^Age',colnames(data));
     if (version<'20-12-20') {
       col.all=3;                        # hardcode it to easily cover all 3 sheets
       col.noage=which(colnames(data)=='Positive UnkAge');
@@ -45,25 +46,67 @@ import_doh=function(file) {
       ## others: 7-Day <what> Counts
       ## just hardcode col numbers
       col.all=if(what=='cases') 5 else 3;
-      col.noage=which(colnames(data)=='UnknownAge');
+      col.noage=grep('Unk\\w*Age',colnames(data)); # v 21-08-29 changed 'UnknownAge' to 'UnkAge'
+      if (length(col.noage)!=1)
+        stop(paste('doh',what,'version',version,"has unrecognized 'Unknown Age' column name(s)"));
+      if (what=='cases'&&version>='21-08-29') 
+        ## v 21-08-29 case counts now seem to include 'probables' and
+        ##   old 'all' column (7-Day Count) no longer matches totals
+        ##   to simplify code below, forcibly set 7-Day Count to confirmed+probable
+        data[,col.all]=data[,3]+data[,4];
     }
-    cols.age=grep('^Age',colnames(data));
     cols.data=c(1,2,col.all,cols.age,col.noage);
-    ## for sanity, make sure 'all' matches individual groups
-    ## in version 21-03-07, age data messed up. row sums don't match. sigh...
-    if (version!='21-03-07') {
-      bad=which(data[,col.all]!=rowSums(data[,c(cols.age,col.noage)]))
-      if (length(bad)>0)
-        stop(paste('doh version',version,"'all' does not equal sum of 'ages' in these rows:",
-                   paste(collapse=', ',bad)));
-    }
     ## convert age colnames to my internal age labels
     names.age=colnames(data)[cols.age];
     names.age=sub('\\+','_',sub('-','_',sub('Age ','',names.age)));
     data=data[,cols.data];
     colnames(data)=c(cq(county,date,all),names.age,'noage');
-    ## Hospitalizations has some rows with Unknown date. delete 'em
+    ## admits has some rows with Unknown date. delete 'em
     if (what=='admits') data=subset(data,subset=(date!='Unknown'));
+    if (version>='21-08-29') {
+      ## changed ages as of version 21-08-29. sigh! new ages (note overlap!!):
+      ##   4_10, 11_13, 14_19, 0_11, 12_19, 20_34, 35_49, 50_64, 65_79, 80_
+      ## better resolution for young ages but strange ranges not compatible with
+      ## pop or mort. also overlapping ranges may confuse existing apps
+      want.age=c('4_10','11_13','14_19','0_11','12_19','20_34','35_49','50_64','65_79','80_');
+      if (names.age%!=%want.age) {
+        bad=names.age%-%want.age;
+        if (bad) stop(paste('doh',what,'version',version,"has unexpected age column(s):",
+                            paste(collapse(', ',bad))));
+        bad=want.age%-%names.age;
+        stop(paste('doh',what,'version',version,"missing expected age column(s):",
+                            paste(collapse(', ',bad))));
+      }
+      ## add 0_19 for backwards campatibility, remove ones that won't work,
+      ## and arrange columns in sensible order
+      data.src=data;                    # hang onto original data for error checks
+      data$'0_19'=data$'0_11'+data$'12_19';
+      names.age=c('0_19','20_34','35_49','50_64','65_79','80_');
+      data=data[,c(cq(county,date,all),names.age,'noage')];
+    }
+    ## for sanity, make sure 'all' matches individual groups
+    ## in version 21-03-07, age data messed up. row sums don't match. sigh...
+    if (version!='21-03-07') {
+      ages.sum=rowSums(data[,c(names.age,'noage')]);
+      bad=which(data[,'all']!=ages.sum);
+      if (length(bad)>0) {
+        ## in version 21-08-29, some admits & deaths rows double count the overlapping ages
+        ## handle as special case
+        if (what!='cases'&&version=='21-08-29') {
+          data.bad=data.src[bad,];
+          ages.bad=rowSums(data.bad[,c('20_34','35_49','50_64','65_79','80_',
+                                       '4_10','11_13','14_19','0_11','12_19','noage')]);
+          bad=which(data.bad[,'all']!=ages.bad);
+          if (length(bad)>0) {
+            stop(paste('doh',what,'version',version,"'all' does not equal sum of 'ages' in these rows even as special case:",paste(collapse=', ',bad)));
+          }
+          ## forcibly fix errors by setting all to correct value
+          data[,'all']=ages.sum;
+        }
+        else
+          stop(paste('doh',what,'version',version, "'all' does not equal sum of 'ages' in these rows:",paste(collapse=', ',bad)));
+      }
+    }
     data$date=as_date(data$date);
     ddates=sort(unique(data$date));                       # dates in data
     wdates=seq(sunday_week(min(data$date)),vdate-7,by=7); # weekly dates spanning data
