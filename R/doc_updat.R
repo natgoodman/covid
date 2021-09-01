@@ -100,17 +100,21 @@ doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',figs.all=TRUE,
           title=figtitle("Weekly cases per million in non-Washington locations"),
           legends=list(labels=labels.nonwa)));
   ## recent raw data very ragged in some versions. include figures showing this
+  ## first compute ymax across all data of interest
+  data=data_cvdat(list(jhu.cases,jhu.cases.raw),places=c(places.wa,places.nonwa),per.capita=TRUE);
+  data=data[data$date>=xmin.raw,];
+  ymax=max(data[,-1],na.rm=TRUE);
   dofig('cases_wa_ragged',
         plot_finraw(
           datasrc='jhu',what='cases',places=places.wa,ages='all',per.capita=TRUE,lwd=2,
-          xmin=xmin.raw,ymax=3100,
+          xmin=xmin.raw,ymax=ymax,
           title=figtitle(
             "Weekly cases per million in Washington locations showing recent raw data"),
           where.legend='topleft',legends=list(labels=labels.wa)));
   dofig('cases_nonwa_ragged',
         plot_finraw(
           datasrc='jhu',what='cases',places=places.nonwa,ages='all',per.capita=TRUE,lwd=2,
-          xmin=xmin.raw,ymax=3100,
+          xmin=xmin.raw,ymax=ymax,
           title=figtitle(
             "Weekly cases per million in non-Washington locations showing recent raw data"),
           where.legend='topleft',legends=list(labels=labels.nonwa)));
@@ -128,17 +132,22 @@ doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',figs.all=TRUE,
           title=figtitle("Weekly deaths per million in non-Washington locations"),
           where.legend='topright',legends=list(labels=labels.nonwa)));
   ## recent raw data very ragged in some versions. include figures showing this
+  ## first compute ymax across all data of interest
+  data=
+    data_cvdat(list(jhu.deaths,jhu.deaths.raw),places=c(places.wa,places.nonwa),per.capita=TRUE);
+  data=data[data$date>=xmin.raw,];
+  ymax=max(data[,-1],na.rm=TRUE);
   dofig('deaths_wa_ragged',
         plot_finraw(
           datasrc='jhu',what='deaths',places=places.wa,ages='all',per.capita=TRUE,lwd=2,
-          xmin=xmin.raw,ymax=15,
+          xmin=xmin.raw,ymax=ymax,
           title=figtitle(
             "Weekly deaths per million in Washington locations showing recent raw data"),
           where.legend='top',legends=list(labels=labels.wa)));
   dofig('deaths_nonwa_ragged',
         plot_finraw(
           datasrc='jhu',what='deaths',places=places.nonwa,ages='all',per.capita=TRUE,lwd=2,
-          xmin=xmin.raw,ymax=15,
+          xmin=xmin.raw,ymax=ymax,
           title=figtitle(
             "Weekly deaths per million in non-Washington locations showing recent raw data"),
            where.legend='top',legends=list(labels=labels.nonwa)));
