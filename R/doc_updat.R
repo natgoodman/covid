@@ -18,17 +18,15 @@
 ## Starting with this version, I only have for the current version.
 ## Previous versions are available in GitHub, of course.
 ## no sections.
-doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',figs.all=TRUE,
+doc_updat=function(doc='updat',need.objs=TRUE,need.init=TRUE,version='latest',
+                   figs.all=TRUE,figs.dohcm=FALSE,
                    do.fig=TRUE,do.tbl=TRUE,xmin.raw=NULL,...) {
+  what=cq(cases,admits,deaths);
   datasrc=cq(doh,jhu);
   if (is.null(version)||version=='latest') version=max(sapply(datasrc,latest_version));
   if (param(verbose)) print(paste('+++ doc_update',nv(version)));
-  if (need.objs) {
-    ## admits broken in version 21-06-20. hopefully temporary...
-    what=if(version!='21-06-20') cq(cases,admits,deaths) else cq(cases,deaths);
-    make_updat_objs(what=what,datasrc=datasrc,version=version);
-  }
-  if (need.init) init_doc(doc='updat',version=version,...);
+  if (need.objs) make_updat_objs(what=what,datasrc=datasrc,version=version);
+  if (need.init) init_doc(doc=doc,version=version,...);
   ## if (is.null(xmin.raw)&&version>='21-05-30') xmin.raw='2021-02-15';
   if (missing(xmin.raw))
     if (btwn_co(version,'21-05-30','21-07-11')) xmin.raw='2021-02-15'
@@ -152,11 +150,11 @@ doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',figs.all=TRUE,
             "Weekly deaths per million in non-Washington locations showing recent raw data"),
            where.legend='top',legends=list(labels=labels.nonwa)));
   if ('doh'%notin%datasrc) return();
-  ## Figures 3,4  WA DOH cases, deaths by age
+  ## Figures 3,4  WA DOH cases, admits&deaths by age
   ages=sort(ages(doh.cases)%-%'all');
   col=col_ages(ages=ages);
   if (figs.all) {
-    ## Figures 3a-d, 4a-d WA DOH cases, deaths by age for all locations
+    ## Figures 3a-d, 4a-d WA DOH cases, admits&deaths by age for all locations
     ## not always in document, but do 'em so I can check to decide whether to include
     fignum.sav=param(fignum);           # to restore after doing a-d figs
     ## Figures 3a-d cases by age
@@ -169,50 +167,93 @@ doc_updat=function(need.objs=TRUE,need.init=TRUE,version='latest',figs.all=TRUE,
               doh.cases,places=place,ages=ages,col=col,
               per.capita=TRUE,lwd=2,ymax=ymax,
               title=figtitle(paste("Weekly cases per million by age in",labels.wa[place])))));
-    ## Figures 4a-d admits, deaths by age
+    ## Figures 4a-d admits&deaths, deaths by age
     figblk_start();
-    ## admits broken in version 21-06-20. hopefully temporary...
-    if (version!='21-06-20') {
-      data=data_cvdat(list(doh.admits,doh.deaths),places=places.wa,ages=ages,per.capita=TRUE);
-      ymax=max(data[,-1],na.rm=TRUE);
-      sapply(places.wa,function(place) 
-        dofig(paste(sep='_','admits_deaths',place),
-              plot_admdea(
-                places=place,ages=ages,col=col,per.capita=TRUE,ymax=ymax,
-                title=figtitle(paste("Weekly admits and deaths per million by age in",
-                                     labels.wa[place])))));
-    } else {
-      data=data_cvdat(list(doh.deaths),places=places.wa,ages=ages,per.capita=TRUE);
-      ymax=max(data[,-1],na.rm=TRUE);
-      sapply(places.wa,function(place) 
-        dofig(paste(sep='_','deaths',place),
-              plot_cvdat(
-                doh.deaths,places=place,ages=ages,col=col,per.capita=TRUE,ymax=ymax,
-                title=figtitle(paste("Weekly deaths per million by age in",
-                                     labels.wa[place])))));
-    }
+    data=data_cvdat(list(doh.admits,doh.deaths),places=places.wa,ages=ages,per.capita=TRUE);
+    ymax=max(data[,-1],na.rm=TRUE);
+    sapply(places.wa,function(place) 
+      dofig(paste(sep='_','admits_deaths',place),
+            plot_admdea(
+              places=place,ages=ages,col=col,per.capita=TRUE,ymax=ymax,
+              title=figtitle(paste("Weekly admits and deaths per million by age in",
+                                   labels.wa[place])))));
     param(fignum=fignum.sav);           # restore fignum after a-d figs
   }
   ## Figures 3 WA DOH cases by age for state
+  ## Figures 3a-d (if figs.dohcm) cases per million inc and cum; case counts inc and cum
   figblk_end();
   place='state';
-  dofig(paste(sep='_','cases',place),
-        plot_cvdat(
-          doh.cases,places=place,ages=ages,col=col,per.capita=TRUE,lwd=2,
-          title=figtitle(paste("Weekly cases per million by age in",labels.wa[place]))));
-  ## Figures 4 WA DOH admits and deaths by age for state
-  ## admits broken in version 21-06-20. hopefully temporary...
-  if (version!='21-06-20') {
-    dofig(paste(sep='_','admits_deaths',place),
-        plot_admdea(
-          places=place,ages=ages,col=col,per.capita=TRUE,
-          title=figtitle(paste("Weekly admits and deaths per million by age in",
-                               labels.wa[place]))));
-  } else {
-    dofig(paste(sep='_','deaths',place),
+  if (!figs.dohcm) {
+    dofig(paste(sep='_','cases',place),
           plot_cvdat(
-            doh.deaths,places=place,ages=ages,col=col,per.capita=TRUE,lwd=2,
-            title=figtitle(paste("Weekly deaths per million by age in",labels.wa[place]))));
+            doh.cases,places=place,ages=ages,col=col,per.capita=TRUE,lwd=2,
+            title=figtitle(paste("Weekly cases per million by age in",labels.wa[place]))));
+  } else {
+    figblk_start();
+    dofig(paste(sep='_','cases',place),
+          plot_cvdat(
+            doh.cases,places=place,ages=ages,col=col,per.capita=TRUE,lwd=2,
+            title=figtitle(paste("Weekly cases per million by age in",labels.wa[place]))));
+    dofig(paste(sep='_','cases_cum',place),
+          plot_cvdat(
+            doh.cases.cum,places=place,ages=ages,col=col,per.capita=TRUE,lwd=2,
+            title=figtitle(paste("Cumulative cases per million by age in",labels.wa[place]))));
+    dofig(paste(sep='_','cases',place),
+          plot_cvdat(
+            doh.cases,places=place,ages=ages,col=col,per.capita=FALSE,lwd=2,
+            title=figtitle(paste("Weekly cases (not per million) by age in",
+                                 labels.wa[place]))));
+    dofig(paste(sep='_','cases_cum',place),
+          plot_cvdat(
+            doh.cases.cum,places=place,ages=ages,col=col,per.capita=TRUE,lwd=2,
+            title=figtitle(paste("Cumulative cases (not per million) by age in",
+                                 labels.wa[place]))));
+  }
+  ## Figures 4 WA DOH admits&deaths by age for state
+  ## Figures 4a-d (if figs.dohcm) admdea per million inc and cum; admdea counts inc and cum
+  ## Figures 4e-f (if figs.dohcm) deaths per mort inc and cum
+  ## admits broken in version 21-06-20. hopefully temporary...
+  if (!figs.dohcm) {
+    dofig(paste(sep='_','admits_deaths',place),
+          plot_admdea(
+            places=place,ages=ages,col=col,per.capita=TRUE,
+            title=figtitle(paste("Weekly admits and deaths per million by age in",
+                                 labels.wa[place]))));
+  } else {
+    figblk_start();
+    dofig(paste(sep='_','admits_deaths',place),
+          plot_admdea(
+            places=place,ages=ages,col=col,per.capita=TRUE,
+            title=figtitle(paste("Weekly admits and deaths per million by age in",
+                                 labels.wa[place]))));
+    dofig(paste(sep='_','admits_deaths_cum',place),
+          plot_admdea(
+            objs=list(doh.admits.cum,doh.deaths.cum),
+            places=place,ages=ages,col=col,per.capita=TRUE,
+            title=figtitle(paste("Cumulative admits and deaths per million by age in",
+                                 labels.wa[place]))))
+    dofig(paste(sep='_','admits_deaths',place),
+          plot_admdea(
+            places=place,ages=ages,col=col,per.capita=FALSE,
+            title=figtitle(paste("Weekly admits and deaths (not per million) by age in",
+                                 labels.wa[place]))));
+    dofig(paste(sep='_','admits_deaths_cum',place),
+            plot_admdea(
+              objs=list(doh.admits.cum,doh.deaths.cum),
+              places=place,ages=ages,col=col,per.capita=FALSE,
+              title=figtitle(paste("Cumulative admits and deaths (not per million) by age in",
+                                   labels.wa[place]))))
+    dofig(paste(sep='_','deaths_permort',place),
+          plot_cvdat(
+            doh.deaths,places=place,ages=ages,col=col,per.mort=TRUE,lwd=2,
+            title=figtitle(paste("Weekly deaths relative to expected mortality in",
+                                 labels.wa[place]))));
+    dofig(paste(sep='_','deaths_permort_cum',place),
+          plot_cvdat(
+            doh.deaths.cum,places=place,ages=ages,col=col,per.mort=TRUE,lwd=2,
+            title=figtitle(paste("Cumulative deaths relative to expected mortality in",
+                                 labels.wa[place]))));
+    figblk_end();
   }
   ## Figures 5a-b compare DOH, JHU.
   ## Note: not used in versions after Dec 13, 2020 until Jun 2, 2021. might go away again...
@@ -290,7 +331,8 @@ plot_finraw=
 ## used for Figure 4 version 21-04-25 and later
 ## TODO: add this to plot_cvdat!
 plot_admdea=
-  function(places='state',ages=NULL,per.capita=TRUE,title=NULL,ylab=NULL,ymax=NULL,
+  function(objs=list(doh.admits,doh.deaths),
+           places='state',ages=NULL,per.capita=TRUE,title=NULL,ylab=NULL,ymax=NULL,
            where.legend='topleft',
            lwd.admits=2,lwd.deaths=3,lwd=c(lwd.admits,lwd.deaths),
            lty.admits='dotted',lty.deaths='solid',lty=c(lty.admits,lty.deaths),
@@ -304,11 +346,11 @@ plot_admdea=
                     'for',places));
     if (is.null(ylab))
       ylab=paste(collapse=' ',
-                 c('weekly admits and deaths',if(per.capita) 'per million' else NULL))
+                 c('admits and deaths',if(per.capita) 'per million' else NULL))
     if (is.null(col))
       col=col_ages(ages=ages,col1.pal=col1.pal,skip.beg=skip.beg,skip.end=skip.end,
                    col2=col2,col2.n=col2.n);
-    plot_cvdat(list(doh.admits,doh.deaths),places=places,ages=ages,per.capita=per.capita,
+    plot_cvdat(objs,places=places,ages=ages,per.capita=per.capita,
                title=title,ylab=ylab,ymax=ymax,where.legend=where.legend,
                lty=lty,lwd=lwd,col=rep(col,each=2),
                legend=list(list(labels=cq(admits,deaths),lty=lty,lwd=lwd,col='black'),
@@ -345,13 +387,15 @@ plot_dohjhu=function(what=cq(cases,deaths),title=NULL) {
 ## as of 21-03-28, okay to fo 'edit' before 'extra'
 make_updat_objs=
   function(what=cq(cases,admits,deaths),datasrc=cq(doh,jhu),version='latest') {
+    what=match.arg(what,several.ok=TRUE);
     datasrc=match.arg(datasrc,several.ok=TRUE);
     cases=expand.grid(what=what,datasrc=datasrc,stringsAsFactors=FALSE);
     cases=cases[(cases$what!='admits'|cases$datasrc%in%cq(doh)),]; # only 'doh' has 'admits'
     withrows(cases,case,{
       if (param(verbose)) print(paste('+++ making',datasrc,what));
-      ## start with raw. really 'weekly, incremental'
-      obj=raw(what,datasrc,version);    # start with raw
+      ## admits broken in version 21-06-20. use previous version
+      obj=if(version=='21-06-20'&what=='admits') raw(what,datasrc,version='21-06-13')
+          else raw(what,datasrc,version);
       assign(paste(sep='.',datasrc,what,'src'),obj,globalenv());  # save as 'src'
       obj=switch(datasrc,               # transform as needed for src
                  doh=edit(obj,KEEP=cq(state,King,Snohomish,Pierce)),
@@ -372,7 +416,9 @@ make_updat_objs=
       obj=fit(obj);                     # default method=sspline, fit.unit=1
       assign(paste(sep='.',datasrc,what),obj,globalenv());        # save as 'final'
       assign(paste(sep='.',datasrc,what,'std'),obj,globalenv());  # and 'std' 
-      assign(paste(sep='.',datasrc,what,'fit'),obj,globalenv());  # and 'fit' 
+      assign(paste(sep='.',datasrc,what,'fit'),obj,globalenv());  # and 'fit'
+      obj=cumulative(obj);
+      assign(paste(sep='.',datasrc,what,'cum'),obj,globalenv());  # save as 'cum'
     });
     cases;
   }
