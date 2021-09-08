@@ -64,18 +64,19 @@ import_doh=function(file) {
     ## admits has some rows with Unknown date. delete 'em
     if (what=='admits') data=subset(data,subset=(date!='Unknown'));
     if (version>='21-08-29') {
-      ## changed ages as of version 21-08-29. sigh! new ages (note overlap!!):
-      ##   4_10, 11_13, 14_19, 0_11, 12_19, 20_34, 35_49, 50_64, 65_79, 80_
-      ## better resolution for young ages but strange ranges not compatible with
-      ## pop or mort. also overlapping ranges may confuse existing apps
-      want.age=c('4_10','11_13','14_19','0_11','12_19','20_34','35_49','50_64','65_79','80_');
-      if (names.age%!=%want.age) {
+      ## changed ages as of version 21-08-29 and again in version 21-09-05 sigh!
+      ## better resolution for young ages but not compatible with pop or mort
+      ## note overlap in 21-08-29 ages! (but not 21-09-05 ages)
+      if (version=='21-08-29') 
+        want.age=c('4_10','11_13','14_19','0_11','12_19','20_34','35_49','50_64','65_79','80_')
+      else want.age=c('0_11','12_19','20_34','35_49','50_64','65_79','80_');
+    if (names.age%!=%want.age) {
         bad=names.age%-%want.age;
-        if (bad) stop(paste('doh',what,'version',version,"has unexpected age column(s):",
-                            paste(collapse(', ',bad))));
+        if (length(bad)) stop(paste('doh',what,'version',version,"has unexpected age column(s):",
+                                    paste(collapse=', ',bad)));
         bad=want.age%-%names.age;
-        stop(paste('doh',what,'version',version,"missing expected age column(s):",
-                            paste(collapse(', ',bad))));
+        if (length(bad)) stop(paste('doh',what,'version',version,"missing expected age column(s):",
+                                    paste(collapse=', ',bad)));
       }
       ## add 0_19 for backwards campatibility, remove ones that won't work,
       ## and arrange columns in sensible order
@@ -89,7 +90,7 @@ import_doh=function(file) {
     if (version!='21-03-07') {
       ages.sum=rowSums(data[,c(names.age,'noage')]);
       bad=which(data[,'all']!=ages.sum);
-      if (length(bad)>0) {
+      if (length(bad)) {
         ## in version 21-08-29, some admits & deaths rows double count the overlapping ages
         ## handle as special case
         if (what!='cases'&&version=='21-08-29') {
@@ -97,7 +98,7 @@ import_doh=function(file) {
           ages.bad=rowSums(data.bad[,c('20_34','35_49','50_64','65_79','80_',
                                        '4_10','11_13','14_19','0_11','12_19','noage')]);
           bad=which(data.bad[,'all']!=ages.bad);
-          if (length(bad)>0) {
+          if (length(bad)) {
             stop(paste('doh',what,'version',version,"'all' does not equal sum of 'ages' in these rows even as special case:",paste(collapse=', ',bad)));
           }
           ## forcibly fix errors by setting all to correct value
@@ -180,12 +181,12 @@ check_doh=function(data,what,version) {
   ## make sure we have all counties and Unassigned
   places=colnames(data)[-1];
   bad=places_wa() %-% places;
-  if (length(bad)>0)
+  if (length(bad))
     stop(paste('doh version',version,'missing counties:',paste(collapse=', ',bad)));
   if ('Unassigned' %notin% places) stop(paste('doh version',version,"missing 'Unassigned'"));
   ## make sure we have no extra places
   bad=places %-% c(places_wa(),'Unassigned');
-  if (length(bad)>0)
+  if (length(bad))
     stop(paste('doh version',version,'has unexpected places:',paste(collapse=', ',bad)));
   ## check non-Sundays
   dates=data$date;
