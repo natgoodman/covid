@@ -103,23 +103,26 @@ roll1=function(data,width) {
   data;
 }
 ## convert object data to cumulative. nop if already cumulative
+## NG 21-09-10: fix longstanding bug when cum'ing fitted object. have to scale by fit.unit/unit
 cumulative=function(obj,...) UseMethod('cumulative')
 cumulative.cvdat=function(obj,week.end=FALSE) {
   if (is_cumulative(obj)) return(obj);
-  unit=obj$unit;
-  obj$data=cum1(obj$data,unit,week.end);
+  obj$data=cum1(obj$data,obj$unit,obj$fit.unit,week.end);
   obj$cumulative=TRUE;
   obj;
 }
 cumulative.cvdoh=function(obj,week.end=FALSE) {
   if (is_cumulative(obj)) return(obj);
   unit=obj$unit;
-  obj$data=sapply(obj$data,function(data) cum1(data,unit,week.end),simplify=FALSE);
+  fit.unit=obj$fit.unit;
+  obj$data=sapply(obj$data,function(data) cum1(data,unit,fit.unit,week.end),simplify=FALSE);
   obj$cumulative=TRUE;
   obj;
 }
 cumulative.cvcdc=cumulative.cvdoh;
-cum1=function(data,unit,week.end) {
+cum1=function(data,unit,fit.unit,week.end) {
+  ## NG 21-09-10: fix longstanding bug when cum'ing fitted object. have to scale by fit.unit/unit
+  if (!is.null(fit.unit)) data[,-1]=data[,-1]*(fit.unit/unit);
   ## do it this convoluted way, so R won't munge place names or dates. sigh...
   data=cbind(date=data[,1],as.data.frame(do.call(cbind,lapply(data[,-1,drop=FALSE],cumsum))))
   if (unit==7&&week.end) {
