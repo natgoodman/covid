@@ -210,11 +210,12 @@ ltitle_label=function(attr) {
 }
                  
 ## adapted from www.r-bloggers.com/dates-in-r-and-the-first-day-of-the-month. Thx!
-mon_day=function(date,day) {
-  date=as_date(date);                   # in case comes to us numeric
-  ## as.Date(paste(sep='-',unique(format(date,format="%Y-%m")),day))
-  as_date(paste(sep='-',unique(format(date,format="%Y-%m")),day))
-}
+## NG 21-09-19: code moved to covid/R/label.R and extended to get last day of month
+## mon_day=function(date,day) {
+##   date=as_date(date);                   # in case comes to us numeric
+##   ## as.Date(paste(sep='-',unique(format(date,format="%Y-%m")),day))
+##   as_date(paste(sep='-',unique(format(date,format="%Y-%m")),day))
+## }
 
 ## produce data frame of obj typically single-valued params
 obj_attr=function(obj,attrs=cq(datasrc,what,unit,cumulative,version,fit,roll,extra,edit),
