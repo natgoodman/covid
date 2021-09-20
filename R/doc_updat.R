@@ -540,7 +540,7 @@ show_counts=
      if (do.print) {
       if ('wa'%in%where&&'cases'%in%what) {
         if (do.peaks)
-          show_peaks(cases.wa,cuts,labels=paste('cases.wa',labels),do.print=do.print);
+          show_peaks(cases.wa,cuts,labels=paste('cases.wa',labels));
         ## if (do.spring)
         ##   show_peak(cases.wa,dates=peak.cases.spring,'cases.wa spring 2020');
         ## if (do.summer)
@@ -550,7 +550,7 @@ show_counts=
       }
       if ('wa'%in%where&&'deaths'%in%what) {
         if (do.peaks)
-          show_peaks(deaths.wa,cuts,labels=paste('deaths.wa',labels),do.print=do.print);
+          show_peaks(deaths.wa,cuts,labels=paste('deaths.wa',labels));
         ## if (do.spring)
         ##   show_peak(deaths.wa,dates=peak.deaths.spring,'deaths.wa spring 2020');
         ## if (do.summer)
@@ -577,34 +577,98 @@ show_counts=
 ##     invisible(peak);
 ##   } else peak;
 ## }
-show_now=function(counts,objid,tail.n,label=NULL,do.print=TRUE) {
-  if (do.print) print(paste(collapse=' ',c(label,'now')));
+show_now=function(counts,objid,tail.n,label='now') {
+  if (!grepl('now$',label)) label=paste(label,'now');
+  print(label);
+  ## print(paste(collapse=' ',c(label,'now')));
   if (objid!='dly') now=tail(subset(counts,subset=weekdays(date)=='Sunday'),n=tail.n[1])
   else now=tail(subset(counts,subset=date<vdate(jhu.cases)),n=tail.n[2]);
-  if (do.print) {
-    print(now);
-    invisible(now);
-  } else now;
+  print(now);
+  invisible(now);
 }
-show_peaks=function(counts,cuts,labels,do.print=TRUE) {
+show_peaks=function(counts,cuts,labels) {
   cuts=c(as_date(cuts),Inf);
   cats=cut(counts$date,cuts,right=F,labels=FALSE);
   peaks=split(counts,cats);
-  sapply(seq_along(peaks),function(i) {
+  peaks=lapply(seq_along(peaks),function(i) {
     peak=peaks[[i]];
     label=labels[i];
-    show_peak1(peak,label,do.print);
+    show_peak1(peak,label);
   });
-  labels;
+  names(peaks)=labels;
+  invisible(peaks);
 }
-show_peak1=function(peak,label,do.print=TRUE) {
-  if (do.print) print(paste(collapse=' ',c(label,'peak')));
+show_peak1=function(peak,label) {
+  print(paste(collapse=' ',c(label,'peak')));
   i=unique(as.vector(capply(peak[,-1],which.max)));
-  peak=peak[i,];
-  smax=capply(peak[,-1],max);
-  peak=rbind(peak,data.frame(date=NA,smax))
-  if (do.print) {
-    print(peak);
-    invisible(peak);
-  } else peak;
+  peak=peak[i,,drop=FALSE];
+  smax=capply(peak[,-1,drop=FALSE],max);
+  peak=rbind(peak,data.frame(date=NA,smax,check.names=FALSE))
+  print(peak);
+  invisible(peak);
+}
+########################################
+## show and compare DOH counts in convenient format. for interactive use
+## based on show_counts used for JHU
+## multiple ages for one place, or multiple places for one age
+## default: usual ages for 'state'
+show_doh=
+  function(objid=cq(std,raw,dly),what=cq(cases,admits,deaths),
+           places='state',ages=NULL,obj=NULL,data=NULL,per.capita=TRUE,per.mort=FALSE,
+           tail.n=c(6,10),round.digits=0,
+           do.peaks=TRUE,do.now=TRUE,do.cmp=TRUE,
+           cuts=c('2020-01-26','2020-06-01','2020-09-15','2021-03-01','2021-07-01'),
+           labels=cq(spring20,summer20,winter20,spring21,summer21)) {
+    objid=match.arg(objid);
+    what=match.arg(what,several.ok=FALSE);
+    if (is.null(obj)) obj=get(paste(sep='.','doh',what,objid));
+    if (is.null(ages)) ages=ages(obj);
+    if (length(places)>1&&length(ages)>1)
+      stop("Only one of 'places' or 'ages' can have mulitple values");
+    if (length(places)==0&&length(ages)==0)
+      stop("Both 'places' and 'ages' are empty; nothing to show!");
+    if (is.null(data))
+      data=data_cvdat(obj,places=places,ages=ages,per.capita=per.capita,per.mort=per.mort);
+    data[,-1]=round(data[,-1],digits=round.digits);
+    if (length(places)==1) {
+      peak.labels=paste(what,places,labels);
+      now.label=paste(what,places,'now');
+      colnames(data)=c('date',ages);
+    } else {
+      peak.labels=paste(what,ages,labels);
+      now.label=paste(what,ages,'now');
+      colnames(data)=c('date',places);
+    }
+    if (do.peaks) peaks=show_peaks(data,cuts,labels=peak.labels) else peaks=list();
+    if (do.now) now=show_now(data,objid,tail.n,label=now.label);
+    print('----------');
+    invisible(cl(peaks,now=now));
+  }
+## TODO: these are CRUDE!! do it better
+## data is list of peaks, now from show_doh
+## cmp_doh_ages compares multiple ages for one place
+cmp_doh_ages=function(data) {
+  now=tail(data$now,n=1);
+  now=now[1,colnames(now)%-%cq(date,all)];
+  ratio=round(max(now)/min(now),digits=2);
+  best=names(which.min(now));
+  worst=names(which.max(now));
+  print(nv(worst,best,ratio));
+}
+## cmp_doh_ages compares multiple places for one age
+cmp_doh_places=function(data,base.place='state') {
+  now=tail(data$now,n=1);
+  now=now[1,-1];
+  ratio=round(now[1,base.place]/now[1,],digits=2);
+  print(ratio);
+}
+xper_cmp_doh=function(places=places.wa,ages=NULL,do.print=FALSE) {
+  if (!do.print) sink('/dev/null');
+  if (is.null(ages)) ages=ages(doh.cases)%-%'all';
+  cmp=sapply(ages,function(age) {
+    data=show_doh(what='cases',places=places,ages=age,do.peaks=F);
+   cmp_doh_places(data);
+  });
+  if (!do.print) sink();
+  t(cmp);
 }
