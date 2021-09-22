@@ -20,18 +20,22 @@
 ## no sections.
 doc_updat=function(doc='updat',need.objs=TRUE,need.init=TRUE,version='latest',
                    figs.all=TRUE,figs.dohcm=FALSE,
-                   do.fig=TRUE,do.tbl=TRUE,xmin.raw=NULL,...) {
+                   do.fig=TRUE,do.tbl=TRUE,xmin.ragged=NULL,...) {
   what=cq(cases,admits,deaths);
   datasrc=cq(doh,jhu);
   if (is.null(version)||version=='latest') version=max(sapply(datasrc,latest_version));
   if (param(verbose)) print(paste('+++ doc_update',nv(version)));
   if (need.objs) make_updat_objs(what=what,datasrc=datasrc,version=version);
   if (need.init) init_doc(doc=doc,version=version,...);
-  ## if (is.null(xmin.raw)&&version>='21-05-30') xmin.raw='2021-02-15';
-  if (missing(xmin.raw))
-    if (btwn_co(version,'21-05-30','21-07-11')) xmin.raw='2021-02-15'
-    else if (btwn_co(version,'21-07-11','21-08-22')) xmin.raw='2021-05-01'
-    else xmin.raw='2021-06-01';
+  ## if (is.null(xmin.ragged)&&version>='21-05-30') xmin.ragged='2021-02-15';
+  if (missing(xmin.ragged)) {
+    if (btwn_co(version,'21-05-30','21-07-11')) xmin.ragged='2021-02-14'
+    else if (btwn_co(version,'21-07-11','21-08-22')) xmin.ragged='2021-05-02'
+    else if (btwn_co(version,'21-08-22','21-09-12')) xmin.ragged='2021-06-06'
+    else xmin.ragged='2021-06-13';
+    ## graphs look nicer when xmin aligned with version. 
+    xmin.ragged=sunday_week(as_date(xmin.ragged));
+  }
   places.wa<<-cq(state,King,Snohomish,Pierce);
   labels.wa=setNames(c('Washington state','Seattle (King County)',
                        'Snohomish (North of Seattle)','Pierce (South of Seattle)'),
@@ -100,19 +104,19 @@ doc_updat=function(doc='updat',need.objs=TRUE,need.init=TRUE,version='latest',
   ## recent raw data very ragged in some versions. include figures showing this
   ## first compute ymax across all data of interest
   data=data_cvdat(list(jhu.cases,jhu.cases.raw),places=c(places.wa,places.nonwa),per.capita=TRUE);
-  data=data[data$date>=xmin.raw,];
+  data=data[data$date>=xmin.ragged,];
   ymax=max(data[,-1],na.rm=TRUE);
   dofig('cases_wa_ragged',
         plot_finraw(
           datasrc='jhu',what='cases',places=places.wa,ages='all',per.capita=TRUE,lwd=2,
-          xmin=xmin.raw,ymax=ymax,
+          xmin=xmin.ragged,ymax=ymax,
           title=figtitle(
             "Weekly cases per million in Washington locations showing recent raw data"),
           where.legend='topleft',legends=list(labels=labels.wa)));
   dofig('cases_nonwa_ragged',
         plot_finraw(
           datasrc='jhu',what='cases',places=places.nonwa,ages='all',per.capita=TRUE,lwd=2,
-          xmin=xmin.raw,ymax=ymax,
+          xmin=xmin.ragged,ymax=ymax,
           title=figtitle(
             "Weekly cases per million in non-Washington locations showing recent raw data"),
           where.legend='topleft',legends=list(labels=labels.nonwa)));
@@ -133,19 +137,19 @@ doc_updat=function(doc='updat',need.objs=TRUE,need.init=TRUE,version='latest',
   ## first compute ymax across all data of interest
   data=
     data_cvdat(list(jhu.deaths,jhu.deaths.raw),places=c(places.wa,places.nonwa),per.capita=TRUE);
-  data=data[data$date>=xmin.raw,];
+  data=data[data$date>=xmin.ragged,];
   ymax=max(data[,-1],na.rm=TRUE);
   dofig('deaths_wa_ragged',
         plot_finraw(
           datasrc='jhu',what='deaths',places=places.wa,ages='all',per.capita=TRUE,lwd=2,
-          xmin=xmin.raw,ymax=ymax,
+          xmin=xmin.ragged,ymax=ymax,
           title=figtitle(
             "Weekly deaths per million in Washington locations showing recent raw data"),
           where.legend='top',legends=list(labels=labels.wa)));
   dofig('deaths_nonwa_ragged',
         plot_finraw(
           datasrc='jhu',what='deaths',places=places.nonwa,ages='all',per.capita=TRUE,lwd=2,
-          xmin=xmin.raw,ymax=ymax,
+          xmin=xmin.ragged,ymax=ymax,
           title=figtitle(
             "Weekly deaths per million in non-Washington locations showing recent raw data"),
            where.legend='top',legends=list(labels=labels.nonwa)));
@@ -288,13 +292,15 @@ col_ages=
 ## TODO: add this to plot_cvdat!
 plot_finraw=
   function(datasrc=param(datasrc),what=cq(cases,admits,deaths),
-           title,legends,where.legend='topright',raw.plot=cq(lines,points),
            places,ages='all',per.capita=TRUE,per.mort=FALSE,
+           title,legends=list(labels=places),where.legend='topright',raw.plot=cq(lines,points),
            xmin=NULL,xmax=NULL,ymin=NULL,ymax='auto',
+           xgrid=cq(biweekly,weekly,quadweekly,semimonthly,monthly),xformat='%b-%d',cex.axis=0.75,
            col=NULL,
            lwd=2,lwd.fin=lwd,lwd.raw=0.375*lwd.fin,lty.fin='solid',lty.raw='dotted',pch=20) {
     datasrc=match.arg(datasrc);
     what=match.arg(what);
+    if (!is.numeric(xgrid)) xgrid=match.arg(xgrid);
     if (!is.null(raw.plot)) raw.plot=match.arg(raw.plot,several.ok=TRUE);
     fin=get(paste(sep='.',datasrc,what));
     raw=get(paste(sep='.',datasrc,what,'raw'));
@@ -316,6 +322,7 @@ plot_finraw=
     }
     plot_cvdat(fin,places=places,ages=ages,per.capita=per.capita,per.mort=per.mort,
                xmin=xmin,xmax=xmax,ymin=ymin,ymax=ymax,
+               xgrid=xgrid,xformat=xformat,cex.axis=cex.axis,
                title=title,legends=legends,where.legend=where.legend,
                col=col,lwd=lwd.fin,lty=lty.fin);
     if ('lines'%in%raw.plot)
