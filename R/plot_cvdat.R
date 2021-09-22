@@ -29,7 +29,9 @@
 ## cex.title is what R calls cex.main. if 'auto' or NULL, use auto-scaling
 ## legend, where.legend tell whether and where to draw legend
 ## title.legend,labels.legend,cex.legend are title, text labels, and cex for legend
-## xgrid is spacing of x grid lines - keyword or nummber of days
+## xgrid, xformat, xaxis control appearance of x-axis.
+##   defaults good for plots covering full date range circa Sep 2021. found by trial-and-error
+##   xgrid is spacing of x grid lines and x-axis annotations - keyword or number of days
 ## vline,hline are vectors of x or y positions for extra vertical or horizontal lines
 ## vhlty, vhcol, vhlwd are lty, col, lwd for these extra lines
 ## vlab, hlab contol writing vline, hline values along axes
@@ -45,7 +47,7 @@ plot_cvdat=
            col.legend=col1,lty.legend=lty1,lwd.legend=lwd1,
            pch=20,ylab=NULL,title=NULL,cex.title=NA,
            legend=TRUE,where.legend='topleft',cex.legend=0.8,legends=list(),
-           xgrid=cq(biweekly,weekly,semimonthly,monthly),cex.axis=0.75,xformat='%y-%b',
+           xgrid=cq(monthly,biweekly,weekly,quadweekly,semimonthly),xformat='%b',cex.axis=0.75,
            vline=NULL,hline=NULL,vhlty='dashed',vhcol='grey50',
            vhlwd=1,vlab=TRUE,hlab=TRUE,vhdigits=2,
            attrs=cq(unit,cumulative,what,datasrc,version,id,fit,roll,extra,edit),
@@ -105,24 +107,36 @@ plot_cvdat=
     if (!add) {
       ## draw grid
       grid(nx=NA,ny=NULL) # draw y grid lines. we'll draw x ourselves at desired spacing
-      days=seq(xlim[1],xlim[2],1);
-      mon.01=mon_day(days,1);
-      mon.15=mon_day(days,15);
       if (is.numeric(xgrid)) xgrid=seq(xlim[1],xlim[2],xgrid)
-        else {
-          xgrid=match.arg(xgrid);
-          xgrid=switch(xgrid,weekly=seq(xlim[1],xlim[2],7),
-                       biweekly=seq(xlim[1],xlim[2],14),
-                       semimonthly=c(mon.01,mon.15),
-                       monthly=mon.01,
-                       stop('Bad news: unknown xgrid=',xgrid,'. Should have been caught earlier'));
-        }
+      else {
+        xgrid=match.arg(xgrid);
+        if (xgrid=='monthly'||xgrid=='semimonthly') {
+          mon.after=inc_month(xlim[2],1);
+          monthly=seq(mon_day(xlim[1],1),mon_day(mon.after,1),by='1 month');
+          if (xgrid=='semimonthly') {
+            mon.before=inc_month(xlim[1],-1);
+            mon.15=seq(mon_day(mon.before,15),mon_day(mon.after,15),by='1 month');
+            semimonthly=sort(c(monthly,mon.15));
+          }}
+        xgrid=switch(xgrid,weekly=seq(xlim[1],xlim[2],7),
+                     biweekly=seq(xlim[1],xlim[2],14),
+                     quadweekly=seq(xlim[1],xlim[2],28),
+                     semimonthly=semimonthly,
+                     monthly=monthly,
+                     stop('Bad news: unknown xgrid=',xgrid,'. Should have been caught earlier'));
+      }
       abline(v=xgrid,col="lightgray",lty="dotted");
       ## abline(v=biweek,col="lightgray",lty="dotted");
       ## abline(v=c(mon.01,mon.15),col="lightgray",lty="dotted");
       ## axis line below adapted from stackoverflow.com/questions/4843969. Thx!
       ## axis(1,mon.01,format(mon.01,"%b-%d"),cex.axis=cex.axis);
-      axis(1,mon.01,format(mon.01,xformat),cex.axis=cex.axis);
+      ## axis(1,mon.01,format(mon.01,xformat),cex.axis=cex.axis);
+      ## axis(1,xgrid,format(xgrid,xformat),cex.axis=cex.axis);
+      ## this code emits every other label
+      axis(1,xgrid,labels=FALSE,cex.axis=cex.axis)
+      i=seq(1,length(xgrid),by=2)
+      axis(1,xgrid[i],format(xgrid[i],xformat),cex.axis=cex.axis,tick=F)
+      
       ## plot extra lines & values if desired. nop if vline, hline NULL
       vhline(vline=vline,hline=hline,vlab=vlab,hlab=hlab,vhdigits=vhdigits,
              lty=vhlty,col=vhcol,lwd=vhlwd);
