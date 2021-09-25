@@ -25,6 +25,10 @@
 ## vhlty, vhcol, vhlwd are lty, col, lwd for these extra lines
 ## vlab, hlab contol writing vline, hline values along axes
 ## vhdigits is number of digits for these values
+## xgrid, xformat, xyear control appearance of x-axis.
+##   defaults good for plots covering full date range circa Sep 2021. found by trial-and-error
+##   xgrid is spacing of x grid lines and x-axis annotations - keyword or number of days
+##   xyear controls writing year on line below axis
 ## smooth whether to smooth data to make plot prettier. uses same methods as 'fit' transform
 ##   aspline, ispline, sspline, spline, loess, linear, approx (sames as linear), step, none
 ##   default aspline
@@ -37,8 +41,10 @@
 ## legend.args are further legend params
 plotm=
   function(x=NULL,y=NULL,title='',cex.title='auto',type='l',add=FALSE,
-           col=NULL,lty=NULL,lwd=NULL,xlab='date',ylab='y',xlim=NULL,ylim=NULL,
+           col=NULL,lty=NULL,lwd=NULL,ylab='count',xlim=NULL,ylim=NULL,
            col.pal='d3',lty.range=c(1,6),lwd.range=c(1,3),
+           xgrid=cq(monthly,biweekly,weekly,quadweekly,semimonthly),xformat='%b',xyear=TRUE,
+           cex.axis=0.75,
            vline=NULL,hline=NULL,vhlty='dashed',vhcol='grey50',
            vhlwd=1,vlab=TRUE,hlab=TRUE,vhdigits=2,
            ## NG 20-01-02: redo 'smooth' logic again to set smooth.args default
@@ -86,7 +92,7 @@ plotm=
       if (!is.null(xlim)) xlim=as_date(xlim);
       xrange=range(x);
       yrange=range(c(0,y),na.rm=TRUE);
-      plot(x=xrange,y=yrange,type='n',xaxt='n',xlab=xlab,ylab=ylab,xlim=xlim,ylim=ylim,
+      plot(x=xrange,y=yrange,type='n',xaxt='n',xlab=NA,ylab=ylab,xlim=xlim,ylim=ylim,
            main=title,cex.main=cex.title,...);
     }
     ## add columns to existing plot
@@ -108,18 +114,14 @@ plotm=
       if (type=='l') lines(x=x,y=y,col=col[j],lty=lty[j],lwd=lwd[j],...)
       else if (type=='p') points(x=x,y=y,col=col[j],lty=lty[j],lwd=lwd[j],...);
     });
-    if (!add&&type!='n') {
-      ## draw grid, extra lines, legend
-      grid(nx=NA,ny=NULL) # draw y grid lines. we'll draw x ourselves at first day of month
-      days=seq(min(x),max(x),1);
-      mon.01=mon_day(days,1);
-      mon.15=mon_day(days,15);
-      abline(v=c(mon.01,mon.15),col="lightgray",lty="dotted");
-      ## axis line below adapted from stackoverflow.com/questions/4843969. Thx!
-      axis(1,mon.01,format(mon.01,"%b-%d"),cex.axis=0.8);
+    if (type!='n') {
       ## plot extra lines & values if desired. nop if vline, hline NULL
       vhline(vline=vline,hline=hline,vlab=vlab,hlab=hlab,vhdigits=vhdigits,
              lty=vhlty,col=vhcol,lwd=vhlwd);
+    }
+    if (!add&&type!='n') {
+      ## draw grid, x-axis labels
+      xstyle(as_date(xrange),xgrid=xgrid,xformat=xformat,xyear=xyear,cex=cex.axis);
       ## draw legend if desired
       if (is.null(legend)) legend=FALSE
       else if (!is.logical(legend)) {
