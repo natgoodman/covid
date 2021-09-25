@@ -6,7 +6,7 @@
 ##
 ## Copyright (C) 2021 Nat Goodman.
 ##
-## Functions used in multiple top-level plots (ploc_cvdat, plotm)
+## Functions used in multiple top-level plots (plot_cvdat, plotm)
 ## Presently just code to draw x-axis and related in plot_cvdat and plotm.
 ##
 ## This software is open source, distributed under the MIT License. See LICENSE
