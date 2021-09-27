@@ -119,7 +119,7 @@ plotm=
       vhline(vline=vline,hline=hline,vlab=vlab,hlab=hlab,vhdigits=vhdigits,
              lty=vhlty,col=vhcol,lwd=vhlwd);
     }
-    if (!add&&type!='n') {
+    if (!add) {
       ## draw grid, x-axis labels
       xstyle(as_date(xrange),xgrid=xgrid,xformat=xformat,xyear=xyear,cex=cex.axis);
       ## draw legend if desired
