@@ -652,22 +652,32 @@ show_doh=
     invisible(cl(peaks,now=now));
   }
 ## TODO: these are CRUDE!! do it better
-## data is list of peaks, now from show_doh
-## cmp_doh_ages compares multiple ages for one place
-cmp_doh_ages=function(data) {
-  now=tail(data$now,n=1);
-  now=now[1,colnames(now)%-%cq(date,all)];
-  ratio=round(max(now)/min(now),digits=2);
-  best=names(which.min(now));
-  worst=names(which.max(now));
-  print(nv(worst,best,ratio));
-}
-## cmp_doh_ages compares multiple places for one age
-cmp_doh_places=function(data,base.place='state') {
-  now=tail(data$now,n=1);
-  now=now[1,-1];
-  ratio=round(now[1,base.place]/now[1,],digits=2);
-  print(ratio);
+## show data for one date for all places, ages. automates analysis I did for cod vsn 21-09-29
+cmp_doh=
+  function(objid=cq(std,raw,dly),what=cq(cases,admits,deaths),
+           places=NULL,ages=NULL,obj=NULL,per.capita=TRUE,per.mort=FALSE,
+           tail.n=1,round.digits=0) {
+    objid=match.arg(objid);
+    what=match.arg(what,several.ok=FALSE);
+    if (is.null(obj)) obj=get(paste(sep='.','doh',what,objid));
+    if (is.null(places)) places=places(obj);
+    if (is.null(ages)) ages=ages(obj);
+    rows=sapply(places,function(place) {
+      data=data_cvdat(obj,places=place,ages=ages,per.capita=per.capita,per.mort=per.mort);
+      row=tail(data,n=tail.n)[1,,drop=FALSE];
+    },simplify=FALSE);
+    data=do.call(rbind,rows);
+    data[,-1]=round(data[,-1],digits=round.digits);
+    data;
+  }
+## compute ratios from cmp_doh data
+## data is from cmp_doh
+cmp_doh_ratio=function(data,base.place='state',round.digits=2) {
+  counts=data[,-1,drop=FALSE];
+  base=repr(counts[base.place,,drop=FALSE],nrow(counts));
+  ratio=round(base/counts,digits=round.digits);
+  rownames(ratio)=rownames(data);
+  ratio;
 }
 xper_cmp_doh=function(places=places.wa,ages=NULL,do.print=FALSE) {
   if (!do.print) sink('/dev/null');
