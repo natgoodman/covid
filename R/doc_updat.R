@@ -19,8 +19,7 @@
 ## Previous versions are available in GitHub, of course.
 ## no sections.
 doc_updat=function(doc='updat',need.objs=TRUE,need.init=TRUE,version='latest',
-                   figs.all=TRUE,figs.dohcm=FALSE,
-                   do.fig=TRUE,do.tbl=TRUE,xmin.ragged=NULL,...) {
+                   figs.all=TRUE,do.fig=TRUE,do.tbl=TRUE,xmin.ragged=12,...) {
   what=cq(cases,admits,deaths);
   datasrc=cq(doh,jhu);
   if (is.null(version)||version=='latest') version=max(sapply(datasrc,latest_version));
@@ -28,7 +27,8 @@ doc_updat=function(doc='updat',need.objs=TRUE,need.init=TRUE,version='latest',
   if (need.objs) make_updat_objs(what=what,datasrc=datasrc,version=version);
   if (need.init) init_doc(doc=doc,version=version,...);
   ## if (is.null(xmin.ragged)&&version>='21-05-30') xmin.ragged='2021-02-15';
-  if (missing(xmin.ragged)) {
+  if (is.numeric(xmin.ragged)) xmin.ragged=as_date(version)-(xmin.ragged*7)
+  else if (is.null(xmin.ragged)) {
     if (btwn_co(version,'21-05-30','21-07-11')) xmin.ragged='2021-02-14'
     else if (btwn_co(version,'21-07-11','21-08-22')) xmin.ragged='2021-05-02'
     else if (btwn_co(version,'21-08-22','21-09-12')) xmin.ragged='2021-06-06'
@@ -43,7 +43,7 @@ doc_updat=function(doc='updat',need.objs=TRUE,need.init=TRUE,version='latest',
   places.nonwa<<-cq('Ann Arbor',Boston,'San Diego',DC);
   labels.nonwa=setNames(c('Ann Arbor','Boston','San Diego','Washington DC'),places.nonwa);
   if (do.tbl) {
-    ## Tables 1-2 trend analysis. Tables 3-4 data counts. not used in document.
+    ## Tables 1-2 trend analysis.
     if (param(verbose)) print(paste('+++ making tables'));
     widths=if(version<'21-02-28') 4 else c(4,6,8);
     widths.dly=7*(1:6);
@@ -53,16 +53,6 @@ doc_updat=function(doc='updat',need.objs=TRUE,need.init=TRUE,version='latest',
     trend.deaths.raw=trend(jhu.deaths.raw,places=c(places.wa,places.nonwa),widths=widths);
     trend.cases.dly=trend(jhu.cases.dly,places=c(places.wa,places.nonwa),widths=widths.dly);
     trend.deaths.dly=trend(jhu.deaths.dly,places=c(places.wa,places.nonwa),widths=widths.dly);
-
-    counts.cases=counts.cases.std=
-      data_cvdat(jhu.cases,places=c(places.wa,places.nonwa),per.capita=TRUE);
-    counts.deaths=counts.deaths.std=
-      data_cvdat(jhu.deaths,places=c(places.wa,places.nonwa),per.capita=TRUE);
-    counts.cases.raw=data_cvdat(jhu.cases.raw,places=c(places.wa,places.nonwa),per.capita=TRUE);
-    counts.deaths.raw=data_cvdat(jhu.deaths.raw,places=c(places.wa,places.nonwa),per.capita=TRUE);
-    counts.cases.dly=data_cvdat(jhu.cases.dly,places=c(places.wa,places.nonwa),per.capita=TRUE);
-    counts.deaths.dly=data_cvdat(jhu.deaths.dly,places=c(places.wa,places.nonwa),per.capita=TRUE);
-
     tblblk_start();
     dotbl('trend_cases',trend.cases);
     dotbl('trend_cases_raw',trend.cases.raw);
@@ -71,6 +61,18 @@ doc_updat=function(doc='updat',need.objs=TRUE,need.init=TRUE,version='latest',
     dotbl('trend_deaths',trend.deaths);
     dotbl('trend_deaths_raw',trend.deaths.raw);
     dotbl('trend_deaths_dly',trend.deaths.dly);
+    assign_global(
+      trend.cases,trend.deaths,trend.cases.std,trend.deaths.std,
+      trend.cases.raw,trend.deaths.raw,trend.cases.dly,trend.deaths.dly);
+   ## Tables 3-4 data counts.
+    counts.cases=counts.cases.std=
+      data_cvdat(jhu.cases,places=c(places.wa,places.nonwa),per.capita=TRUE);
+    counts.deaths=counts.deaths.std=
+      data_cvdat(jhu.deaths,places=c(places.wa,places.nonwa),per.capita=TRUE);
+    counts.cases.raw=data_cvdat(jhu.cases.raw,places=c(places.wa,places.nonwa),per.capita=TRUE);
+    counts.deaths.raw=data_cvdat(jhu.deaths.raw,places=c(places.wa,places.nonwa),per.capita=TRUE);
+    counts.cases.dly=data_cvdat(jhu.cases.dly,places=c(places.wa,places.nonwa),per.capita=TRUE);
+    counts.deaths.dly=data_cvdat(jhu.deaths.dly,places=c(places.wa,places.nonwa),per.capita=TRUE);
     tblblk_start();
     dotbl('counts_cases',counts.cases);
     dotbl('counts_cases_raw',counts.cases.raw);
@@ -79,13 +81,28 @@ doc_updat=function(doc='updat',need.objs=TRUE,need.init=TRUE,version='latest',
     dotbl('counts_deaths',counts.deaths);
     dotbl('counts_deaths_raw',counts.deaths.raw);
     dotbl('counts_deaths_dly',counts.deaths.dly);
-
     assign_global(
-      trend.cases,trend.deaths,trend.cases.std,trend.deaths.std,
-      trend.cases.raw,trend.deaths.raw,trend.cases.dly,trend.deaths.dly,
       counts.cases,counts.deaths,counts.cases.std,counts.deaths.std,
       counts.cases.raw,counts.deaths.raw,
       counts.cases.dly,counts.deaths.dly);
+    ## Tables 5-7 DOH comparisons
+    cmp.doh.cases=cmp_doh(what='cases');
+    cmp.doh.admits=cmp_doh(what='admits');
+    cmp.doh.deaths=cmp_doh(what='deaths');
+    rat.doh.cases=cmp_doh_ratio(cmp.doh.cases);
+    rat.doh.admits=cmp_doh_ratio(cmp.doh.admits);
+    rat.doh.deaths=cmp_doh_ratio(cmp.doh.deaths);
+    tblblk_start();
+    dotbl('cmp_doh_cases',cmp.doh.cases)
+    dotbl('cmp_doh_admits',cmp.doh.admits)
+    dotbl('cmp_doh_deaths',cmp.doh.deaths)
+    tblblk_start();
+    dotbl('rat_doh_cases',rat.doh.cases)
+    dotbl('rat_doh_admits',rat.doh.admits)
+    dotbl('rat_doh_deaths',rat.doh.deaths)
+    assign_global(
+      cmp.doh.cases,cmp.doh.admits,cmp.doh.deaths,
+      rat.doh.cases,rat.doh.admits,rat.doh.deaths);
   }
   if (!do.fig) return(version);
   if (param(verbose)) print(paste('+++ making figures'));
@@ -184,81 +201,19 @@ doc_updat=function(doc='updat',need.objs=TRUE,need.init=TRUE,version='latest',
     param(fignum=fignum.sav);           # restore fignum after a-d figs
   }
   ## Figures 3 WA DOH cases by age for state
-  ## Figures 3a-d (if figs.dohcm) cases per million inc and cum; case counts inc and cum
   figblk_end();
   place='state';
-  if (!figs.dohcm) {
-    dofig(paste(sep='_','cases',place),
-          plot_cvdat(
-            doh.cases,places=place,ages=ages,col=col,per.capita=TRUE,lwd=2,
-            title=figtitle(paste("Weekly cases per million by age in",labels.wa[place]))));
-  } else {
-    figblk_start();
-    dofig(paste(sep='_','cases',place),
-          plot_cvdat(
-            doh.cases,places=place,ages=ages,col=col,per.capita=TRUE,lwd=2,
-            title=figtitle(paste("Weekly cases per million by age in",labels.wa[place]))));
-    dofig(paste(sep='_','cases_cum',place),
-          plot_cvdat(
-            doh.cases.cum,places=place,ages=ages,col=col,per.capita=TRUE,lwd=2,
-            title=figtitle(paste("Cumulative cases per million by age in",labels.wa[place]))));
-    dofig(paste(sep='_','cases',place),
-          plot_cvdat(
-            doh.cases,places=place,ages=ages,col=col,per.capita=FALSE,lwd=2,
-            title=figtitle(paste("Weekly cases (not per million) by age in",
-                                 labels.wa[place]))));
-    dofig(paste(sep='_','cases_cum',place),
-          plot_cvdat(
-            doh.cases.cum,places=place,ages=ages,col=col,per.capita=TRUE,lwd=2,
-            title=figtitle(paste("Cumulative cases (not per million) by age in",
-                                 labels.wa[place]))));
-  }
+  dofig(paste(sep='_','cases',place),
+        plot_cvdat(
+          doh.cases,places=place,ages=ages,col=col,per.capita=TRUE,lwd=2,
+          title=figtitle(paste("Weekly cases per million by age in",labels.wa[place]))));
   ## Figures 4 WA DOH admits&deaths by age for state
-  ## Figures 4a-d (if figs.dohcm) admdea per million inc and cum; admdea counts inc and cum
-  ## Figures 4e-f (if figs.dohcm) deaths per mort inc and cum
-  ## admits broken in version 21-06-20. hopefully temporary...
-  if (!figs.dohcm) {
-    dofig(paste(sep='_','admits_deaths',place),
-          plot_admdea(
-            places=place,ages=ages,col=col,per.capita=TRUE,
-            title=figtitle(paste("Weekly admits and deaths per million by age in",
-                                 labels.wa[place]))));
-  } else {
-    figblk_start();
-    dofig(paste(sep='_','admits_deaths',place),
-          plot_admdea(
-            places=place,ages=ages,col=col,per.capita=TRUE,
-            title=figtitle(paste("Weekly admits and deaths per million by age in",
-                                 labels.wa[place]))));
-    dofig(paste(sep='_','admits_deaths_cum',place),
-          plot_admdea(
-            objs=list(doh.admits.cum,doh.deaths.cum),
-            places=place,ages=ages,col=col,per.capita=TRUE,
-            title=figtitle(paste("Cumulative admits and deaths per million by age in",
-                                 labels.wa[place]))))
-    dofig(paste(sep='_','admits_deaths',place),
-          plot_admdea(
-            places=place,ages=ages,col=col,per.capita=FALSE,
-            title=figtitle(paste("Weekly admits and deaths (not per million) by age in",
-                                 labels.wa[place]))));
-    dofig(paste(sep='_','admits_deaths_cum',place),
-            plot_admdea(
-              objs=list(doh.admits.cum,doh.deaths.cum),
-              places=place,ages=ages,col=col,per.capita=FALSE,
-              title=figtitle(paste("Cumulative admits and deaths (not per million) by age in",
-                                   labels.wa[place]))))
-    dofig(paste(sep='_','deaths_permort',place),
-          plot_cvdat(
-            doh.deaths,places=place,ages=ages,col=col,per.mort=TRUE,lwd=2,
-            title=figtitle(paste("Weekly deaths relative to expected mortality in",
-                                 labels.wa[place]))));
-    dofig(paste(sep='_','deaths_permort_cum',place),
-          plot_cvdat(
-            doh.deaths.cum,places=place,ages=ages,col=col,per.mort=TRUE,lwd=2,
-            title=figtitle(paste("Cumulative deaths relative to expected mortality in",
-                                 labels.wa[place]))));
-    figblk_end();
-  }
+  ## NOTE: admits broken in version 21-06-20. hopefully temporary...
+  dofig(paste(sep='_','admits_deaths',place),
+        plot_admdea(
+          places=place,ages=ages,col=col,per.capita=TRUE,
+          title=figtitle(paste("Weekly admits and deaths per million by age in",
+                               labels.wa[place]))));
   ## Figures 5a-b compare DOH, JHU.
   ## Note: not used in versions after Dec 13, 2020 until Jun 2, 2021. might go away again...
   ##if (figs.all) {
@@ -652,7 +607,8 @@ show_doh=
     invisible(cl(peaks,now=now));
   }
 ## TODO: these are CRUDE!! do it better
-## show data for one date for all places, ages. automates analysis I did for cod vsn 21-09-29
+## show data for one date for all places, ages. automates analysis I did for DOH vsn 21-09-29
+## NG 21-10-05: now also used for tables
 cmp_doh=
   function(objid=cq(std,raw,dly),what=cq(cases,admits,deaths),
            places=NULL,ages=NULL,obj=NULL,per.capita=TRUE,per.mort=FALSE,
@@ -679,13 +635,13 @@ cmp_doh_ratio=function(data,base.place='state',round.digits=2) {
   rownames(ratio)=rownames(data);
   ratio;
 }
-xper_cmp_doh=function(places=places.wa,ages=NULL,do.print=FALSE) {
-  if (!do.print) sink('/dev/null');
-  if (is.null(ages)) ages=ages(doh.cases)%-%'all';
-  cmp=sapply(ages,function(age) {
-    data=show_doh(what='cases',places=places,ages=age,do.peaks=F);
-   cmp_doh_places(data);
-  });
-  if (!do.print) sink();
-  t(cmp);
-}
+## xper_cmp_doh=function(places=places.wa,ages=NULL,do.print=FALSE) {
+##   if (!do.print) sink('/dev/null');
+##   if (is.null(ages)) ages=ages(doh.cases)%-%'all';
+##   cmp=sapply(ages,function(age) {
+##     data=show_doh(what='cases',places=places,ages=age,do.peaks=F);
+##    cmp_doh_places(data);
+##   });
+##   if (!do.print) sink();
+##   t(cmp);
+## }
