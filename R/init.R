@@ -46,6 +46,7 @@ init=function(
   inmetadir=filename(indir,'meta'),
   placedir=filename(inmetadir,'place'),
   inmortdir=filename(inmetadir,'mort'),
+  inmtopdir=filename(inmetadir,'mtop'),
   ## metadata input URLs and files
   ## acs5yr=filename(inmetadir,'acs2018_5yr_B01001_05000US53041.csv'),
   acsmeta=filename(inmetadir,'metadata.json'),
@@ -57,6 +58,7 @@ init=function(
   stateid.file=filename(metadir,'stateid'), # map state names to IDs
   mort.file=filename(metadir,'mort'),       # mortality (see mort.R for details)
   mortpop.file=filename(metadir,'mortpop'), # mortality pop (see mort.R for details)
+  mtop.file=filename(metadir,'mtop'),       # leading cause of deatg (see mtop.R for details)
  ## descriptors for non-WA places of interest
   ## entries are place, state, county. converted to data frame in code below
   places.nonwa=
@@ -77,6 +79,7 @@ init=function(
   stateid=NULL,                  # map state names to IDs. set by load_stateid, read_stateid
   mort=NULL,                     # mortality by place, age. set by load_mort, read_mort
   mortpop=NULL,                  # pop from mort files. set by load_mortpop, read_mortpop
+  mtop=NULL,                     # leading causes of death by age. set by load_mtop, read_mtop
   pal.info=NULL,                 # color palette info. set in pal/init_pal
 
   ## import params for specific data sources

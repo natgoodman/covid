@@ -148,8 +148,29 @@ read_mortpop=function(base=param(mortpop.file)) {
   mortpop=read_(base=base,row.names='age');
   param(mortpop=mortpop);
 }
-
-
-
+## ---- Save and Load leading cause of death (mtop) data ----
+## mtop is list. names are ages
+save_mtop=function(mtop,base=param(mtop.file)) {
+  param(save.meta,save.txt.meta);
+  save_(mtop,base=base,save=save.meta,save.txt=FALSE);
+  if (save.txt.meta) {
+    ## flatten list into table with explicit age, place columns
+    mtop=do.call(rbind,lapply(names(mtop),function(name) {
+      mt=mtop[[name]];
+      mt=if(name=='USA') cbind(age='all',place='USA',mt) else cbind(age=name,place='state',mt);
+    }));
+    file=resuffix(base,old.suffix=cq(txt,RData),suffix='txt');
+    write.table(mtop,file=file,sep='\t',quote=F,row.names=F);
+  }
+}
+load_mtop=function(base=param(mtop.file)) {
+  mtop=load_(base=base);
+  param(mtop=mtop);
+}
+## CAUTION: this one returns data frame not list. dunno if that's a problem
+read_mtop=function(base=param(mtop.file)) {
+  mtop=read_(base=base,row.names='age');
+  ## param(mtop=mtop);
+}
 
 
