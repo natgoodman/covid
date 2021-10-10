@@ -47,6 +47,7 @@ init=function(
   placedir=filename(inmetadir,'place'),
   inmortdir=filename(inmetadir,'mort'),
   inmtopdir=filename(inmetadir,'mtop'),
+  mtopcause.file=filename(inmtopdir,'cause'), # map ICD causes to lay terms
   ## metadata input URLs and files
   ## acs5yr=filename(inmetadir,'acs2018_5yr_B01001_05000US53041.csv'),
   acsmeta=filename(inmetadir,'metadata.json'),
@@ -80,6 +81,7 @@ init=function(
   mort=NULL,                     # mortality by place, age. set by load_mort, read_mort
   mortpop=NULL,                  # pop from mort files. set by load_mortpop, read_mortpop
   mtop=NULL,                     # leading causes of death by age. set by load_mtop, read_mtop
+  mtopcause=NULL,                # maps ICD causes of death to lay terms
   pal.info=NULL,                 # color palette info. set in pal/init_pal
 
   ## import params for specific data sources

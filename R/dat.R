@@ -167,10 +167,15 @@ load_mtop=function(base=param(mtop.file)) {
   mtop=load_(base=base);
   param(mtop=mtop);
 }
-## CAUTION: this one returns data frame not list. dunno if that's a problem
+## CAUTION: this one returns data frame not list. seems like a feature but may be a trap
 read_mtop=function(base=param(mtop.file)) {
-  mtop=read_(base=base,row.names='age');
-  ## param(mtop=mtop);
+  mtop=read_(base=base);
+  param(mtop=mtop);
 }
-
-
+## read mtop cause file
+## maps long ICD causes to lay terms.  has 15 leading causes of death for age groups of interest
+## NOTE: hand crafted!
+read_mtopcause=load_mtopcause=function(base=param(mtopcause.file)) {
+  cause=read_(base=base);
+  param(mtopcause=cause);
+}
