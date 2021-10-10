@@ -22,7 +22,7 @@
 ##
 #################################################################################
 ## ---- Import mortality data ----
-## input files in input/meta/mortality
+## input files in input/meta/mort
 ## output files meta/mort .RData, .txt
 download_mort=function(...) {
   stop("Mortality files downloaded 'manually' using CDC WONDER web query tool and stored in ",
