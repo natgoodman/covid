@@ -473,7 +473,8 @@ show_counts=
   function(objid=cq(raw,std,dly),where=cq(wa,nonwa),what=cq(cases,deaths),
            places.wa=parent(places.wa),places.nonwa=parent(places.nonwa),
            cases=NULL,deaths=NULL,
-           tail.n=c(3,10),round.digits=0,
+           tail.n=c(3,10),
+           round.digits=0,round.50=FALSE,round.to=if(round.50) 50 else 10^(-round.digits),
            ## ## wa spring 2020 peak dates
            ## do.spring=FALSE,
            ## peak.cases.spring=c('2020-03-15','2020-05-01'),
@@ -492,8 +493,10 @@ show_counts=
     what=match.arg(what,several.ok=TRUE);
     if (is.null(cases)) cases=get(paste0('counts.cases.',objid),envir=globalenv());
     if (is.null(deaths)) deaths=get(paste0('counts.deaths.',objid),envir=globalenv());
-    cases[,-1]=round(cases[,-1],digits=round.digits);
-    deaths[,-1]=round(deaths[,-1],digits=round.digits);
+    ## cases[,-1]=round(cases[,-1],digits=round.digits);
+    ## deaths[,-1]=round(deaths[,-1],digits=round.digits);
+    cases[,-1]=round_to(cases[,-1],round.to);
+    deaths[,-1]=round_to(deaths[,-1],round.to);
     cases.wa=cases[,c('date',places.wa)];
     deaths.wa=deaths[,c('date',places.wa)];
     cases.nonwa=cases[,c('date',places.nonwa)];
@@ -577,7 +580,8 @@ show_peak1=function(peak,label) {
 show_doh=
   function(objid=cq(std,raw,dly),what=cq(cases,admits,deaths),
            places='state',ages=NULL,obj=NULL,data=NULL,per.capita=TRUE,per.mort=FALSE,
-           tail.n=c(6,10),round.digits=0,
+           tail.n=c(6,10),
+           round.digits=0,round.50=FALSE,round.to=if(round.50) 50 else 10^(-round.digits),
            do.peaks=TRUE,do.now=TRUE,do.cmp=TRUE,
            cuts=c('2020-01-26','2020-06-01','2020-09-15','2021-03-01','2021-07-01'),
            labels=cq(spring20,summer20,winter20,spring21,summer21)) {
@@ -591,7 +595,8 @@ show_doh=
       stop("Both 'places' and 'ages' are empty; nothing to show!");
     if (is.null(data))
       data=data_cvdat(obj,places=places,ages=ages,per.capita=per.capita,per.mort=per.mort);
-    data[,-1]=round(data[,-1],digits=round.digits);
+##    data[,-1]=round(data[,-1],digits=round.digits);
+    data[,-1]=round_to(data[,-1],round.to);
     if (length(places)==1) {
       peak.labels=paste(what,places,labels);
       now.label=paste(what,places,'now');
@@ -612,7 +617,8 @@ show_doh=
 cmp_doh=
   function(objid=cq(std,raw,dly),what=cq(cases,admits,deaths),
            places=NULL,ages=NULL,obj=NULL,per.capita=TRUE,per.mort=FALSE,
-           tail.n=1,round.digits=0) {
+           tail.n=1,
+           round.digits=0,round.50=FALSE,round.to=if(round.50) 50 else 10^(-round.digits)) {
     objid=match.arg(objid);
     what=match.arg(what,several.ok=FALSE);
     if (is.null(obj)) obj=get(paste(sep='.','doh',what,objid));
@@ -623,7 +629,8 @@ cmp_doh=
       row=tail(data,n=tail.n)[1,,drop=FALSE];
     },simplify=FALSE);
     data=do.call(rbind,rows);
-    data[,-1]=round(data[,-1],digits=round.digits);
+    ## data[,-1]=round(data[,-1],digits=round.digits);
+    data[,-1]=round_to(data[,-1],round.to);
     data;
   }
 ## compute ratios from cmp_doh data
