@@ -20,7 +20,7 @@
 #################################################################################
 source('../util/R/source.R');        # source first to get 'cq' and 'source_all' functions
 SOURCE=cq(cvdat,dat,data_cvdat,distr_slct,doc,edit,extra,fit,import,import_doh,import_cdc,
-          init,label,pal,pal_yarrr,meta,mort,plot_cvdat,plotfun,plotm,series,transform,trend,
+          init,label,pal,pal_yarrr,meta,mort,mtop,plot_cvdat,plotfun,plotm,series,transform,trend,
           workflow,
           ## doc-specific files. not too many as yet
           doc_updat,doc_updatsupp,docfun_updatsupp);
