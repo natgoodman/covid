@@ -23,7 +23,7 @@ doc_updat=function(doc='updat',need.objs=TRUE,need.init=TRUE,version='latest',
   what=cq(cases,admits,deaths);
   datasrc=cq(doh,jhu);
   if (is.null(version)||version=='latest') version=max(sapply(datasrc,latest_version));
-  if (param(verbose)) print(paste('+++ doc_update',nv(version)));
+  if (param(verbose)) print(paste('+++ doc_updat',nv(version)));
   if (need.objs) make_updat_objs(what=what,datasrc=datasrc,version=version);
   if (need.init) init_doc(doc=doc,version=version,...);
   ## if (is.null(xmin.ragged)&&version>='21-05-30') xmin.ragged='2021-02-15';
@@ -394,14 +394,14 @@ make_updat_objs=
 ## remove superflous objects - either because they were created by mistake or to start clean
 ## if id is set, only removes those objects, else all that fit the pattern
 rm_updat_objs=function(what=cq(cases,admits,deaths),datasrc=param(datasrc),
-                       id=NULL,rm.std=is.null(id)) {
+                       objid=NULL,rm.std=is.null(objid)) {
   what=match.arg(what,several.ok=TRUE);
   datasrc=match.arg(datasrc,several.ok=TRUE);
   if (length(what)==0||length(datasrc)==0) invisible(NULL); # nothing to remove
   names.all=ls(globalenv());
   pat=paste0('^(',paste(collapse='|',datasrc),')','\\.',
              '(',paste(collapse='|',what),')','\\.',
-             '(',paste(collapse='|',id),')');
+             '(',paste(collapse='|',objid),')');
   names1=grep(pat,names.all,value=TRUE);
   rm(list=names1,envir=globalenv());
   if (rm.std) {
