@@ -78,12 +78,12 @@ read_mtop_input=
 ## construct annual data from 'data_cvdat' result
 ## assumes cum with daily rows - what 'fit' produces
 ## TODO: should really be transform
-ann=function(data) {
+ann=function(data,test.mono=TRUE) {
   dates=data$date;
   counts=data[,-1,drop=FALSE];
   if (unique(diff(dates))!=1) stop ("ann assumes data has daily rows");
   ## 'is.unsorted' tests monotonicity. from stackoverflow.com/questions/13093912. Thx!!
-  if (any(capply(counts,is.unsorted))) stop ("ann assumes data is cumulative");
+  if (test.mono&&any(capply(counts,is.unsorted))) stop ("ann assumes data is cumulative");
   ## do it.
   ## scale counts in first year (365 days)
   c0=head(counts,n=365);                # first year
@@ -103,15 +103,15 @@ cv_mtop=function(obj,places=NULL,ages=NULL,mtop=param(mtop)) {
   if (is.null(mtop)) mtop=load_mtop();
   if (is.null(places)) {
     places=if(datasrc(obj)=='doh') 'state' else 'USA';
-  } else {
+  } else { 
     if (datasrc(obj)=='doh') {
       bad=places%-%cq(state);
       if (length(bad))
-        stop("Invalid place(s): ",paste(collapse=', ',bad),"; when  obj is 'doh', only valid place is 'state'");
+        stop("Invalid place(s): ",paste(collapse=', ',bad),"; when  obj is 'doh', only valid place is 'state' (because don't have 'mtop' data for other places)");
     } else {
       bad=places%-%cq(state,USA);
       if (length(bad))
-        stop("Invalid place(s): ",paste(collapse=', ',bad),";  when  obj is not 'doh', valid places are 'state', 'USA'");
+        stop("Invalid place(s): ",paste(collapse=', ',bad),";  when  obj is not 'doh', valid places are 'state', 'USA' (because don't have 'mtop' data for other places)");
     }}
   if (is.null(ages)) {
     ages=if(datasrc(obj)=='doh') ages(obj) else 'all';
@@ -125,17 +125,18 @@ cv_mtop1=function(obj,places,ages,names,mtop) {
   deaths=data_cvdat(obj,places=places,ages=ages,cnm=names,per.capita=FALSE);
   per.capita=data_cvdat(obj,places=places,ages=ages,cnm=names,per.capita=TRUE);
   ## annualized counts
-  deaths=ann(deaths);
-  per.capita=ann(per.capita);
+  deaths=ann(deaths,test.mono=FALSE);
+  per.capita=ann(per.capita,test.mono=FALSE);
   ## current annualized counts
   deaths=tail(deaths,n=1)[1,-1,drop=FALSE];
   per.capita=tail(per.capita,n=1)[1,-1,drop=FALSE];
   ## merge COVID counts with mtop
   mt=lapply(names,function(name) {
     mt=if(name=='state') mtop[['all']] else mtop[[name]];
-    mt=rbind(mt,data.frame(cause='COVID',deaths=deaths[1,name],per.capita=per.capita[1,name]));
+    mt=rbind(mt,data.frame(cause='**COVID**',deaths=deaths[1,name],per.capita=per.capita[1,name]));
         mt[,cq(deaths,per.capita)]=round(mt[,cq(deaths,per.capita)]);
-        mt[order(mt$per.capita,decreasing=TRUE),];
+    rownames(mt)=NULL;
+    mt[order(mt$per.capita,decreasing=TRUE),];
       });
   names(mt)=names;
   mt;
