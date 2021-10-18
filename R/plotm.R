@@ -119,7 +119,7 @@ plotm=
       vhline(vline=vline,hline=hline,vlab=vlab,hlab=hlab,vhdigits=vhdigits,
              lty=vhlty,col=vhcol,lwd=vhlwd);
     }
-    if (!add) {
+    if (!add&&type!='n') {
       ## draw grid, x-axis labels
       xstyle(as_date(xrange),xgrid=xgrid,xformat=xformat,xyear=xyear,cex=cex.axis);
       ## draw legend if desired
@@ -149,11 +149,11 @@ plotm_df=
 plotm_legend=
   function(where=NULL,x=NULL,y=NULL,cex=0.8,bty='n',
            title=NULL,title.col='black',
-           col='black',lty='solid',lwd=1,labels=NULL,legend=labels,...) {
+           col='black',lty='solid',lwd=1,labels=NULL,legend=labels,seg.len=4,...) {
     if (is.null(legend)) return();      # nothing to draw
     if (is.null(x)) x=where;
     legend(x,y,bty=bty,legend=legend,cex=cex,col=col,lwd=lwd,lty=lty,
-          title=title,title.col=title.col,...);
+          title=title,title.col=title.col,seg.len=seg.len,...);
   }
 
 
