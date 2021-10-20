@@ -26,7 +26,7 @@ The first several figures (1a-2d) show *case* and *death* counts per million for
 
 Figures 1a-b (the top row) show smoothed *case* counts (See [below](#techdetails) for details on the smoothing method). Figures 1c-d (the bottom row) overlay raw data onto the smoothed for the latest 12 weeks to help explain recent trends.
 
-When comparing the smoothed Washington and non-Washington graphs (Figures 1a-b), please note the difference in y-scale; the graphs with raw data (Figures 1c-d) have the same y-scale and may be better for comparing Washington and non-Washington locations. The current raw counts for Washington locations are about 1350-2450 per million; non-Washington raw counts are about 950-2050 per million.
+When comparing the smoothed Washington and non-Washington graphs (Figures 1a-b), please note the difference in y-scale; the graphs with raw data (Figures 1c-d) have the same y-scale and may be better for comparing Washington and non-Washington locations. The current raw counts for Washington locations are about 1500-2700 per million; non-Washington raw counts are about 400-2100 per million.
 
 ```{r out.width="50%",echo=FALSE,fig.show='asis',include=TRUE}
 knitr::include_graphics(file.path(figdir,'figure_001a_cases_wa.png'));
@@ -37,13 +37,13 @@ knitr::include_graphics(file.path(figdir,'figure_001c_cases_wa_ragged.png'));
 knitr::include_graphics(file.path(figdir,'figure_001d_cases_nonwa_ragged.png'));
 ```
 
-The smoothed graphs for Washington locations (Figure 1a) show rates decreasing everywhere. The raw data (Figure 1c) and trend analysis agree except in Pierce where the most recent data is too variable to call the direction; looking back 6 or 8 weeks, the downward trend is clear even in Pierce. Rates in all Washington locations are well below their recent peaks. Comparing to the highest ever peak in winter 2020-21 (Figure 1a): statewide and Pierce remain above; Snohomish has finally fallen slightly below; Seattle never exceeded that peak and is now well below it.
+The smoothed graphs for Washington locations (Figure 1a) show rates decreasing everywhere. The raw data (Figure 1c) and trend analysis broadly agree; looking back 6 or 8 weeks, the downward trend is clear, but more recent rates seem to be flattening. Rates in all Washington locations are well below their recent peaks. Comparing to the highest ever peak in winter 2020-21 (Figure 1a): Pierce remains above; the state as a whole has finally fallen slightly below; Snohomish is well below; Seattle never exceeded that peak and has fallen even further below.
 
-The smoothed graphs for non-Washington locations (Figure 1b) show rates decreasing in all locations except Ann Arbor. The raw data (Figure 1d) and trend analysis concur. Rates in non-Washington locations remain below their winter peaks.
+The smoothed graphs for non-Washington locations (Figure 1b) show rates decreasing in all locations except Ann Arbor. The raw data (Figure 1d) and trend analysis concur, except in Washington DC where the raw data is too variable to call; the most recent data point for Washington DC (about 400 per million) seems anomalously low. Rates in non-Washington locations remain below their winter peaks.
 
 Figures 2a-d show *deaths* per million for the same locations. As with the *cases* graphs, the top row (Figures 2a-b) show smoothed data (see details [below](#techdetails)) and the bottom row (Figures 2c-d) overlays raw data onto the smoothed since June 1.
 
-As with the cases data, the graphs with raw data (Figures 2c-d) are probably more useful when comparing the Washington and non-Washington graphs, as they have the same y-scale. The current Washington rates are 13-34 per million and non-Washington rates are 5-11 per million. Deaths in all Washington locations are higher than any non-Washington locations.
+As with the cases data, the graphs with raw data (Figures 2c-d) are probably more useful when comparing the Washington and non-Washington graphs, as they have the same y-scale. The current Washington rates are 9-28 per million and non-Washington rates are 1-15 per million.
 
 ```{r out.width="50%",echo=FALSE,fig.show='asis',include=TRUE}
 knitr::include_graphics(file.path(figdir,'figure_002a_deaths_wa.png'));
@@ -54,9 +54,9 @@ knitr::include_graphics(file.path(figdir,'figure_002c_deaths_wa_ragged.png'));
 knitr::include_graphics(file.path(figdir,'figure_002d_deaths_nonwa_ragged.png'));
 ```
 
-The smoothed graphs for Washington locations (Figure 2a) show rates increasing everywhere. Trend analysis and raw data (Figure 2c) indicate that recent data is too variable to be confident in the direction; looking back 6 or 8 weeks, the upward trend is clear, but the most recent data suggests rates may be flattening. The long flat line for Pierce in late May-June 2021 is due to negative counts for two weeks in early June: this arises when JHU discovers they overcounted previous weeks and are catching up; my software clamps the fit to zero reasoning that negative counts are meaningless.
+The smoothed graphs for Washington locations (Figure 2a) show rates decreasing statewide and in Seattle, while continuing to climb in Snohomish and Pierce. Trend analysis and raw data (Figure 2c) support the statewide decline and Snohomish increase; in Seattle, the rates are probably flat; in Pierce, the raw data is too variable to be confident in the direction. The long flat line for Pierce in late May-June 2021 is due to negative counts for two weeks in early June: this arises when JHU discovers they overcounted previous weeks and are catching up; my software clamps the fit to zero reasoning that negative counts are meaningless.
 
-The smoothed graphs for non-Washington locations (Figure 2b) show rates going up everywhere except San Diego. Trend analysis and raw data (Figure 2d) confirm the increase in Boston and Washington DC, and the decline in San Diego, but recent data in Ann Arbor is too variable to call. 
+The smoothed graphs for non-Washington locations (Figure 2b) show rates increasing everywhere except Washington DC. Trend analysis and raw data (Figure 2d) suggest that rates are actually flat in all locations. 
 
 The next graphs show the Washington results broken down by age. This data is from Washington State Department of Health (DOH) weekly downloads, described [below](#doh). An important caveat is that the DOH download systematically undercounts events in recent weeks due to manual curation. I extrapolate data for late time points as discussed [below](#techdetails).
 
@@ -76,7 +76,8 @@ knitr::include_graphics(file.path(figdir,'figure_003c_cases_Snohomish.png'));
 knitr::include_graphics(file.path(figdir,'figure_003d_cases_Pierce.png'));
 ```
 
-Early on, the pandemic struck older age groups most heavily, but *cases* quickly spread into all age groups, even the young. Rates have greatly increased in recent weeks but are now flattening or declining in most age groups. In recent weeks, the youngest group (0-19) have surpassed the 20-34 and 35-49 year olds to take the dubious honor of being the highest group. Pre-seniors (50-64) are well below the younger groups followed by the two oldest age groups (65-79 and 80+ years). The difference between worst and best in the statewide data (Figure 3a) is about 2x (about 3000 for 0-19 vs. 1500 for 65-79). The general pattern is similar in Seattle (Figure 3b) but the counts are a lot lower, ranging from 1.7x lower for 0-19 (3000 vs. 1800) to 2.1x lower in the 80+ group (1600 vs. 750). The Snohomish numbers (Figure 3c) are between Seattle and statewide, while Pierce (Figure 3d) is about the same as the state for most age groups.
+Early on, the pandemic struck older age groups most heavily, but *cases* quickly spread into all age groups, even the young. Rates have greatly increased in recent weeks but are now declining in most age groups. In recent weeks, the youngest group (0-19) have surpassed the 20-34 and 35-49 year olds to take the dubious honor of being the highest group in all locations except Pierce. Pre-seniors (50-64) are well below the younger groups followed by the two oldest age groups (65-79 and 80+ years). The difference between worst and best in the statewide data (Figure 3a) is about 1.8x (about 2750 for 0-19 vs. 1550 for 65-79). The general pattern is similar in Seattle (Figure 3b) but the counts are a lot lower, ranging from 1.7x lower for 0-19 (2750 vs. 1600) to 2.2x lower in the 80+ group (1550 vs. 700). The Snohomish numbers (Figure 3c) are between Seattle and statewide, while Pierce (Figure 3d) is worse than the state, except for the oldest group (80+) where it's between Snohomish and statewide.
+about the same as the state for most age groups.
 
 Figures 4a-d show hospital admissions (*admits*) and *deaths*.
 
@@ -87,11 +88,11 @@ knitr::include_graphics(file.path(figdir,'figure_004c_admits_deaths_Snohomish.pn
 knitr::include_graphics(file.path(figdir,'figure_004d_admits_deaths_Pierce.png'));
 ```
 
-*Admits*, like *cases*, have gone up a lot in recent weeks but are now declining statewide in all age groups. Rates remain well above their previous highs in winter 2020-21 except for the oldest two age groups (65-79 and 80+). *Admit* rates vary with age groups exactly as one would expect: lowest in the young and increasing with age. As with *cases*, *admits* are much higher statewide than in Seattle (Figure 4a vs. 4b): more than 2x in all groups except the youngest (0-19) where the ratio is 1.4x. The Snohomish rates (Figure 4c) are generally between Seattle and statewide, while Pierce (Figure 4d) is worse than the state, except for the oldest group (80+) where it's between Seattle and statewide.
+*Admits*, like *cases*, have gone up a lot in recent weeks but are now declining statewide and Seattle in all age groups, and elsewhere in most age groups. Rates remain well above their previous highs in winter 2020-21 except for the oldest two age groups (65-79 and 80+). *Admit* rates vary with age groups exactly as one would expect: lowest in the young and increasing with age. As with *cases*, *admits* are much higher statewide than in Seattle (Figure 4a vs. 4b): more than 2x in all groups except the youngest (0-19) where the ratio is 1.3x. The Snohomish rates (Figure 4c) are generally between Seattle and statewide, while Pierce (Figure 4d) is worse than the state for most ages groups.
 
-Throughout the pandemic, the *death* rate for the 80+ group was much higher than any other group. Thankfully deaths even in this group dropped to near zero in early summer, increased above their spring 2021 levels in all locations during the current wave, but have fallen near or below their spring 2021 levels in all locations except statewide. *Deaths* for the oldest groups are much higher statewide (Figure 4a) than any of the individual locations (Figures 4b-d). The high statewide rate reflects the much higher death rate in the rural eastern part of the state (data not shown).
+Throughout the pandemic, the *death* rate for the 80+ group was much higher than any other group. Thankfully deaths even in this group dropped to near zero in early summer, increased above their spring 2021 levels in all locations during the current wave, but are now falling in most locations. *Deaths* for the oldest groups are much higher statewide (Figure 4a) than any of the individual locations (Figures 4b-d). The high statewide rate reflects the much higher death rate in the rural eastern part of the state (data not shown).
 
-The dip at the end is probably an artifact of DOH undercounting. Comparing the figures here to those in previous versions of the document, it seems reasonable to conjecture that *deaths* are declining or at least flattening in the oldest age groups.
+*Death* data near the end is unreliable due to DOH undercounting and my [extrapolation](#techdetails) that seeks to correct for this. Comparing the figures here to those in previous versions of the document, it seems reasonable to conjecture that *deaths* are declining or at least flattening in the oldest age groups in all locations.
 
 ## Caveats {#caveats}
 
