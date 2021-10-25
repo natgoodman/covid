@@ -72,7 +72,7 @@ dotbl=function(tblname,tblfun=NULL,sect=param(sect),pjto=param(pjto),obj.ok=TRUE
   tblfun=pryr::subs(tblfun);
   tbl=eval(tblfun,parent.env);          # generate table!
   save_(tbl,base=base,save=param(save.RData.tbl),save.txt=param(save.txt.tbl),
-        pjto=pjto,obj.ok=obj.ok)
+        pjto=pjto,obj.ok=obj.ok);
   tblinc();                             # increment table info for next time
   tblname;
 }
@@ -111,6 +111,21 @@ figlabel=function(extra=FALSE,where=cq(content,filename)) {
   numsfx=paste(collapse='',c(num,sfx));
   if (where=='filename') paste(collapse='',c(pfx,numsfx)) else paste(collapse='-',c(pfx,numsfx));
 }
+## construct table title (aka caption)
+## use CAP arg names to reduce conflicts with partial arg matching
+tbltitle=function(TEXT=NULL,...,SEP=' ',FMT=cq(html,txt)) {
+  FMT=match.arg(FMT);
+  dots=unlist(list(...));
+  tbl=if(param(tbllabel)) paste(sep='','Table ',tbllabel()) else NULL;
+  TEXT=paste(collapse=SEP,TEXT);
+  if (!is.null(dots)) {
+    dots=paste(collapse=', ',sapply(names(dots),function(name) paste(sep='=',name,dots[name])));
+    TEXT=paste(collapse='. ',c(TEXT,dots));
+  }
+  sep=if(FMT=='txt') "\n" else "</br>";
+  paste(collapse=sep,c(tbl,TEXT));
+}
+
 ## construct table label, eg, S1-2c
 tbllabel=function(where=cq(content,filename)) {
   if (!param(tbllabel)) return('');
