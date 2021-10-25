@@ -259,6 +259,7 @@ init_doc=function(
   save.tbl=save.out,            # save tables (when called via dotbl)
   save.RData.tbl=FALSE,         # save RData tables. default F
   save.txt.tbl=TRUE,            # save txt tables. default T
+  save.kbl=TRUE,                # save kables. only used in doc_mtop. default T
   clean.out=FALSE,
   clean.fig=clean.out,          # remove figdir
   clean.tbl=clean.out,          # remove tbldir
