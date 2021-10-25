@@ -102,14 +102,14 @@ ann=function(data,test.mono=TRUE) {
 cv_mtop=function(obj,places=NULL,ages=NULL,mtop=param(mtop)) {
   if (is.null(mtop)) mtop=load_mtop();
   if (is.null(places)) {
-    places=if(datasrc(obj)=='doh') 'state' else 'USA';
+    places=if(datasrc(obj)=='doh') 'state' else cq(USA,state);
   } else { 
     if (datasrc(obj)=='doh') {
       bad=places%-%cq(state);
       if (length(bad))
         stop("Invalid place(s): ",paste(collapse=', ',bad),"; when  obj is 'doh', only valid place is 'state' (because don't have 'mtop' data for other places)");
     } else {
-      bad=places%-%cq(state,USA);
+      bad=places%-%cq(USA,state);
       if (length(bad))
         stop("Invalid place(s): ",paste(collapse=', ',bad),";  when  obj is not 'doh', valid places are 'state', 'USA' (because don't have 'mtop' data for other places)");
     }}
@@ -133,7 +133,7 @@ cv_mtop1=function(obj,places,ages,names,mtop) {
   ## merge COVID counts with mtop
   mt=lapply(names,function(name) {
     mt=if(name=='state') mtop[['all']] else mtop[[name]];
-    mt=rbind(mt,data.frame(cause='**COVID**',deaths=deaths[1,name],per.capita=per.capita[1,name]));
+    mt=rbind(mt,data.frame(cause='COVID',deaths=deaths[1,name],per.capita=per.capita[1,name]));
         mt[,cq(deaths,per.capita)]=round(mt[,cq(deaths,per.capita)]);
     rownames(mt)=NULL;
     mt[order(mt$per.capita,decreasing=TRUE),];
