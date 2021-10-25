@@ -23,7 +23,7 @@ SOURCE=cq(cvdat,dat,data_cvdat,distr_slct,doc,edit,extra,fit,import,import_doh,i
           init,label,pal,pal_yarrr,meta,mort,mtop,plot_cvdat,plotfun,plotm,series,transform,trend,
           workflow,
           ## doc-specific files. not too many as yet
-          doc_updat,doc_updatsupp,docfun_updatsupp);
+          doc_mtop,doc_updat,doc_updatsupp,docfun_updatsupp);
 UTIL=cq(apply,assign,cqcl,dat,date,dev,file,fill,nv,param,parent,plot,rep,set,util,withrows);
 source_all(SOURCE,UTIL);
 
