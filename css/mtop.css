@@ -1,0 +1,34 @@
+/* 
+Devised by trial-and-error to do what I want for doc_mtop
+*/
+
+/* Needed, I think, to override bootstrap */
+.table>tbody>tr>td {
+    vertical-align: middle;
+}
+.table>thead>tr>th {
+    vertical-align: bottom;
+    /* text-align: center; */
+    width: 10em;
+}
+
+table.kable_wrapper>tbody>tr>td {
+    vertical-align: top;
+}
+
+caption {
+    text-align: center;
+    font-weight: bold;
+    font-size: larger;
+    color: black;
+}
+
+thead {
+    background-color: #f2f2f2;
+}
+
+td {
+    vertical-align: middle;
+}
+tr:nth-child(even){background-color: #f2f2f2}
+
