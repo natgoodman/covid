@@ -217,7 +217,10 @@ obj_mort=function(obj) {
   } else groups=NULL;
    mort.obj=if(datasrc(obj)=='cdc')
               data.frame(USA=c(all=mort['all',],sapply(groups,function(i) sum(mort[i,,drop=F]))))
-            else rbind(mort['all',], t(sapply(groups,function(i) colSums(mort[i,]))));
+            ## else rbind(mort['all',], t(sapply(groups,function(i) colSums(mort[i,]))));
+            ## NG 21-10-31: this way works even when only place. gotta love R...
+            else mort.obj=rbind(all=mort['all',,drop=FALSE],
+                do.call(rbind,lapply(groups,function(i) colSums(mort[i,,drop=FALSE]))));
   ## colnames(mort.obj)=places.obj;
   mort.obj;
 }
