@@ -82,7 +82,7 @@ obj_pop=function(obj) {
   places.obj=places(obj)%-%c('Unassigned','Out of WA','Unknown')
   bad=places.obj%-%places.pop;
   if (length(bad)) stop("Bad news: object contains unknown place(s): ",paste(collapse=', ',bad));
-  pop=pop[,places.obj];
+  pop=pop[,places.obj,drop=FALSE];
   ages.pop=rownames(pop)%-%'all';
   ages.obj=ages(obj)%-%'all';
   if (length(ages.obj)) {
@@ -91,7 +91,10 @@ obj_pop=function(obj) {
     cats=cut(starts.pop,c(starts.obj,100),right=F,labels=ages.obj);
     groups=split(ages.pop,cats);
   } else groups=NULL;
-  pop.obj=rbind(pop['all',], t(sapply(groups,function(i) colSums(pop[i,]))));
+  ## pop.obj=rbind(pop['all',], t(sapply(groups,function(i) colSums(pop[i,,drop=FALSE]))));
+  ## NG 21-10-31: this way works even when only place. gotta love R...
+  pop.obj=rbind(all=pop['all',,drop=FALSE],
+                do.call(rbind,lapply(groups,function(i) colSums(pop[i,,drop=FALSE]))));
   ## colnames(pop.obj)=places.obj;
   pop.obj;
 }
@@ -158,21 +161,23 @@ import_stateid=function(infile=param(stateid.infile),base=param(stateid.file)) {
 ## compare pops from multiple, possibly edited, objects
 ## returns whether pops all equal
 ## CAUTION: make sure places, ages valid for all objects!
-cmp_pops=function(objs,places=NULL,ages=NULL,pop=param(pop),
-                  incompatible.ok=param(incompatible.ok)) {
+cmp_pops=function(objs,places=NULL,ages=NULL,pop=param(pop)) {
   if (length(objs)<=1) return(TRUE);    # trivial case - just one object
   pops=lapply(objs,function(obj) pop(obj)); # CAUTION: use pop(obj) form to avoid scope problem
   ## filter, and order by age (for testing equality later)
   pops=lapply(pops,function(pop) {
     pop=filter_pop(pop,places,ages);
-    pop=cbind(age=rownames(pop),pop);
-    pop[order(pop$age),];
+    ## BREAKPOINT('cmp_pops: lapply pops, after filter')
+    ## pop=cbind(age=rownames(pop),pop);
+    ## pop[order(pop$age),,drop=FALSE];
+    ## NG 21-10-31: dunno why I didn't do it this way in the first place...
+    pop=pop[rownames(pop),,drop=F];
   });
   ## pick one pop to compare others against
   pop0=pops[[1]];
   pops=tail(pops,n=-1);
   ok=all(sapply(pops,function(pop) identical(pop0,pop)));
-  if (!incompatible.ok&&!ok) 
+  if (!ok) 
     stop("Objects are incompatible (edited in conflicting ways). ",
          "Sorry I can't be more specific");
   ok;
