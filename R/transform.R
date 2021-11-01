@@ -21,7 +21,9 @@
 ##   cumulative vs incremental
 
 ## read raw imported data and return as object
-raw=function(what=cq(cases,admits,icus,deaths),datasrc=param(datasrc),version='latest') {
+##   drop.ages used by doh to drop overlapping ages
+raw=function(what=cq(cases,admits,icus,deaths),datasrc=param(datasrc),version='latest',
+             drop.ages=c('0_11','12_19')) {
   what=match.arg(what);
   datasrc=match.arg(datasrc);
   if (what=='admits'&&datasrc %notin% cq(doh,cdc,trk))
@@ -29,6 +31,7 @@ raw=function(what=cq(cases,admits,icus,deaths),datasrc=param(datasrc),version='l
   if (what=='icus'&&datasrc!='cdc') stop("Only have icus data for cdc, not ",datasrc);
   if (!is.null(version)&&version=='latest') version=latest_version(datasrc,what);
   data=load_data(whatv=what,datasrc=datasrc,version=version);
+  if (datasrc=='doh') data=data[names(data)%notin%drop.ages];
   newobj=switch(datasrc,doh=cvdoh,cdc=cvcdc,cvdat);
   obj=newobj(data=data,datasrc=datasrc,what=what,version=version,
              id=FALSE,fit=FALSE,roll=FALSE,extra=FALSE,edit=FALSE);
@@ -285,8 +288,7 @@ extra.cvdoh=
            err.type=param(extra.errtype),wmax=param(extra.wmax),mulmax=param(extra.mulmax),
            mdl.places=param(extra.places),mdl.ages=param(extra.ages),
            mdl.minobjs=param(extra.minobjs)*wmax,
-           mdl.maxobjs=param(extra.maxobjs)*wmax,
-           incompatible.ok=param(incompatible.ok),...) {
+           mdl.maxobjs=param(extra.maxobjs)*wmax,...) {
     args=cl(args,...);
     err.type=match.arg(err.type);
     err.type=switch(err.type,multiplicative='*',additive='+',err.type);
@@ -317,7 +319,7 @@ extra.cvdoh=
       else stop("Too few objects have required ages: have ",length(objs.ok)," objects, need ",
                 mdl.minobjs," objects. ages= ",paste(collapse=', ',ages));
       ## check whether edited objects are compatible
-      cmp_pops(c(list(obj),objs),places=mdl.places,ages=mdl.ages,incompatible.ok=incompatible.ok);
+      cmp_pops(c(list(obj),objs),places=mdl.places,ages=mdl.ages);
       ## compute models
       fun=extrafun(obj,objs,places=mdl.places,ages=mdl.ages,method,args,err.type,wmax,mulmax);
     }
