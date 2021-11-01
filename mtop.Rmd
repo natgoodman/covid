@@ -1,5 +1,5 @@
 ---
-title: "COVID is the Third or Fourth Cause of Death in Most Age Groups"
+title: "COVID is a Leading Cause of Death in the United States and Washington State"
 author: "Nathan (Nat) Goodman"
 date: "October 31, 2021"
 output:
@@ -12,9 +12,7 @@ citecolor: green
 urlcolor: blue
 ---
 
-*TBD Counts of cases, hospital admissions, and deaths are key metrics of COVID-19 prevalence and burden, and are the basis for model-based estimates and predictions of these statistics. I present here graphs showing these metrics over time in Washington state and a few other USA locations of interest to me. I update the graphs and this write-up weekly. Previous versions are [here](https://natgoodman.github.io/covid/updatvsn.html). See below for [caveats](#caveats) and [technical details](#techdetails).*
-
-
+*In the 12 months ending October 31, 2021, COVID deaths in the United States were 18% of expected deaths from all non-COVID causes; in Washington State, COVID deaths were 11% of expected non-COVID deaths. In both locations, COVID was the third leading cause of death behind heart disease and cancer. In Washington State, among age groups 35 years and up, COVID deaths were 10-14% of expected non-COVID deaths (14% in the youngest group decreasing to 10% in the oldest); it was the third leading cause of death in age groups from 35-79 years old, and fourth leading cause in those 80+ years old. In young adults (20-34 years old), COVID deaths were 6% of expected non-COVID mortality and the fourth leading cause of death. In children and teens (0-19 years old), I calculate COVID deaths to be 2% of expected non-COVID mortality and the sixth leading cause of death but believe this understates the impact as explained [below](#kids). See below for [caveats](#caveats) and [technical details](#techdetails).*
 
 ```{r echo=FALSE,include=FALSE,cache=FALSE}
 ## setup
@@ -31,24 +29,25 @@ tbldir=file.path('table',doc);
 space=strrep('\\ ',10);                 # space between tables
 ```
 
+The gruesome body count of COVID deaths is mind-numbing. Unless you've lost a loved one to COVID, it's hard to grasp the enormity of the 700,000 deaths reported in the New York Times on October 1, a number that's grown to 740,000 as I write this. For those old enough to have lived through the Vietnam war, it's sadly reminiscent of the body counts reported daily to mark "progress" in that horror. For comparison, the official US death toll in the Vietnam war was 58,220; Vietnamese deaths probably exceed 1,000,000.
 
-The gruesome body count of COVID deaths is mind-numbing. Sadly reminiscent of the body counts from the Vietname for those old enough to remember.
+In this blog post, I try to put the COVID death toll in context by comparing annual COVID deaths to expected non-COVID mortality and to other leading causes of death. I report on deaths for all ages in the United States and Washington State where I live, and deaths by age group in Washington State. See below for [data sources](#sources), [caveats](#caveats) and [technical details](#techdetails).
 
-In this blog post, I try to put the death toll in context by comparing annual COVID deaths to the leading causes of non-COVID deaths. In the USA as a whole COVID kills almost as many people as cancer and far more than accidents. In Washington State, looking at all ages, COVID kills more people than Alzheimer's disease; among the elderly (people 80 years and above), COVID kills more than stroke or lung disease; among young adults (20-24 years old), COVID kills almost as many as cancer and more than homicide or heart disease.
+The first block of figures (Figures 1a-2b) set the stage. The substance begins with the next block (Figures 3a-b).
 
-Figures 1a-b show cumulative COVID deaths in the USA and Washington State. 
+The top row (Figures 1a-b) show cumulative COVID deaths per million in the USA and Washington State. The bottom row (Figures 2a-b) annualize the data so we can compare COVID deaths to annual mortality data. The left column (the 'a' figures) show all ages in the two locations. The right column (the 'b' figures) break it down by age group in Washington State. 
 
 ```{r out.width="50%",echo=FALSE,fig.show='asis',include=TRUE}
 knitr::include_graphics(file.path(figdir,'figure_001a_jhu_cum.png'));
 knitr::include_graphics(file.path(figdir,'figure_001b_doh_cum.png'));
-```
-
-The next two graphs (Figures 2a-b) annualize the data so we can compare COVID deaths to other leading causes of death (usually expressed annually).
-
-```{r out.width="50%",echo=FALSE,fig.show='asis',include=TRUE}
 knitr::include_graphics(file.path(figdir,'figure_002a_jhu_ann.png'));
 knitr::include_graphics(file.path(figdir,'figure_002b_doh_ann.png'));
 ```
+
+The main points of note are
+
+1. COVID deaths vary by location and age. The oldest age group (80+ years old) suffer many more deaths than the young.
+2. Annual COVID deaths fluctuate reflecting the several COVID waves we've endured. In the all-age graphs (the 'a' column), the annual death rate has increased 1.8x in the USA and somewhat less in Washington State between early Summer 2020 and Spring 2021; in the USA, the annual rate has dropped abut 5% from the Spring 2021 peak, while in Washington State, the rate has increased about 20%. The current annual death rates are about 1550 per million (USA) and 800 per million (Washington).
 
 The next figures (Figures 3a-b) show annual COVID deaths relative to non-COVID deaths.
 
@@ -57,47 +56,65 @@ knitr::include_graphics(file.path(figdir,'figure_003a_jhu_mort.png'));
 knitr::include_graphics(file.path(figdir,'figure_003b_doh_mort.png'));
 ```
 
+For the all-age case (the 'a' figures), this is just a simple scaling and doesn't change the shape of the graph. For the age-group data (the 'b' figures), the change is dramatic. The oldest group (80+) is now in the middle of the pack. The most affected groups are now middle aged adults (35-49 years old), followed by pre-seniors (50-64), and then young seniors (65-79). Young adults (20-34) and children and teens (0-11 and 12-19) remain thankfully near the bottom.
 
-## jhu tables centered
-<center>
+The reason for the big change in the age-group figure is that expected mortality is much lower in younger groups making COVID deaths a bigger fraction of the total. 
+
+Reading off the final values from the graphs, we get the results in Table 1. 
+
+<!-- <center><div style="width: 40%"> -->
+<div style="width: 40%; margin-left: auto; margin-right: auto;">
 ```{r echo=FALSE, results='asis'}
-k1=load_(file.path(tbldir,'table_001a_jhu_usa.kbl'))
-k2=load_(file.path(tbldir,'table_001b_jhu_state.kbl'))
-kables(list(k1,space,k2))
+k1=load_(file.path(tbldir,'table_001_mort_pct.kbl'))
+k1
 ```
-</center>
+</div>
+<!-- </center></div> -->
 
-## jhu tables narrowed, not centered
-<div style="width: 67%">
+COVID deaths as a percentage of expected non-COVID deaths are 18% for the USA as a whole; 11% for Washington State all ages; 2% for Washington State children and teens (but see [below](#kids) for why this probably understates the impact), 7% for young adults, 14% for adults 35-49 and 50-64 years old, 12% for seniors, and 10% for the elderly.
+
+The tables below gives further context for these numbers by comparing annual COVID deaths to the leading non-COVID causes of death.
+
+<div style="width: 70%; margin-left: auto; margin-right: auto;">
 ```{r echo=FALSE, results='asis'}
-k1=load_(file.path(tbldir,'table_001a_jhu_usa.kbl'))
-k2=load_(file.path(tbldir,'table_001b_jhu_state.kbl'))
+k1=load_(file.path(tbldir,'table_002a_jhu_usa.kbl'))
+k2=load_(file.path(tbldir,'table_002b_jhu_state.kbl'))
 kables(list(k1,space,k2))
 ```
 </div>
 
+In the USA as a whole COVID kills almost as many people as cancer and far more than accidents, lung disease, and stroke. In Washington State, looking at all ages, COVID kills more people than Alzheimer's disease, accidents, and lung disease.
 
-## jhu tables narrowed and centered
-<center><div style="width: 67%">
+<div style="width: 90%; margin-left: auto; margin-right: auto;">
 ```{r echo=FALSE, results='asis'}
-k1=load_(file.path(tbldir,'table_001a_jhu_usa.kbl'))
-k2=load_(file.path(tbldir,'table_001b_jhu_state.kbl'))
-kables(list(k1,space,k2))
-```
-</div></center>
-
-
-## doh tables
-```{r echo=FALSE, results='asis'}
-k1=load_(file.path(tbldir,'table_002a_doh_0_19.kbl'))
-k2=load_(file.path(tbldir,'table_002b_doh_20_34.kbl'))
-k3=load_(file.path(tbldir,'table_002c_doh_35_49.kbl'))
-kables(list(k1,space,k2,space,k3))
-k1=load_(file.path(tbldir,'table_002d_doh_50_64.kbl'))
-k2=load_(file.path(tbldir,'table_002e_doh_65_79.kbl'))
-k3=load_(file.path(tbldir,'table_002f_doh_80_.kbl'))
+k1=load_(file.path(tbldir,'table_003a_doh_0_11.kbl'))
+k2=load_(file.path(tbldir,'table_003b_doh_12_19.kbl'))
+k3=load_(file.path(tbldir,'table_003c_doh_20_34.kbl'))
 kables(list(k1,space,k2,space,k3))
 ```
+</div>
+
+Among children and teens in Washington State (ages 0-11 and 12-19 years), COVID thankfully remains below the five leading causes of death, but climbs to fourth place in the next age group (young adults, ages 20-34 years). In this age group, COVID kills almost as many people as cancer and more than homicide and heart disease.
+
+<div style="width: 90%; margin-left: auto; margin-right: auto;">
+```{r echo=FALSE, results='asis'}
+k4=load_(file.path(tbldir,'table_003d_doh_35_49.kbl'))
+k5=load_(file.path(tbldir,'table_003e_doh_50_64.kbl'))
+k6=load_(file.path(tbldir,'table_003f_doh_65_79.kbl'))
+kables(list(k4,space,k5,space,k6))
+```
+</div>
+
+<div style="width: 40%; margin-left: auto; margin-right: auto;">
+```{r echo=FALSE, results='asis'}
+k7=load_(file.path(tbldir,'table_003g_doh_80_.kbl'))
+kables(list(space,k7,space))
+```
+</div>
+
+COVID is the third leading killer for the next three age groups (35-49, 50-64, and 65-79 years). It drops to fourth in the elderly (80+) only because Alzheimer's disease is a major cause of death in this group.
+
+
 
 ## References
 
