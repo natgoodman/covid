@@ -30,6 +30,8 @@ import_mtop=function(ntop=5) {
   files=list.files(dir,pattern='^wa\\..*.txt$',full.names=TRUE);
   mtop=lapply(files,function(file) read_mtop_input(file,ntop));
   names(mtop)=sub('^wa\\.','',desuffix(basename(files)));
+  ## replace 'all' by 'state'
+  names(mtop)[names(mtop)=='all']='state';
   ## tack on USA
   usa=read_mtop_input(filename(dir,'usa.all.txt'),ntop);
   mtop$USA=usa;
@@ -97,30 +99,58 @@ ann=function(data,test.mono=TRUE) {
   } else y=y0;
   invisible(cbind(date=dates,y));
 }
-## merge annualized COVID counts with mtop
-## obj is usually doh.deaths.cum or jhu.deaths.cum
-cv_mtop=function(obj,places=NULL,ages=NULL,mtop=param(mtop)) {
-  if (is.null(mtop)) mtop=load_mtop();
-  if (is.null(places)) {
-    places=if(datasrc(obj)=='doh') 'state' else cq(USA,state);
-  } else { 
-    if (datasrc(obj)=='doh') {
-      bad=places%-%cq(state);
-      if (length(bad))
-        stop("Invalid place(s): ",paste(collapse=', ',bad),"; when  obj is 'doh', only valid place is 'state' (because don't have 'mtop' data for other places)");
-    } else {
-      bad=places%-%cq(USA,state);
-      if (length(bad))
-        stop("Invalid place(s): ",paste(collapse=', ',bad),";  when  obj is not 'doh', valid places are 'state', 'USA' (because don't have 'mtop' data for other places)");
-    }}
-  if (is.null(ages)) {
-    ages=if(datasrc(obj)=='doh') ages(obj) else 'all';
+#####
+## TODO: decide whether ann_cvdat, mort_ann belong here or in doc_mtop
+## TODO: use these functions in doc_mtop
+## combine data_cvdat and ann. ... passed to data_cvdat
+ann_cvdat=function(obj,...) {
+  data=data_cvdat(obj,...);
+  ann(data,test.mono=FALSE); # test.mono=FALSE 'cuz data sometimes overshoots and backs up
+}
+## scale ann data by mort
+mort_ann=function(ann,obj=NULL,mort=NULL) {
+  if (is.null(mort)) {
+    ## get mort from obj
+    if (is.null(obj)) stop("'obj' and 'mort' cannot both be NULL");
+    mort=obj$mort;
   }
-  names=if(datasrc(obj)=='doh') ages else places;
-  mt=cv_mtop1(obj,places,ages,names,mtop);
+  ## mort can be a vector or data frame with 1 row or col
+  if (!is.null(dim(mort))) {
+    mort=if (nrow(mort)==1) as.numeric(mort[1,colnames(ann)[-1]])
+         else if (ncol(mort==1)) as.numeric(mort[colnames(ann)[-1],1])
+         else stop("'mort' must be vector or object with 1 row or 1 col: dim(mort)=",
+                   paste(collapse=', ',dim(mort)));
+  }
+  data.frame(date=ann$date,rapply(ann[,-1],function(counts) counts/mort));
+}
+## combine data_cvdat, ann, mort_ann. ... passed to data_cvdat
+mortann_cvdat=function(obj,...) {
+  ann=ann_cvdat(obj,...);
+  mort=mort_ann(ann,obj);
+}
+#####
+
+## merge annualized COVID counts with mtop
+## objs is usually list of doh.deaths.cum, jhu.deaths.cum
+## do.percap=T means calculate per.capita here
+##           F means use per.capita from files even if NA
+##           NA means calculate per.capita if NA, else use from files
+cv_mtop=function(objs,do.percap=NA,mtop=param(mtop)) {
+  if (is_cvdat(objs)) objs=list(objs);
+  ## merge doh, jhu pops into column matrix. rownames are mt names
+  pop=do.call(rbind,lapply(objs,function(obj) {
+    pop=if (datasrc(obj)=='doh') obj$pop else t(obj$pop);
+    colnames(pop)='pop';
+    pop;
+  }))
+  if (is.null(mtop)) mtop=load_mtop();
+  mt=do.call(c,lapply(objs,function(obj) cv_mtop1(obj,mtop,pop,do.percap)))
   mt;
 }
-cv_mtop1=function(obj,places,ages,names,mtop) {
+cv_mtop1=function(obj,mtop,pop,do.percap=NA) {
+  places=if(datasrc(obj)=='doh') 'state' else cq(USA,state);
+  ages=if(datasrc(obj)=='doh') ages(obj) else 'all'
+  names=if(datasrc(obj)=='doh') ages else places;
   ## counts
   deaths=data_cvdat(obj,places=places,ages=ages,cnm=names,per.capita=FALSE);
   per.capita=data_cvdat(obj,places=places,ages=ages,cnm=names,per.capita=TRUE);
@@ -132,12 +162,15 @@ cv_mtop1=function(obj,places,ages,names,mtop) {
   per.capita=tail(per.capita,n=1)[1,-1,drop=FALSE];
   ## merge COVID counts with mtop
   mt=lapply(names,function(name) {
-    mt=if(name=='state') mtop[['all']] else mtop[[name]];
+    mt=mtop[[name]];
     mt=rbind(mt,data.frame(cause='COVID',deaths=deaths[1,name],per.capita=per.capita[1,name]));
-        mt[,cq(deaths,per.capita)]=round(mt[,cq(deaths,per.capita)]);
+    mt[,cq(deaths,per.capita)]=round(mt[,cq(deaths,per.capita)]);
+    percap=round(1e6*mt$deaths/pop[name,1]);
+    if (is.na(do.percap)) mt$per.capita=ifelse(is.na(mt$per.capita),percap,mt$per.capita)
+    else if (do.percap) mt$per.capita=percap;
     rownames(mt)=NULL;
     mt[order(mt$per.capita,decreasing=TRUE),];
-      });
+  });
   names(mt)=names;
   mt;
 }
