@@ -13,6 +13,7 @@
 ## file at https://github.com/natgoodman/NewPro/FDR/LICENSE 
 ##
 #################################################################################
+library(knitr);
 ## --- Generate Figures and Tables for Document ---
 ## sect is which sections to run - for use during development
 ##   uses prefix matching and all matches run
@@ -65,7 +66,8 @@ dofig=function(figname,figfun,sect=param(sect),pjto=param(pjto)) {
 ##   if function, args from ... passed to it
 ##   else eval'ed as is
 ## tblfun can be a variable, function call, or statement block. eval'ed in parent env
-dotbl=function(tblname,tblfun=NULL,sect=param(sect),pjto=param(pjto),obj.ok=TRUE) {
+## title used as kable caption. ... passed to kable
+dotbl=function(tblname,tblfun=NULL,title=NULL,sect=param(sect),pjto=param(pjto),obj.ok=TRUE,...) {
   if (!is.logical(pjto)) pjto=if(pjto=='file') TRUE else FALSE;
   parent.env=parent.frame(n=1);
   base=filename_tbl(tbllabel(where='filename'),sect,tblname,suffix=NULL);
@@ -73,6 +75,11 @@ dotbl=function(tblname,tblfun=NULL,sect=param(sect),pjto=param(pjto),obj.ok=TRUE
   tbl=eval(tblfun,parent.env);          # generate table!
   save_(tbl,base=base,save=param(save.RData.tbl),save.txt=param(save.txt.tbl),
         pjto=pjto,obj.ok=obj.ok);
+  if (param(save.kbl)) {
+    args=cl(list(x=tbl,caption=title,row.names=FALSE,escape=T),list(...));
+    kt=do.call(kable,args);
+    save_(kt,file=filename(base,suffix='kbl'),save=TRUE,save.txt=FALSE,pjto=pjto);
+  }
   tblinc();                             # increment table info for next time
   tblname;
 }
