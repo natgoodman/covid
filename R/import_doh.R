@@ -63,29 +63,8 @@ import_doh=function(file) {
     colnames(data)=c(cq(county,date,all),names.age,'noage');
     ## admits has some rows with Unknown date. delete 'em
     if (what=='admits') data=subset(data,subset=(date!='Unknown'));
-    if (version>='21-08-29') {
-      ## changed ages as of version 21-08-29 and again in version 21-09-05 sigh!
-      ## better resolution for young ages but not compatible with pop or mort
-      ## note overlap in 21-08-29 ages! (but not 21-09-05 ages)
-      if (version=='21-08-29') 
-        want.age=c('4_10','11_13','14_19','0_11','12_19','20_34','35_49','50_64','65_79','80_')
-      else want.age=c('0_11','12_19','20_34','35_49','50_64','65_79','80_');
-    if (names.age%!=%want.age) {
-        bad=names.age%-%want.age;
-        if (length(bad)) stop(paste('doh',what,'version',version,"has unexpected age column(s):",
-                                    paste(collapse=', ',bad)));
-        bad=want.age%-%names.age;
-        if (length(bad)) stop(paste('doh',what,'version',version,"missing expected age column(s):",
-                                    paste(collapse=', ',bad)));
-      }
-      ## add 0_19 for backwards campatibility, remove ones that won't work,
-      ## and arrange columns in sensible order
-      data.src=data;                    # hang onto original data for error checks
-      data$'0_19'=data$'0_11'+data$'12_19';
-      names.age=c('0_19','20_34','35_49','50_64','65_79','80_');
-      data=data[,c(cq(county,date,all),names.age,'noage')];
-    }
     ## for sanity, make sure 'all' matches individual groups
+    ## NG 21-10-31; check totals before fixing ages, 'cuz now keep overlapping young ages
     ## in version 21-03-07, age data messed up. row sums don't match. sigh...
     if (version!='21-03-07') {
       ages.sum=rowSums(data[,c(names.age,'noage')]);
@@ -107,6 +86,29 @@ import_doh=function(file) {
         else
           stop(paste('doh',what,'version',version, "'all' does not equal sum of 'ages' in these rows:",paste(collapse=', ',bad)));
       }
+    }
+    if (version>='21-08-29') {
+      ## changed ages as of version 21-08-29 and again in version 21-09-05 sigh!
+      ## better resolution for young ages but not compatible with pop or mort
+      ## note overlap in 21-08-29 ages! (but not 21-09-05 ages)
+      if (version=='21-08-29') 
+        want.age=c('4_10','11_13','14_19','0_11','12_19','20_34','35_49','50_64','65_79','80_')
+      else want.age=c('0_11','12_19','20_34','35_49','50_64','65_79','80_');
+      if (names.age%!=%want.age) {
+        bad=names.age%-%want.age;
+        if (length(bad)) stop(paste('doh',what,'version',version,"has unexpected age column(s):",
+                                    paste(collapse=', ',bad)));
+        bad=want.age%-%names.age;
+        if (length(bad)) stop(paste('doh',what,'version',version,"missing expected age column(s):",
+                                    paste(collapse=', ',bad)));
+      }
+      ## add 0_19 for backwards campatibility
+      ## NG 21-10-31; keep overlapping young ages to support doc_mtop
+      ## and arrange columns in sensible order
+      data.src=data;                    # hang onto original data for error checks
+      data$'0_19'=data$'0_11'+data$'12_19';
+      names.age=c('0_11','12_19','0_19','20_34','35_49','50_64','65_79','80_');
+      data=data[,c(cq(county,date,all),names.age,'noage')];
     }
     data$date=as_date(data$date);
     ddates=sort(unique(data$date));                       # dates in data
