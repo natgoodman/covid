@@ -17,7 +17,6 @@
 ## cnm is optional list of colnames
 data_cvdat=
   function(objs,places='state',ages=NULL,per.capita=FALSE,per.mort=FALSE,cnm=NULL,
-           incompatible.ok=param(incompatible.ok),
            attrs=cq(unit,cumulative,what,datasrc,version,fit,roll,extra,edit)) {
     if (is_cvdat(objs)) objs=list(objs);
     places.all=Reduce(intersect,lapply(objs,function(obj) places(obj)));
@@ -39,7 +38,7 @@ data_cvdat=
              ".\nValid ages for these objects are: ",paste(collapse=', ',ages.all));
     }
     if (per.capita&&per.mort) stop ("Cannot specify both 'per.capita' and 'per.mort'");
-    series=data_series(objs,places,ages,incompatible.ok,attrs);
+    series=data_series(objs,places,ages,attrs);
     if (per.capita) series=series_percap(series);
     if (per.mort) series=series_permort(series);
     ct=ct_attrs(series,attrs)

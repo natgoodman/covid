@@ -18,7 +18,7 @@
 ## places are either 'state' or counties
 ## for doh object, ages are age groups
 ## can plot per.capita results
-## incompatible.ok controls whether edited objects must be compatible
+## NOT USED:incompatible.ok controls whether edited objects must be compatible
 ##   (places, ages of interest edited the same way)
 ## col,lty, lwd are the usual R line properties
 ##   code can automatically compute suitable values from the input data
@@ -39,7 +39,6 @@
 ## vhdigits is number of digits for these values (only used for horizontal (y-axis) values)
 plot_cvdat=
   function(objs,places='state',ages=NULL,per.capita=FALSE,per.mort=FALSE,
-           incompatible.ok=param(incompatible.ok),
            type='l',add=FALSE,xlim=NULL,xmin=NULL,xmax=NULL,ylim=NULL,ymin=NULL,ymax=NULL,
            col=NULL,lty=NULL,lwd=NULL,
            col1='black',lty1='solid',lwd1=2,
@@ -77,7 +76,7 @@ plot_cvdat=
              ".\nValid ages for these objects are: ",paste(collapse=', ',ages.all));
     }
     if (per.capita&&per.mort) stop ("Cannot specify both 'per.capita' and 'per.mort'");
-    series=data_series(objs,places,ages,incompatible.ok,attrs);
+    series=data_series(objs,places,ages,attrs);
     if (per.capita) series=series_percap(series);
     if (per.mort) series=series_permort(series);
     ct=ct_attrs(series,attrs);
