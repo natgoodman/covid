@@ -19,7 +19,7 @@ table.kable_wrapper>tbody>tr>td {
 caption {
     text-align: center;
     font-weight: bold;
-    font-size: larger;
+    /* font-size: larger; */
     color: black;
 }
 

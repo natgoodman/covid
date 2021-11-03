@@ -51,7 +51,8 @@ doc_mtop=function(doc='mtop',need.objs=TRUE,need.init=TRUE,version='latest',
                         pct);
     colnames(mort.pct)=c('Location/Age','Pct of Expected Deaths');
     dotbl('mort_pct',mort.pct,
-          title=tbltitle('COVID deaths relative to expected non-COVID deaths'),
+          ## title=tbltitle('COVID deaths relative to expected non-COVID deaths'),
+          title='COVID deaths relative to expected non-COVID deaths',
           align=cq(l,r));    
     
  ########################################
@@ -76,14 +77,16 @@ doc_mtop=function(doc='mtop',need.objs=TRUE,need.init=TRUE,version='latest',
     sapply(places.jhu,function(place) {
       mt=mtop[[place]];
       tblname=paste0('jhu_',lc(place));
-      mtkbl(tblname,mt,title=tbltitle(paste(titles.jhu[[place]],'all ages')));
+      ## mtkbl(tblname,mt,title=tbltitle(paste(titles.jhu[[place]],'all ages')));
+      mtkbl(tblname,mt,title=paste(titles.jhu[[place]],'all ages'));
     });
     ## Tables 3a-f mtop tables for usual ages from doh 
     tblblk_start();
     sapply(ages.doh,function(age) {
       mt=mtop[[age]];
       tblname=paste0('doh_',age);
-      mtkbl(tblname,mt,title=tbltitle(paste('WA',age_label(age,fmt='legend'))));
+      ## mtkbl(tblname,mt,title=tbltitle(paste('WA',age_label(age,fmt='legend'))));
+      mtkbl(tblname,mt,title=paste('WA',age_label(age,fmt='legend')));
     });
   }
   if (do.fig) { 
