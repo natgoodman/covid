@@ -1,0 +1,7 @@
+cause	deaths	per.capita
+perinatal condition	167	91
+accident	126	68
+congenital condition	109	59
+suicide	68	37
+cancer	43	23
+COVID	15	8

@@ -7,7 +7,8 @@ Devised by trial-and-error to do what I want for doc_mtop
     vertical-align: middle;
 }
 .table>thead>tr>th {
-    vertical-align: bottom;
+    vertical-align: middle;
+    /* vertical-align: bottom; */
     /* text-align: center; */
     width: 10em;
 }
@@ -32,3 +33,5 @@ td {
 }
 tr:nth-child(even){background-color: #f2f2f2}
 
+/* Trick to use '-' for indentation. from stackoverflow.com/questions/6046263. thx! */
+ul>li {list-style-type: none;} 

@@ -1,0 +1,7 @@
+cause	deaths	per.capita
+accident	579	387
+cancer	483	323
+COVID	412	274
+heart disease	329	220
+suicide	312	209
+liver disease	173	116

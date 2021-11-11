@@ -1,0 +1,7 @@
+cause	deaths	per.capita
+heart disease	659041	2008
+cancer	599601	1827
+COVID	517663	1577
+accident	173040	527
+lung disease	156979	478
+stroke	150005	457

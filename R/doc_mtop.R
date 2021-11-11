@@ -15,64 +15,43 @@
 ##
 #################################################################################
 library(knitr);
+library(withr);                         # for with_options
+
 ## --- Generate Figures and Tables for mtop Blog Post ---
 ## no sections
 ## TODO: mostly NOT YET PORTED
 ## TODO: version should be fixed to whatever version I used in document
-doc_mtop=function(doc='mtop',need.objs=TRUE,need.init=TRUE,version='latest',
+doc_mtop=function(doc='mtop',need.objs=TRUE,need.vars=TRUE,need.init=TRUE,version='latest',
                   rawfun=cq(raw,raw_mtop),do.fig=TRUE,do.tbl=TRUE,pal.jhu='d3',...) {
   what='deaths';
   datasrc=cq(doh,jhu);
   if (is.null(version)||version=='latest') version=max(sapply(datasrc,latest_version));
   if (param(verbose)) print(paste('+++ doc_mtop',nv(version)));
   if (need.objs) make_mtop_objs(rawfun=rawfun,what=what,datasrc=datasrc,version=version);
+  if (need.vars) make_mtop_vars();
   if (need.init) init_doc(doc=doc,version=version,...);
-  places.jhu<<-cq(USA,state);
-  labels.jhu<<-setNames(c('USA','Washington State'),places.jhu);
-  titles.jhu<<-setNames(c('USA','WA'),places.jhu);
-  col.jhu<<-col_brew(places.jhu,pal.jhu);
-  ages.doh<<-ages(doh);
-  labels.doh<<-age_label(ages.doh,fmt='legend');
-  col.doh<<-col_ages(doh,skip.beg=3);      # col_ages in doc_updat.R
- 
+  
   if (do.tbl) {
     if (param(verbose)) print(paste('+++ making tables'));
     mt.jhu=cv_mtop(jhu);
     mt.doh=cv_mtop(doh);
     mtop=cv_mtop(list(jhu,doh));
-    ## Table 1 mort percentage
-    jhu.mort=mortann_cvdat(jhu,places=places.jhu,per.capita=FALSE);
-    doh.mort=mortann_cvdat(doh,ages=ages.doh,per.capita=FALSE);
-    pct=c(as.numeric(jhu.mort[nrow(jhu.mort),-1,drop=T]),
-          as.numeric(doh.mort[nrow(doh.mort),-1,drop=T]));
-    pct=paste0(100*round(pct,digits=2),'%');
-    mort.pct=data.frame(c('USA all ages','WA all ages',
-                          sapply(ages.doh,function(age) paste('WA',age_label(age,'legend')))),
-                        pct);
-    colnames(mort.pct)=c('Location/Age','Pct of Expected Deaths');
-    dotbl('mort_pct',mort.pct,
-          ## title=tbltitle('COVID deaths relative to expected non-COVID deaths'),
-          title='COVID deaths relative to expected non-COVID deaths',
-          align=cq(l,r));    
-    
- ########################################
-    ## TODO: mort percentage (table and/or barchart as decided)
-    ## jhu.ann=ann_cvdat(jhu,places=places.jhu,per.capita=FALSE);
-    ## mort=as.numeric(jhu$mort[,colnames(jhu.ann)[-1]]);
-    ## jhu.mort<<-data.frame(date=jhu.ann$date,rapply(jhu.ann[,-1],function(counts) counts/mort));
-    ## doh.ann=ann_cvdat(doh,ages=ages.doh,per.capita=FALSE);
-    ## mort=as.numeric(doh$mort[colnames(doh.ann)[-1],]);
-    ## doh.mort<<-data.frame(date=doh.ann$date,rapply(doh.ann[,-1],function(counts) counts/mort));
-    ## mort percentage table
-    ## mort.pct=c(as.numeric(jhu.mort[nrow(jhu.mort),-1,drop=T]),
-    ##            as.numeric(doh.mort[nrow(doh.mort),-1,drop=T]));
-    ## mort.pct=paste0(round(mort.pct,digits=2),'%');
-    ## mort.df=data.frame(c('USA all ages','WA all ages',
-    ##                      sapply(doh.ages,function(age) age_label(age,none))),
-    ##                    mort.pct);
-    ## barchart TBD
-    ########################################
-   ## Tables 2a-b mtop tables for USA, state
+    ## Table 1 risk_mort
+    deaths=round(clast(jhu.deaths,doh.deaths));
+    risk=clast(jhu.risk,doh.risk);
+    mort=clast(jhu.mort,doh.mort);
+    percap=round(risk);
+    risk.pct=with_options(list(scipen=999),paste0(signif(100*risk/1e6,digits=2),'%'));
+    mort.pct=paste0(100*round(mort,digits=2),'%');
+
+    risk.mort=data.frame(c('USA all ages','WA all ages',
+                             sapply(ages.doh,function(age) paste('WA',age_label(age,'legend')))),
+                           deaths,percap,risk.pct,mort.pct);
+    colnames(risk.mort)=c('Location/Age','Deaths','Deaths per Million','Personal Risk','Relative Mortality');
+    dotbl('risk_mort',risk.mort,
+          title='Annualized COVID deaths relative to population and expected non-COVID deaths',
+          align=c('l',rep('r',ncol(risk.mort)-1)))
+    ## Tables 2a-b mtop tables for USA, state
     tblblk_start();
     sapply(places.jhu,function(place) {
       mt=mtop[[place]];
@@ -91,62 +70,38 @@ doc_mtop=function(doc='mtop',need.objs=TRUE,need.init=TRUE,version='latest',
   }
   if (do.fig) { 
     if (param(verbose)) print(paste('+++ making figures'));
-    ## Figures 1a-b cum
+    ## risk 
     figblk_start();
-    dofig('jhu_cum',
-          plot_cvdat(
-            jhu,places=places.jhu,ages='all',per.capita=TRUE,lwd=2,
-            title=figtitle("Cumulative COVID deaths per million in USA and Washington"),
-            ylab="cumulative deaths per million",
-            legends=list(labels=labels.jhu)));
-     dofig('doh_cum',
-          plot_cvdat(
-            doh,ages=ages.doh,per.capita=TRUE,lwd=2,col=col.doh,
-            title=figtitle("Cumulative COVID deaths per million in Washington by age"),
-            ylab="cumulative deaths per million",
-            legends=list(labels=labels.doh)));
-    ## Figures 2a-b ann
-    figblk_start();
-    jhu.data=data_cvdat(jhu,places=places.jhu,per.capita=TRUE);
-    jhu.ann=ann(jhu.data,test.mono=FALSE); # test.mono=FALSE 'cuz jhu overshoots then backs up
-    dofig('jhu_ann',
+    ylab="personal risk (percent)";
+    risk.pct=data.frame(date=jhu.risk$date,100*jhu.risk[,-1]/1e6);
+    dofig('jhu_risk',
           plotm(
-            jhu.ann,lwd=2,lty='solid',
-            title=figtitle("Annualized COVID deaths per million in USA and Washington"),
-            ylab="annualized deaths per million",          
-            legend='topleft',legend.title='Place',legend.labels=labels.jhu));
-    doh.data=data_cvdat(doh,ages=ages.doh,per.capita=TRUE);
-    doh.ann=ann(doh.data,test.mono=FALSE); # test.mono=FALSE 'cuz fit produces small decreases
-    dofig('doh_ann',
+            risk.pct,lwd=2,lty='solid',
+            title=figtitle("Annualized COVID risk in USA and Washington"),
+            ylab=ylab,legend='topleft',legend.title='Place',legend.labels=labels.jhu));
+    risk.pct=data.frame(date=doh.risk$date,100*doh.risk[,-1]/1e6);
+    dofig('doh_risk',
           plotm(
-            doh.ann,lwd=2,lty='solid',col=col.doh,
-            title=figtitle("Annualized COVID deaths per million in Washington by age"),
-            ylab="annualized deaths per million",          
-            legend='topright',legend.title='Age',legend.labels=labels.doh));
-    ## Figures 3a-b ann relative to mort
+            risk.pct,lwd=2,lty='solid',col=col.doh,
+            title=figtitle("Annualized COVID risk in Washington by age"),
+            ylab=ylab,legend='topright',legend.title='Age',legend.labels=labels.doh));
+    ## relative mortality
     figblk_start();
-    jhu.data=data_cvdat(jhu,places=places.jhu,per.capita=FALSE);
-    jhu.ann=ann(jhu.data,test.mono=FALSE); # test.mono=FALSE 'cuz jhu overshoots then backs up
-    mort=as.numeric(jhu$mort[,colnames(jhu.ann)[-1]]);
-    jhu.mort=data.frame(date=jhu.ann$date,rapply(jhu.ann[,-1],function(counts) counts/mort));
+    ylab="relative mortality (percent)";
+    mort.pct=data.frame(date=jhu.mort$date,100*jhu.mort[,-1]);
     dofig('jhu_mort',
           plotm(
-            jhu.mort,lwd=2,lty='solid',
+            mort.pct,lwd=2,lty='solid',
             title=figtitle("Annualized COVID relative to non-COVID deaths in USA and Washington"),
-            ylab="annualized relative deaths",          
-            legend='topleft',legend.title='Place',legend.labels=labels.jhu));
-    doh.data=data_cvdat(doh,ages=ages.doh,per.capita=FALSE);
-    doh.ann=ann(doh.data,test.mono=FALSE); # test.mono=FALSE 'cuz fit produces small decreases
-    mort=as.numeric(doh$mort[colnames(doh.ann)[-1],]);
-    doh.mort=data.frame(date=doh.ann$date,rapply(doh.ann[,-1],function(counts) counts/mort));
+            ylab=ylab,legend='topleft',legend.title='Place',legend.labels=labels.jhu));
+    mort.pct=data.frame(date=doh.mort$date,100*doh.mort[,-1]);
     dofig('doh_mort',
           plotm(
-            doh.mort,lwd=2,lty='solid',col=col.doh,
+            mort.pct,lwd=2,lty='solid',col=col.doh,
             title=figtitle("Annualized COVID relative to non-COVID deaths in Washington by age"),
-            ylab="annualized relative deaths",          
-            legend='top',legend.title='Age',legend.labels=labels.doh));
-   
+            ylab=ylab,legend='top',legend.title='Age',legend.labels=labels.doh));
   }
+  nv(version,do.fig,do.tbl);
 }
 
 ## replicates much of 'dotbl'. refactor someday...
@@ -217,6 +172,28 @@ rm_mtop_objs=function(what='deaths',datasrc=cq(doh,jhu),
   rm(list=names,envir=globalenv());
   invisible(names);
 }
+## make global 'document vars'
+make_mtop_vars=function() {
+  places.jhu=cq(USA,state);
+  labels.jhu=setNames(c('USA','Washington State'),places.jhu);
+  titles.jhu=setNames(c('USA','WA'),places.jhu);
+  col.jhu=col_brew(places.jhu,pal.jhu);
+  ages.doh=ages(doh);
+  labels.doh=age_label(ages.doh,fmt='years');
+  col.doh=col_ages(doh,skip.beg=3);      # col_ages in doc_updat.R
+  ## absolute deaths
+  jhu.deaths=ann_cvdat(jhu,places=places.jhu,per.capita=FALSE);
+  doh.deaths=ann_cvdat(doh,ages=ages.doh,per.capita=FALSE);
+  ## risk 
+  jhu.risk=ann_cvdat(jhu,places=places.jhu,per.capita=TRUE);
+  doh.risk=ann_cvdat(doh,ages=ages.doh,per.capita=TRUE);
+  ## permort
+  jhu.mort=mortann_cvdat(jhu,places=places.jhu,per.capita=FALSE);
+  doh.mort=mortann_cvdat(doh,ages=ages.doh,per.capita=FALSE);
+  ## assign vars to global
+  assign_global();
+  return();
+}
 
 ## customized raw
 ## pop.young, mort.young manually extracted from input/meta/mort/state_0_11.txt, state_12_19.txt
@@ -246,3 +223,6 @@ raw_mtop=function(what='deaths',datasrc=cq(doh,jhu),version='latest',
   }
   obj;
 }
+## make vector of last rows' date
+clast=function(jhu,doh) as.numeric(cbind(jhu[nrow(jhu),-1],doh[nrow(doh),-1]));
+

@@ -1,0 +1,7 @@
+cause	deaths	per.capita
+cancer	12960	1702
+heart disease	11862	1558
+COVID	6429	844
+Alzheimer	3585	471
+accident	3569	469
+lung disease	3045	400

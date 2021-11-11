@@ -1,0 +1,9 @@
+Location/Age	Deaths	Deaths per Million	Personal Risk	Relative Mortality
+USA all ages	517663	1577	0.16%	18%
+WA all ages	6429	844	0.084%	11%
+WA 0-19 years old	15	8	0.00083%	2%
+WA 20-34 years old	93	57	0.0057%	6%
+WA 35-49 years old	412	274	0.027%	15%
+WA 50-64 years old	1273	899	0.09%	14%
+WA 65-79 years old	2320	2450	0.24%	13%
+WA 80+ years old	2404	9228	0.92%	9%
