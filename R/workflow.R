@@ -245,7 +245,6 @@ do_mtop=function(save=param(save),version=NULL) {
   ## create version directory (for maintaining old version)
   vsndir=file.path('doc.nnn','mtop',version);
   if (verbose) print(paste('+++ creating directory',vsndir));
-  BREAKPOINT('do_mtop: before creating doc.nnn')
   dir.create(vsndir,recursive=TRUE,showWarnings=FALSE);
   ## copy files to 'stable' and version directory
   sfx=cq(Rmd,html,pdf);
