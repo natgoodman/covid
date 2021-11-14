@@ -111,7 +111,7 @@ deaths of people they know. For most people, the risk is low. And even though th
 
 I hope that placing COVID in the context of other deadly diseases will make the enormous COVID death toll more concrete. I don't expect to change the minds of people who don't care. But perhaps I can help people who do care to better understand this ongoing tragedy. 
 
-### Data Sources and References {#sources}
+### Data Sources {#sources}
 
 1. COVID data for USA and Washington State all ages is from Johns Hopkins University (JHU) [COVID portal](https://github.com/CSSEGISandData/COVID-19/), specifically their [time_series_covid19_deaths_US.csv](https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_US.csv).
 
