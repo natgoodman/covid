@@ -28,9 +28,9 @@ tbldir=file.path('table',doc);
 space=strrep('\\ ',10);                 # space between tables
 ```
 
-The gruesome body count of COVID deaths is mind-numbing. Unless you've lost a loved one to COVID or provided care to seriously ill COVID patients, it's hard to grasp the enormity of the death toll: 700,000 deaths reported in the New York Times on October 1, a number that's grown to more than 750,000 as I write this. For those who remember the Vietnam war, it brings to mind the body counts reported daily to mark "progress" in that horror. For comparison, the official US death toll in the Vietnam war was 58,220; Vietnamese deaths probably exceeded 1,000,000.
+The gruesome body count of COVID deaths is mind-numbing. Unless you've lost a loved one to COVID or provided care to seriously ill COVID patients, it's hard to grasp the enormity of the death toll: 700,000 deaths reported in the New York Times on October 1, a number that's grown to more than 750,000 as I write this. For those who remember the Vietnam war, it brings to mind the body counts reported daily to mark "progress" in that horror. For comparison, the official US death toll in the Vietnam war was 58,220.
 
-The basic COVID paradox is that personal risk for most people is low, even though the death count is high. The first block of figures show risk for people of all ages in the USA and Washington State (Figure 1a) and by age group in Washington State (Figure 1b).
+The basic COVID paradox is that personal risk for most people is low, even though the death count is high. The first block of figures below show risk for people of all ages in the USA and Washington State (Figure 1a) and by age group in Washington State (Figure 1b).
 
 ```{r out.width="50%",echo=FALSE,fig.show='asis',include=TRUE}
 ## knitr::include_graphics(file.path(figdir,'figure_001a_jhu_cum.png'));
