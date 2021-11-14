@@ -220,6 +220,44 @@ do_updat=function(save=param(save),version='latest') {
   if (verbose) 
     print('>>> do_updat done. remember to knit updatvsn.Rmd, blog/README.Rmd and commit all docs');
 }
+## ---- Deploy mtop doc  ----
+## Run after rendering doc in RStudio
+##   can't render here 'cuz main sunfish R version not compatible...
+do_mtop=function(save=param(save),version=NULL) {
+  if (is.null(version)) stop('do_mtop needs explicit version');
+  if (is.na(save)) overwrite=FALSE
+  else {
+    if (!save) stop("Cannot deploy: 'save' is FALSE");
+    overwrite=save;
+  }
+  param(verbose,pjto);
+  if (pjto) {
+    ok=system('pjtest')==0;
+    if (!ok) warning('Cannot copy to Mac: reverse tunnel not running. Deploying on Linux');
+  }
+  ## make sure pdf exists is up-to-date
+  msg='must save mtop.pdf in Safari on Mac and pjto it here before running do_mtop';
+  file='mtop.pdf';
+  if (!file.exists('mtop.pdf')) stop(paste('mtop.pdf does not exist.',msg));
+  time.html=file.info('mtop.html')$ctime;
+  time.pdf=file.info('mtop.pdf')$ctime;
+  if (time.pdf<time.html) stop(paste('mtop.pdf not up-to-date.',msg));
+  ## create version directory (for maintaining old version)
+  vsndir=file.path('doc.nnn','mtop',version);
+  if (verbose) print(paste('+++ creating directory',vsndir));
+  BREAKPOINT('do_mtop: before creating doc.nnn')
+  dir.create(vsndir,recursive=TRUE,showWarnings=FALSE);
+  ## copy files to 'stable' and version directory
+  sfx=cq(Rmd,html,pdf);
+  sapply(sfx,function(sfx) {
+    file=paste(sep='.','mtop',sfx);
+    cp_if_allowed(file,paste(sep='.','mtop','stable',sfx),overwrite=overwrite);
+    cp_if_allowed(file,file.path(vsndir,file),overwrite=overwrite);
+  });
+ if (verbose) print('>>> do_mtop done. remember to commit all docs');
+}
+
+
 cp_if_allowed=function(infile,file,overwrite) {
   if (overwrite||(!file.exists(file))) {
     param(verbose,pjto);
