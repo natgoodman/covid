@@ -166,7 +166,7 @@ init=function(
   clean.data=clean,              # remove datadir
   clean.sim=FALSE,               # clean simulations. default F
   clean.top=FALSE,               # clean top level data. default F
-  clean.type=NULL,               # specific data types to clean. see clean_type
+  ## clean.type=NULL,               # specific data types to clean. see clean_type
   clean.out=clean,               # remove outputs - figures and tables
   clean.fig=clean.out,           # remove figdir
   clean.tbl=clean.out,           # remove tbldir
@@ -199,7 +199,7 @@ init=function(
   if (clean.tbl) unlink(tbldir,recursive=T);
   ## clean specific types if desired.
   ## TODO: probably not right/useful here
-  sapply(clean.type,clean_type);
+  ## sapply(clean.type,clean_type);
   ## create input directories. nop if already exist
   sapply(indirs,function(dir) dir.create(dir,recursive=TRUE,showWarnings=FALSE));
   ## create output directories. nop if already exist
@@ -210,7 +210,7 @@ init=function(
     rbind,lapply(places.nonwa,function(row) 
       data.frame(place=row[1],state=row[2],county=row[3],stringsAsFactors=FALSE)));
   param(places.nonwa=places.nonwa);
- invisible();
+  invisible();
 }
 ## initialize doc parameters
 ## NG 19-01-11: abandon subdoc concept for 'supp' - not useful for effit
@@ -287,19 +287,19 @@ init_doc=function(
 
 ## clean specific data type. deletes directory, and any top level files
 ## TODO: probably not right/useful here
-clean_type=function(what,cleandir=T) {
-  param(datadir);
-  ## delete top level files if exist
-  files=list.files(datadir,full.names=TRUE,pattern=paste(sep='','^',what,'\\.(RData|txt)'));
-  unlink(files);
-  if (cleandir) {
-    whatdir=paste(sep='',what,'dir');
-    ## delete directory if exists
-    if (exists(whatdir,envir=param.env)) unlink(get(whatdir,envir=param.env),recursive=T);
-  }
-}
-cleanq=function(what,cleandir=T) {
-  what=as.character(pryr::subs(what));
-  clean_type(what,cleandir);
-}
+## clean_type=function(what,cleandir=T) {
+##   param(datadir);
+##   ## delete top level files if exist
+##   files=list.files(datadir,full.names=TRUE,pattern=paste(sep='','^',what,'\\.(RData|txt)'));
+##   unlink(files);
+##   if (cleandir) {
+##     whatdir=paste(sep='',what,'dir');
+##     ## delete directory if exists
+##     if (exists(whatdir,envir=param.env)) unlink(get(whatdir,envir=param.env),recursive=T);
+##   }
+## }
+## cleanq=function(what,cleandir=T) {
+##   what=as.character(pryr::subs(what));
+##   clean_type(what,cleandir);
+## }
 
