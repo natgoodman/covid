@@ -407,7 +407,7 @@ cmp_doh=
   }
 ## compute ratios from cmp_doh data
 ## data is from cmp_doh
-cmp_doh_ratio=function(data,base.place='state',round.digits=ratio.digits) {
+cmp_doh_ratio=function(data,base.place='state',round.digits=2) {
   counts=data[,-1,drop=FALSE];
   base=repr(counts[base.place,,drop=FALSE],nrow(counts));
   ratio=round(base/counts,digits=round.digits);
