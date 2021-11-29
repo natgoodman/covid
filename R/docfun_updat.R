@@ -363,9 +363,8 @@ show_doh=
       stop("Both 'places' and 'ages' are empty; nothing to show!");
     if (is.null(data))
       data=data_cvdat(obj,places=places,ages=ages,per.capita=per.capita,per.mort=per.mort);
-##    data[,-1]=round(data[,-1],digits=round.digits);
+    ##    data[,-1]=round(data[,-1],digits=round.digits);
     data[,-1]=round_to(data[,-1],round.to);
-    if (do.range) data=do_range(data,do.ratio=do.ratio);
     if (length(places)==1) {
       peak.labels=paste(what,places,labels);
       now.label=paste(what,places,'now');
@@ -375,6 +374,8 @@ show_doh=
       now.label=paste(what,ages,'now');
       colnames(data)=c('date',places);
     }
+    ## NG 21-11-29: do do_range after fixing colnames above. else range column names munged
+    if (do.range) data=do_range(data,do.ratio=do.ratio);
     if (do.peaks) peaks=show_peaks(data,cuts,labels=peak.labels) else peaks=list();
     if (do.now) now=show_now(data,objid,tail.n,label=now.label);
     print('----------');
