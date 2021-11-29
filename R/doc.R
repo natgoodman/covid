@@ -27,7 +27,7 @@ library(knitr);
 ##   fignew - plot each figure in new window. default figscreen
 ##   docfun document-specific function. default calculated from doc,subdoc eg, doc_repwr
 dodoc=
-  function(sect=NULL,need.init=F,xperiment=F,...) {
+  function(sect=NULL,need.init=FALSE,xperiment=FALSE,...) {
     if (!xperiment) {
       ## normal doc
       if (need.init) wrapfun(init,...);
@@ -67,16 +67,26 @@ dofig=function(figname,figfun,sect=param(sect),pjto=param(pjto)) {
 ##   else eval'ed as is
 ## tblfun can be a variable, function call, or statement block. eval'ed in parent env
 ## title used as kable caption. ... passed to kable
-dotbl=function(tblname,tblfun=NULL,title=NULL,sect=param(sect),pjto=param(pjto),obj.ok=TRUE,...) {
+dotbl=function(tblname,tblfun=NULL,title=NULL,sect=param(sect),pjto=param(pjto),obj.ok=TRUE,
+               save.RData=param(save.RData.tbl),save.txt=param(save.txt.tbl),
+               save.kbl=param(save.kbl),row.names=NA,...) {
   if (!is.logical(pjto)) pjto=if(pjto=='file') TRUE else FALSE;
   parent.env=parent.frame(n=1);
   base=filename_tbl(tbllabel(where='filename'),sect,tblname,suffix=NULL);
   tblfun=pryr::subs(tblfun);
   tbl=eval(tblfun,parent.env);          # generate table!
-  save_(tbl,base=base,save=param(save.RData.tbl),save.txt=param(save.txt.tbl),
-        pjto=pjto,obj.ok=obj.ok);
+  ## save RData if desired
+  if (save.RData) save_(tbl,base=base,save.RData=TRUE,save.txt=FALSE,pjto=pjto);
+  ## save txt if desired. first tack on rownames if desired
+  if (save.txt) {
+    if (!is.na(row.names)) {
+      tbl=cbind(rownames(tbl),tbl);
+      colnames(tbl)[1]=row.names;
+    }
+    save_(tbl,base=base,save.RData=FALSE,save.txt=TRUE,pjto=pjto,obj.ok=obj.ok);
+  }
   if (param(save.kbl)) {
-    args=cl(list(x=tbl,caption=title,row.names=FALSE,escape=T),list(...));
+    args=cl(list(x=tbl,caption=title,row.names=FALSE,escape=TRUE),list(...));
     kt=do.call(kable,args);
     save_(kt,file=filename(base,suffix='kbl'),save=TRUE,save.txt=FALSE,pjto=pjto);
   }
