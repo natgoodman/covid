@@ -92,14 +92,15 @@ doc_updat=function(doc='updat',need.objs=TRUE,need.init=TRUE,version='latest',
     rat.doh.cases=cmp_doh_ratio(cmp.doh.cases);
     rat.doh.admits=cmp_doh_ratio(cmp.doh.admits);
     rat.doh.deaths=cmp_doh_ratio(cmp.doh.deaths);
+    BREAKPOINT('doc_updat: before cmp.doh tables')
     tblblk_start();
-    dotbl('cmp_doh_cases',cmp.doh.cases)
-    dotbl('cmp_doh_admits',cmp.doh.admits)
-    dotbl('cmp_doh_deaths',cmp.doh.deaths)
+    dotbl('cmp_doh_cases',cmp.doh.cases,row.names='place');
+    dotbl('cmp_doh_admits',cmp.doh.admits,row.names='place');
+    dotbl('cmp_doh_deaths',cmp.doh.deaths,row.names='place');
     tblblk_start();
-    dotbl('rat_doh_cases',rat.doh.cases)
-    dotbl('rat_doh_admits',rat.doh.admits)
-    dotbl('rat_doh_deaths',rat.doh.deaths)
+    dotbl('rat_doh_cases',rat.doh.cases,row.names='place');
+    dotbl('rat_doh_admits',rat.doh.admits,row.names='place');
+    dotbl('rat_doh_deaths',rat.doh.deaths,row.names='place');
     assign_global(
       cmp.doh.cases,cmp.doh.admits,cmp.doh.deaths,
       rat.doh.cases,rat.doh.admits,rat.doh.deaths);
