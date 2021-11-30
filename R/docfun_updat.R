@@ -303,6 +303,22 @@ show_counts=
     invisible(list(cases.wa=cases.wa,deaths.wa=deaths.wa,
                    cases.nonwa=cases.nonwa,deaths.nonwa=deaths.nonwa));
   }
+## wrapper for show_counts to emit count ranges used in doc
+show_range=show_ranges=
+  function(objid=cq(raw,std,dly),where=cq(wa,nonwa),what=cq(cases,deaths),
+           places.wa=parent(places.wa),places.nonwa=parent(places.nonwa)) {
+    objid=match.arg(objid);
+    what=match.arg(what);
+    round.50=(what=='cases');
+    counts=show_counts(
+      objid=objid,where=where,what=what,places.wa=places.wa,places.nonwa=places.nonwa,
+      round.50=round.50,do.peaks=FALSE,do.range=TRUE,do.print=FALSE);
+    ## filter on what
+    counts=counts[grep(what,names(counts))];
+    ranges=do.call(rbind,lapply(counts,function(counts) tail(counts,n=1)[,cq(min,max)]));
+    ranges$text=paste(sep='-',ranges$min,ranges$max);
+    ranges;
+  }
 ## add row ranges to data
 do_range=function(data,do.ratio=FALSE,round.digits=2) {
   data$min=as.numeric(rapply(data[,-1,drop=FALSE],min));
