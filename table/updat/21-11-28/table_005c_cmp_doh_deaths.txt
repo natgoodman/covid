@@ -1,0 +1,5 @@
+place	date	0_19	20_34	35_49	50_64	65_79	80_	min	max	ratio
+state	2021-11-21	0	0	1	2	11	48	0	48	Inf
+King	2021-11-21	0	0	0	6	0	48	0	48	Inf
+Snohomish	2021-11-21	0	0	0	0	0	10	0	10	Inf
+Pierce	2021-11-21	0	0	9	0	0	23	0	23	Inf
