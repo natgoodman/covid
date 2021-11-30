@@ -92,7 +92,6 @@ doc_updat=function(doc='updat',need.objs=TRUE,need.init=TRUE,version='latest',
     rat.doh.cases=cmp_doh_ratio(cmp.doh.cases);
     rat.doh.admits=cmp_doh_ratio(cmp.doh.admits);
     rat.doh.deaths=cmp_doh_ratio(cmp.doh.deaths);
-    BREAKPOINT('doc_updat: before cmp.doh tables')
     tblblk_start();
     dotbl('cmp_doh_cases',cmp.doh.cases,row.names='place');
     dotbl('cmp_doh_admits',cmp.doh.admits,row.names='place');
