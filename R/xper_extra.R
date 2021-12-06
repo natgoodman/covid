@@ -7,12 +7,131 @@
 ## Copyright (C) 2021 Nat Goodman.
 ##
 ## Experiment with 'extra' transform: check, validate, compare
-## New version circa 21-08-21
+## Vesrion circa 21-12
+## Based on version circa 21-08-21 (now xper_extra.bak1.R)
 ##
 ## This software is open source, distributed under the MIT License. See LICENSE
 ## file at https://github.com/natgoodman/NewPro/FDR/LICENSE 
 ##
 ###################################################################################
+## standard objids (suffixes)
+objids.xper=cq(src,raw,edit,fitr,extra,fit,fitx);
+## 'edit', 'raw' synonyms.  'fitx', 'fit' synonyms. 
+
+## make object lists
+make_xper_objs=
+  function(what=cq(cases,admits,deaths),places=cq(state,King,Snohomish,Pierce),ages='new',
+          objids=objids.xper,vsn.min=NULL,vsn.max=NULL,versions=NULL) {
+    what=match.arg(what,several.ok=TRUE);
+    if (ages=='new') ages=c("all","0_19","20_34","35_49","50_64","65_79" ,"80_")
+    else if (ages=='old') ages=c("all","0_19","20_39","40_59","60_79","80_");
+    objids=match.arg(objids,several.ok=TRUE);
+    ## deal with objids synonyms
+    if ('raw'%in%objids) objids=objids%-%'edit';
+    if ('fit'%in%objids) objids=objids%-%'fitx';
+    verbose=param(verbose);
+    sapply(what,function(what) {
+      if ('src'%in%objids) {
+        if (verbose) print(paste(">>> make",what,"src"));
+        if (is.null(versions)) versions=list_versions('doh',what);
+        versions=btwn_vsn(versions,vsn.min,vsn.max);
+        objs.src=lapply(versions,function(vsn) raw(what,'doh',vsn));
+        ## filter to ones with ages we want
+        objs.src=objs.src[sapply(objs.src,function(obj) ages(obj)%>=%ages)]
+        assign(paste(sep='.','objs',what,'src'),objs.src,globalenv());
+      } else objs.src=get(paste(sep='.','objs',what,'src'),globalenv());
+      if ('raw'%in%objids) {
+        if (verbose) print(paste(">>> make",what,"raw (aka edit)"));
+        objs.raw=lapply(objs.src,function(obj) {
+          obj=edit(obj,KEEP=c(places,ages));
+          if ('state'%notin%places) obj=edit(obj,DROP='state');
+          if ('all'%notin%ages) obj=edit(obj,DROP='all');
+          obj});
+        assign(paste(sep='.','objs',what,'raw'),objs.raw,globalenv());
+        assign(paste(sep='.','objs',what,'edit'),objs.raw,globalenv()); # 'edit' synonym for 'raw'
+      } else objs.raw=get(paste(sep='.','objs',what,'raw'),globalenv());
+      if ('extra'%in%objids)  {
+        if (verbose) print(paste(">>> make",what,"extra"));
+        objs.extra=lapply(objs.raw,function(obj) extra(obj));
+        assign(paste(sep='.','objs',what,'extra'),objs.extra,globalenv());
+      } else objs.extra=get(paste(sep='.','objs',what,'extra'),globalenv());
+      if ('fitr'%in%objids)  {
+        if (verbose) print(paste(">>> make",what,"fitr (fit of raw (non-extra))"));
+        objs.fitr=lapply(objs.raw,function(obj) fit(obj));
+        assign(paste(sep='.','objs',what,'fitr'),objs.fitr,globalenv());
+      } 
+      if ('fit'%in%objids)  {
+        if (verbose) print(paste(">>> make",what,"fit (aka fitx)"));
+        objs.fit=lapply(objs.extra,function(obj) fit(obj));
+        assign(paste(sep='.','objs',what,'fit'),objs.fit,globalenv());
+        assign(paste(sep='.','objs',what,'fitx'),objs.fit,globalenv()); # 'fitx' synonym for 'fit'
+      } 
+      if (verbose) print(">>> done");
+    })
+    invisible(list(what=what,objids=objids));
+  }
+rm_xper_objs=function(what=cq(cases,admits,deaths),objids=objids.xper) {
+  what=match.arg(what,several.ok=TRUE);
+  objids=match.arg(objids,several.ok=TRUE);
+  if (length(what)==0||length(objids)==0) invisible(NULL); # nothing to remove
+  names.all=ls(globalenv());
+  pat=paste0('^(','objs',')','\\.',
+             '(',paste(collapse='|',what),')','\\.',
+             '(',paste(collapse='|',objids),')');
+  names=grep(pat,names.all,value=TRUE);
+  if (length(names)>0) {
+    if (param(verbose)) print(paste('>>> rm',paste(collapse=', ',names)));
+    rm(list=names,envir=globalenv());
+  }
+  invisible(names);
+}
+## plot xper object lists. wrapper for cvdat.
+## VERY ROUGH - direct copy of what I did interactively
+plot_xper=function(objs,places,ages,per.capita=TRUE,xmin='2021-03-01',...) {
+  n=length(objs);
+  col=c(col_brew(n-1,'rainbow'),'black');
+  lty=c(rep('dotted',n-1),'solid');
+  lwd=c(rep(1,n-1),2);
+  plot_cvdat(objs,places=places,ages=ages,per.capita=per.capita,xmin=xmin,
+             col=col,lty=lty,lwd=lwd,...);
+}
+
+## compute residuals fot xper object list
+## VERY ROUGH - direct copy of what I did interactively
+resid_xper=function(objs,places,ages,per.capita=TRUE,...) {
+  n=length(objs);
+  data=data_cvdat(objs,places=places,ages=ages,per.capita=per.capita,...);
+  resid=data[,-1]-data[,n+1];
+  resid=cbind(data$date,resid);
+  colnames(resid)=colnames(data);
+  invisible(resid);
+}
+rms_xper=function(resid) {
+  rms=capply(resid[,-1],function(x) sqrt(mean(x^2,na.rm=T));
+}
+## TODO: title, ylab, legend title
+plot_resid=function(resid,rms=NULL,xmin='2021-03-01',...) {
+  n=ncol(resid)-1;
+  col=c(col_brew(n-1,'rainbow'),'black');
+  lty=c(rep('dotted',n-1),'solid');
+  lwd=c(rep(1,n-1),2);
+  xlim=if(!is.null(xmin)) as_date(c(xmin,tail(colnames(resid),n=1)));
+  ylim=if(!is.null(rms)) ylim=range(c(resid[,-1],rms),na.rm=TRUE) else NULL;
+  plotm(resid,col=col,lty=lty,lwd=lwd,legend='bottomleft',xlim=xlim,ylim=ylim,...);
+  if (!is.null(rms)) lines(x=as_date(colnames(rms)),y=rms[1,],lty='solid',col='black');
+}
+
+  
+## between allowing missing endpoint. used in new and old code
+btwn_vsn=function(vsn,vsn.min=NULL,vsn.max=NULL) {
+  if (is.null(vsn.min)&&is.null(vsn.max)) return(vsn);
+  want=if (is.null(vsn.min)) vsn<=vsn.max
+       else if (is.null(vsn.max)) vsn>=vsn.min
+       else btwn_cc(vsn,vsn.min,vsn.max);
+  vsn[want];
+}
+########################################
+## OLD CODE below here
 ## make wmats using 'extra' objs for all but final column
 make_wmats=
   function(what=cq(cases,admits,deaths),need.objs=TRUE,
@@ -182,19 +301,12 @@ col_ages=
     setNames(col,ages);
   }
 
-## between allowing missing endpoint. used in new and old code
-btwn_vsn=function(vsn,vsn.min=NULL,vsn.max=NULL) {
-  want=if(is.null(vsn.min)&&is.null(vsn.max)) vsn
-       else if (is.null(vsn.min)) vsn<=vsn.max
-       else if (is.null(vsn.max)) vsn>=vsn.min
-       else btwn_cc(vsn,vsn.min,vsn.max);
-  vsn[want];
-}
+
 #################### OLD CODE below here. Last used 21-03-19 ####################
 ## Make base objects. 
 ## vsn.min default is min version with enough earlier versions for 'extra'
 ## vsn.max default is max version with original age groups
-make_xper_objs=
+XXXmake_xper_objs=
   function(vsn.min='20-05-31',vsn.max='21-02-28',
            places=cq(state,King,Snohomish,Pierce,Adams,'San Juan'),ages=NULL,
            idx=list(xorig=TRUE,xa=TRUE,xas=TRUE,xs=TRUE,
