@@ -199,6 +199,41 @@ rm_updat_objs=function(what=cq(cases,admits,deaths),datasrc=param(datasrc),
 }
 
 ## --- doc_updat interactive functions ---
+## wrapper for show_counts to emit count ranges used in doc
+show_range=show_ranges=
+  function(objid=cq(raw,std,dly),where=cq(wa,nonwa),what=cq(cases,deaths),
+           places.wa=parent(places.wa),places.nonwa=parent(places.nonwa)) {
+    objid=match.arg(objid);
+    what=match.arg(what);
+    round.50=(what=='cases');
+    counts=show_counts(
+      objid=objid,where=where,what=what,places.wa=places.wa,places.nonwa=places.nonwa,
+      round.50=round.50,do.peaks=FALSE,do.range=TRUE,do.print=FALSE);
+    ranges=do.call(rbind,lapply(counts,function(counts) tail(counts$now,n=1)[,cq(min,max)]));
+    ranges$text=paste(sep='-',ranges$min,ranges$max);
+    ranges;
+  }
+## wrapper for show_counts to show now vs. peak comparisons used in doc
+show_peak=show_peaks=
+  function(objid=cq(std,raw,dly),where=cq(wa,nonwa),what=cq(cases,deaths),
+           places.wa=parent(places.wa),places.nonwa=parent(places.nonwa),
+           SIMPLIFY=TRUE) {
+    objid=match.arg(objid);
+    what=match.arg(what);
+    round.50=(what=='cases');
+    counts=show_counts(
+      objid=objid,where=where,what=what,places.wa=places.wa,places.nonwa=places.nonwa,
+      round.50=round.50,do.peaks=TRUE,do.range=TRUE,do.print=FALSE);
+    counts=lapply(counts,function(counts) {names(counts)=sub('^.* ','',names(counts)); counts});
+    peaks=lapply(counts,function(peaks) 
+      do.call(rbind,lapply(peaks,function(peak) tail(peak,n=1)[,-1])));
+    masks=lapply(peaks,function(peaks) head(capply(peaks,function(x) sign(x['now']-x)),n=-1));
+    texts=lapply(masks,function(mask)
+      as.data.frame(capply(mask,function(x) ifelse(x==-1,'B',ifelse(x==0,'0','-')))));
+    out=mapply(function(peaks,texts) list(counts=peaks,texts=texts),peaks,texts,SIMPLIFY=FALSE);
+    if (SIMPLIFY&&length(out)==1) out=out[[1]];
+    out;
+  }
 ## show trend results in convenient format. for interactive use
 show_trend=show_trends=
   function(objid=cq(raw,std,dly),where=cq(wa,nonwa),what=cq(cases,deaths),
@@ -250,12 +285,11 @@ show_counts=
            cases=NULL,deaths=NULL,
            tail.n=c(3,10),
            round.digits=0,round.50=FALSE,round.to=if(round.50) 50 else 10^(-round.digits),
-           do.peaks=TRUE,do.range=TRUE,
+           do.peaks=TRUE,do.range=TRUE,do.print=TRUE,
            cuts.wa=c('2020-01-26','2020-06-01','2020-09-15','2021-03-01','2021-07-01'),
-           labels.wa=cq(spring20,summer20,winter20,spring21,summer21),
+           labels.wa=cq(spring20,summer20,'winter20-21',spring21,summer21),
            cuts.nonwa=c('2020-01-26','2020-09-15','2021-03-01','2021-07-01'),
-           labels.nonwa=cq(spring_summer20,winter20,spring21,summer21),
-           do.print=TRUE) {
+           labels.nonwa=cq(spring_summer20,'winter20-21',spring21,summer21)) {
     objid=match.arg(objid);
     where=match.arg(where,several.ok=TRUE);
     what=match.arg(what,several.ok=TRUE);
@@ -276,48 +310,42 @@ show_counts=
       deaths.nonwa=do_range(deaths.nonwa);
     }
     assign_global(cases.wa,deaths.wa,cases.nonwa,deaths.nonwa);
-    if (do.print) {
-      if ('wa'%in%where&&'cases'%in%what) {
-        if (do.peaks) show_peaks(cases.wa,cuts.wa,labels=paste('cases.wa',labels.wa));
-        show_now(cases.wa,objid,tail.n,'cases.wa');
-        print('----------');
-      }
-      if ('wa'%in%where&&'deaths'%in%what) {
-        if (do.peaks) show_peaks(deaths.wa,cuts.wa,labels=paste('deaths.wa',labels.wa));
-        show_now(deaths.wa,objid,tail.n,'deaths.wa');
-        print('----------');
-      }
-      if ('nonwa'%in%where&&'cases'%in%what) {
-        if (do.peaks)
-          show_peaks(cases.nonwa,cuts.nonwa,labels=paste('cases.nonwa',labels.nonwa));
-        show_now(cases.nonwa,objid,tail.n,'cases.nonwa');
-        print('----------');
-      }
-      if ('nonwa'%in%where&&'deaths'%in%what) {
-        if (do.peaks)
-          show_peaks(deaths.nonwa,cuts.nonwa,labels=paste('deaths.nonwa',labels.nonwa));
-        show_now(deaths.nonwa,objid,tail.n,'deaths.nonwa');
-        print('----------');
-      }
+    out=list();
+    if ('wa'%in%where&&'cases'%in%what) {
+      if (do.peaks)
+        peaks=do_peaks(cases.wa,cuts.wa,labels=paste('cases.wa',labels.wa),do.print=do.print)
+      else peaks=list();
+      now=show_now(cases.wa,objid,tail.n,'cases.wa',do.print=do.print);
+      out=cl(out,cases.wa=cl(peaks,now=now));
+      if (do.print) print('----------');
     }
-    invisible(list(cases.wa=cases.wa,deaths.wa=deaths.wa,
-                   cases.nonwa=cases.nonwa,deaths.nonwa=deaths.nonwa));
-  }
-## wrapper for show_counts to emit count ranges used in doc
-show_range=show_ranges=
-  function(objid=cq(raw,std,dly),where=cq(wa,nonwa),what=cq(cases,deaths),
-           places.wa=parent(places.wa),places.nonwa=parent(places.nonwa)) {
-    objid=match.arg(objid);
-    what=match.arg(what);
-    round.50=(what=='cases');
-    counts=show_counts(
-      objid=objid,where=where,what=what,places.wa=places.wa,places.nonwa=places.nonwa,
-      round.50=round.50,do.peaks=FALSE,do.range=TRUE,do.print=FALSE);
-    ## filter on what
-    counts=counts[grep(what,names(counts))];
-    ranges=do.call(rbind,lapply(counts,function(counts) tail(counts,n=1)[,cq(min,max)]));
-    ranges$text=paste(sep='-',ranges$min,ranges$max);
-    ranges;
+    if ('wa'%in%where&&'deaths'%in%what) {
+      if (do.peaks)
+        peaks=do_peaks(deaths.wa,cuts.wa,labels=paste('deaths.wa',labels.wa),do.print=do.print)
+      else peaks=list();
+      now=show_now(deaths.wa,objid,tail.n,'deaths.wa',do.print=do.print);
+      out=cl(out,deaths.wa=cl(peaks,now=now));
+      if (do.print) print('----------');
+    }
+    if ('nonwa'%in%where&&'cases'%in%what) {
+      if (do.peaks)
+        peaks=do_peaks(cases.nonwa,cuts.nonwa,labels=paste('cases.nonwa',labels.nonwa),
+                         do.print=do.print)
+      else peaks=list();
+      now=show_now(cases.nonwa,objid,tail.n,'cases.nonwa',do.print=do.print);
+      out=cl(out,cases.nonwa=cl(peaks,now=now));
+      if (do.print) print('----------');
+    }
+    if ('nonwa'%in%where&&'deaths'%in%what) {
+      if (do.peaks)
+        peaks=do_peaks(deaths.nonwa,cuts.nonwa,labels=paste('deaths.nonwa',labels.nonwa),
+                         do.print=do.print)
+      else peaks=list();
+      now=show_now(deaths.nonwa,objid,tail.n,'deaths.nonwa',do.print=do.print);
+      out=cl(out,deaths.nonwa=cl(peaks,now=now));
+      if (do.print) print('----------');
+    }
+    invisible(out);
   }
 ## add row ranges to data
 do_range=function(data,do.ratio=FALSE,round.digits=2) {
@@ -326,34 +354,34 @@ do_range=function(data,do.ratio=FALSE,round.digits=2) {
   if (do.ratio) data$ratio=round(data$max/data$min,digits=round.digits)
   data;
 }
-show_now=function(counts,objid,tail.n,label='now') {
+show_now=function(counts,objid,tail.n,label='now',do.print=TRUE) {
   if (!grepl('now$',label)) label=paste(label,'now');
-  print(label);
+  if (do.print) print(label);
   ## print(paste(collapse=' ',c(label,'now')));
   if (objid!='dly') now=tail(subset(counts,subset=weekdays(date)=='Sunday'),n=tail.n[1])
   else now=tail(subset(counts,subset=date<vdate(jhu.cases)),n=tail.n[2]);
-  print(now);
+  if (do.print) print(now);
   invisible(now);
 }
-show_peaks=function(counts,cuts,labels) {
+do_peaks=function(counts,cuts,labels,do.print=TRUE) {
   cuts=c(as_date(cuts),Inf);
   cats=cut(counts$date,cuts,right=F,labels=FALSE);
   peaks=split(counts,cats);
   peaks=lapply(seq_along(peaks),function(i) {
     peak=peaks[[i]];
     label=labels[i];
-    show_peak1(peak,label);
+    do_peak1(peak,label,do.print=do.print);
   });
   names(peaks)=labels;
   invisible(peaks);
 }
-show_peak1=function(peak,label) {
-  print(paste(collapse=' ',c(label,'peak')));
+do_peak1=function(peak,label,do.print=TRUE) {
+  if (do.print) print(paste(collapse=' ',c(label,'peak')));
   i=unique(as.vector(capply(peak[,-1],which.max)));
   peak=peak[i,,drop=FALSE];
   smax=capply(peak[,-1,drop=FALSE],max);
   peak=rbind(peak,data.frame(date=NA,smax,check.names=FALSE));
-  print(peak);
+  if (do.print) print(peak);
   invisible(peak);
 }
 ########################################
@@ -366,7 +394,7 @@ show_doh=
            places='state',ages=NULL,obj=NULL,data=NULL,per.capita=TRUE,per.mort=FALSE,
            tail.n=c(6,10),
            round.digits=0,round.50=FALSE,round.to=if(round.50) 50 else 10^(-round.digits),
-           do.peaks=TRUE,do.now=TRUE,do.range=TRUE,do.ratio=TRUE,
+           do.peaks=TRUE,do.now=TRUE,do.range=TRUE,do.ratio=TRUE,do.print=TRUE,
            cuts=c('2020-01-26','2020-06-01','2020-09-15','2021-03-01','2021-07-01'),
            labels=cq(spring20,summer20,winter20,spring21,summer21)) {
     objid=match.arg(objid);
@@ -392,9 +420,11 @@ show_doh=
     }
     ## NG 21-11-29: do do_range after fixing colnames above. else range column names munged
     if (do.range) data=do_range(data,do.ratio=do.ratio);
-    if (do.peaks) peaks=show_peaks(data,cuts,labels=peak.labels) else peaks=list();
-    if (do.now) now=show_now(data,objid,tail.n,label=now.label);
-    print('----------');
+    if (do.peaks)
+      peaks=do_peaks(data,cuts,labels=peak.labels,do.print=do.print) else peaks=list();
+    if (do.now)
+      now=show_now(data,objid,tail.n,label=now.label,do.print=do.print) else now=list();
+    if (do.print) print('----------');
     invisible(cl(peaks,now=now));
   }
 ## TODO: these are CRUDE!! do it better
