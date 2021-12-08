@@ -87,7 +87,8 @@ rm_xper_objs=function(what=cq(cases,admits,deaths),objids=objids.xper) {
 }
 ## plot xper object lists. wrapper for cvdat.
 ## VERY ROUGH - direct copy of what I did interactively
-plot_xper=function(objs,places,ages,per.capita=TRUE,xmin='2021-03-01',...) {
+plot_xper=function(objs,obj.last=NULL,places,ages,per.capita=TRUE,xmin='2021-03-01',...) {
+  if (!is.null(obj.last)) objs=cla(objs,obj.last);
   n=length(objs);
   col=c(col_brew(n-1,'rainbow'),'black');
   lty=c(rep('dotted',n-1),'solid');
@@ -98,7 +99,8 @@ plot_xper=function(objs,places,ages,per.capita=TRUE,xmin='2021-03-01',...) {
 
 ## compute residuals fot xper object list
 ## VERY ROUGH - direct copy of what I did interactively
-resid_xper=function(objs,places,ages,per.capita=TRUE,...) {
+resid_xper=function(objs,obj.last=NULL,places,ages,per.capita=TRUE,...) {
+  if (!is.null(obj.last)) objs=cla(objs,obj.last);
   n=length(objs);
   data=data_cvdat(objs,places=places,ages=ages,per.capita=per.capita,...);
   resid=data[,-1]-data[,n+1];
@@ -107,7 +109,7 @@ resid_xper=function(objs,places,ages,per.capita=TRUE,...) {
   invisible(resid);
 }
 rms_xper=function(resid) {
-  rms=capply(resid[,-1],function(x) sqrt(mean(x^2,na.rm=T));
+  rms=capply(resid[,-1],function(x) sqrt(mean(x^2,na.rm=T)));
 }
 ## TODO: title, ylab, legend title
 plot_resid=function(resid,rms=NULL,xmin='2021-03-01',...) {
