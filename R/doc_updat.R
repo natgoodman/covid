@@ -19,7 +19,7 @@
 ## Previous versions are available in GitHub, of course.
 ## no sections.
 doc_updat=function(doc='updat',need.objs=TRUE,need.init=TRUE,version='latest',
-                   figs.all=TRUE,do.fig=TRUE,do.tbl=TRUE,xmin.ragged=12,...) {
+                   figs.all=TRUE,do.fig=TRUE,do.tbl=TRUE,do.USA=TRUE,xmin.ragged=12,...) {
   what=cq(cases,admits,deaths);
   datasrc=cq(doh,jhu);
   if (is.null(version)||version=='latest') version=max(sapply(datasrc,latest_version));
@@ -42,6 +42,7 @@ doc_updat=function(doc='updat',need.objs=TRUE,need.init=TRUE,version='latest',
                      places.wa);
   places.nonwa<<-cq('Ann Arbor',Boston,'San Diego',DC);
   labels.nonwa=setNames(c('Ann Arbor','Boston','San Diego','Washington DC'),places.nonwa);
+  if (do.USA) places.nonwa<<-c(places.nonwa,'USA');
   if (do.tbl) {
     ## Tables 1-2 trend analysis.
     if (param(verbose)) print(paste('+++ making tables'));
@@ -106,6 +107,8 @@ doc_updat=function(doc='updat',need.objs=TRUE,need.init=TRUE,version='latest',
   }
   if (!do.fig) return(version);
   if (param(verbose)) print(paste('+++ making figures'));
+  ## REAL HACK: remove 'USA' from places.nonwa for figures 1, 2
+  places.nonwa=places.nonwa%-%'USA';
   ## Figures 1a-b cases
   figblk_start();
   dofig('cases_wa',
@@ -170,8 +173,39 @@ doc_updat=function(doc='updat',need.objs=TRUE,need.init=TRUE,version='latest',
           title=figtitle(
             "Weekly deaths per million in non-Washington locations showing recent raw data"),
            where.legend='topright',legends=list(labels=labels.nonwa)));
+  if (do.USA) {
+    ## next block include USA
+    figblk_start();
+    places.usa<<-cq(state,King,USA);
+    labels.usa=setNames(c('Washington state','Seattle (King County)','USA'),places.usa);
+    dofig('cases_usa',
+        plot_cvdat(
+          jhu.cases,places=places.usa,ages='all',per.capita=TRUE,lwd=2,
+          title=figtitle("Weekly cases per million in USA and Washington"),
+          legends=list(labels=labels.usa)));
+    dofig('deaths_usa',
+        plot_cvdat(
+          jhu.deaths,places=places.usa,ages='all',per.capita=TRUE,lwd=2,
+          title=figtitle("Weekly deaths per million in USA and Washington"),
+          legends=list(labels=labels.usa)));
+    ## ragged graphs. not used in document
+    dofig('cases_usa_ragged',
+        plot_finraw(
+          datasrc='jhu',what='cases',places=places.usa,ages='all',per.capita=TRUE,lwd=2,
+          xmin=xmin.ragged,
+          title=figtitle(
+            "Weekly cases per million in USA and Washington showing recent raw data"),
+          where.legend='bottomleft',legends=list(labels=labels.usa)));
+    dofig('deaths_usa_ragged',
+        plot_finraw(
+          datasrc='jhu',what='deaths',places=places.usa,ages='all',per.capita=TRUE,lwd=2,
+          xmin=xmin.ragged,
+          title=figtitle(
+            "Weekly deaths per million in USA and Washington showing recent raw data"),
+          where.legend='bottomleft',legends=list(labels=labels.usa)));
+  }
   if ('doh'%notin%datasrc) return();
-  ## Figures 3,4  WA DOH cases, admits&deaths by age
+  ## next two blocks: WA DOH cases, admits&deaths by age
   ages=ages_doh();
   col=col_ages(ages=ages);
   if (figs.all) {
