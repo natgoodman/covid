@@ -58,7 +58,7 @@ The smoothed graphs for Washington locations (Figure 2a) show rates decreasing s
 
 The smoothed graphs for non-Washington locations (Figure 2b) show rates increasing in Ann Arbor but decreasing or flat everywhere else. Trend analysis and raw data (Figure 2d) suggest that rates are flat everywhere including Ann Arbor. All locations are below their peaks early in the pandemic (spring and summer 2020). All locations, except Ann Arbor, are below their peaks in spring and summer 2021.
 
-New in this version of the document, Figures 3a-b show counts for the USA as a whole, using Washington state and Seattle  for comparison. Figure 3a are *cases*; Figure 3b are *deaths*.
+New in this version of the document, Figures 3a-b show counts for the USA as a whole, using Washington state for comparison. Figure 3a are *cases*; Figure 3b are *deaths*.
 
 ```{r out.width="50%",echo=FALSE,fig.show='asis',include=TRUE}
 knitr::include_graphics(file.path(figdir,'figure_003a_cases_usa.png'));
@@ -69,7 +69,7 @@ knitr::include_graphics(file.path(figdir,'figure_003c_cases_usa_ragged.png'));
 knitr::include_graphics(file.path(figdir,'figure_003d_deaths_usa_ragged.png'));
 ```
 
-The three locations are traveling the same trajectory, indicating that the pandemic waves have played out similarly in the three locations. For most of the pandemic, USA counts are higher than Washington state, which in turn are higher than Seattle. Note also that *cases* are starting to increase again in the USA (Figure 3a). It remains to be seen where this presages a new wave in Washington state.
+The two locations are traveling the same trajectory, indicating that the pandemic waves have played out similarly in the USA and Washington state. For most of the pandemic, USA *cases* and *deaths* are higher than Washington state. Overall, USA *cases* are about 1.5x and *deaths* almost 2x the Washington counts (data not shown). *Cases* are starting to increase again in the USA (Figure 3a). It remains to be seen whether this presages a new wave in Washington state.
 
 The next graphs show the Washington results broken down by age. This data is from Washington State Department of Health (DOH) weekly downloads, described [below](#doh). An important caveat is that the DOH download systematically undercounts events in recent weeks due to manual curation. I extrapolate data for late time points to correct the undercounting as discussed [below](#techdetails). The extrapolation worked well in past, but now seems to be erratic, making data near the end unreliable. I'm working to improve this.
 

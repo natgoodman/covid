@@ -176,8 +176,8 @@ doc_updat=function(doc='updat',need.objs=TRUE,need.init=TRUE,version='latest',
   if (do.USA) {
     ## next block include USA
     figblk_start();
-    places.usa<<-cq(state,King,USA);
-    labels.usa=setNames(c('Washington state','Seattle (King County)','USA'),places.usa);
+    places.usa<<-cq(state,USA);
+    labels.usa=setNames(c('Washington state','USA'),places.usa);
     dofig('cases_usa',
         plot_cvdat(
           jhu.cases,places=places.usa,ages='all',per.capita=TRUE,lwd=2,
