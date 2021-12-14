@@ -1,0 +1,5 @@
+place	0_19	20_34	35_49	50_64	65_79	80_	min	max	ratio
+state	NA	NA	1	1	1	1	NA	1	NA
+King	NA	NA	Inf	1	Inf	1.11	NA	1.11	NA
+Snohomish	NA	NA	Inf	0.67	7	49	NA	8.17	NA
+Pierce	NA	0	Inf	Inf	Inf	49	NA	24.5	NA
