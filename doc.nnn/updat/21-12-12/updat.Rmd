@@ -37,7 +37,7 @@ knitr::include_graphics(file.path(figdir,'figure_001c_cases_wa_ragged.png'));
 knitr::include_graphics(file.path(figdir,'figure_001d_cases_nonwa_ragged.png'));
 ```
 
-The smoothed graphs for Washington locations (Figure 1a) show rates decreasing everywhere. Trend analysis suggests that the recent trend is flat in all locations, although looking back 8 weeks, there is a slight downward trend everywhere except Snohomish. The raw data (Figure 1c) shows counts increasing in all locations for the most recent week; while this might be a blip, I fear it's the start of a new wave. 
+The smoothed graphs for Washington locations (Figure 1a) show rates decreasing everywhere. Trend analysis suggests that the recent trend is flat in all locations, although looking back 8 weeks, there is a slight downward trend everywhere except Snohomish. The raw data (Figure 1c) shows counts increasing in all locations over the past two weeks; while this might be a blip, I fear it's the start of a new wave. 
 
 Rates in all Washington locations are well below their recent peaks and as well as their previous highs in winter 2020-21 (Figure 1a). Counts remain well above their peaks early in the pandemic (spring and summer 2020).
 
