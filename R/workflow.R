@@ -123,7 +123,9 @@ pjto=function(datasrc=param(datasrc),version=NULL) {
                        orig=filename(dir,version,suffix='csv');
                        gz=paste(sep='.',orig,'gz');
                        ## zip before copying to Mac; saves 90%
-                       cmd=paste('/bin/gzip -c',orig,'>',gz);
+                       ## NG 21-12-20: gzip w/o '-c' to delete original. BIG and not needed
+                       ## cmd=paste('/bin/gzip -c',orig,'>',gz);
+                       cmd=paste('/bin/gzip',orig);
                        if (param(verbose)) print(paste('+++',cmd));
                        system(cmd);
                        gz;
