@@ -44,7 +44,7 @@ plotm=
            col=NULL,lty=NULL,lwd=NULL,ylab='count',xlim=NULL,ylim=NULL,
            col.pal='d3',lty.range=c(1,6),lwd.range=c(1,3),
            xgrid=cq(monthly,biweekly,weekly,quadweekly,semimonthly),xformat='%b',xyear=TRUE,
-           cex.axis=0.75,
+           cex.axis=0.75,cex.legend=0.8,
            vline=NULL,hline=NULL,vhlty='dashed',vhcol='grey50',
            vhlwd=1,vlab=TRUE,hlab=TRUE,vhdigits=2,
            ## NG 20-01-02: redo 'smooth' logic again to set smooth.args default
@@ -52,13 +52,13 @@ plotm=
            smooth.args=list(args=list(),clamp=NULL,by=NULL,length.out=NULL,relative=TRUE),
            legend=if(is.vector(y)) FALSE else 'right',legend.title=NULL,
            legend.labels=if(is.vector(y)) NULL else colnames(y),
-           legend.args=list(where=NULL,x=NULL,y=NULL,cex=0.8,
+           legend.args=list(where=NULL,x=NULL,y=NULL,cex=cex.legend,
                             title=legend.title,labels=legend.labels,col=col,lty=lty,lwd=lwd),
            ...) {
     if (is.null(x)) stop("Nothing to plot: 'x' is NULL");
     if (is.null(y)) {
       y=x[,-1,drop=FALSE];
-      x=x[,1,drop=FALSE];
+      x=x[,1,drop=TRUE];
     }
     x=as_date(x);
     if (is_vector(x)) x=matrix(x)   # use is_vector to handle dates
