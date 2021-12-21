@@ -286,10 +286,11 @@ show_counts=
            tail.n=c(3,10),
            round.digits=0,round.50=FALSE,round.to=if(round.50) 50 else 10^(-round.digits),
            do.peaks=TRUE,do.range=TRUE,do.print=TRUE,
-           cuts.wa=c('2020-01-26','2020-06-01','2020-09-15','2021-03-01','2021-07-01'),
-           labels.wa=cq(spring20,summer20,'winter20-21',spring21,summer21),
-           cuts.nonwa=c('2020-01-26','2020-09-15','2021-03-01','2021-07-01'),
-           labels.nonwa=cq(spring_summer20,'winter20-21',spring21,summer21)) {
+           cuts.wa=c('2020-01-26','2020-06-01','2020-09-15','2021-03-01','2021-07-01',
+                     '2021-10-01'),
+           labels.wa=cq(spring20,summer20,'winter20-21',spring21,summer21,fall21),
+           cuts.nonwa=c('2020-01-26','2020-09-15','2021-03-01','2021-07-01','2021-10-01'),
+           labels.nonwa=cq(spring_summer20,'winter20-21',spring21,summer21,fall21)) {
     objid=match.arg(objid);
     where=match.arg(where,several.ok=TRUE);
     what=match.arg(what,several.ok=TRUE);
@@ -461,3 +462,14 @@ cmp_doh_ratio=function(data,base.place='state',round.digits=2) {
   rownames(ratio)=rownames(data);
   ratio;
 }
+##### compare USA and WA cumulative totals
+cmp_usa_wa=function(what=cq(cases,deaths),round.to=1000,round.digits=1) {
+  what=match.arg(what,several.ok=FALSE);
+  obj=get(paste(sep='.','jhu',what,'src'),envir=globalenv());
+  data=data_cvdat(obj,places=cq(USA,state),per.capita=TRUE);
+  counts=setNames(as.numeric(tail(data[,-1],n=1)),cq(USA,state));
+  counts=round_to(counts,round.to);
+  ratio=round(counts[1]/counts[2],digits=round.digits);
+  list(counts=counts,ratio=ratio,
+       text=paste0(ratio,'x ',paste(collapse=' vs. ',format(counts,big.mark=','))));
+  }
