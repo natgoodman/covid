@@ -15,16 +15,164 @@
 ##
 ###################################################################################
 ## standard objids (suffixes)
-objids.xper=cq(src,raw,edit,fitr,extra,fit,fitx);
-## 'edit', 'raw' synonyms.  'fitx', 'fit' synonyms. 
+objids.xper=cq(all,src,raw,edit,fitr,extra,fit,fitx,extrax,fitxx);
+## note 'edit', 'raw' synonyms.  'fitx', 'fit' synonyms.
+## base objids for main tests. no 'extra' since we're testing 'extra' variants
+objids.test=cq(src,raw,edit,fitr);
+## 
+places.xper=cq(state,King,Snohomish,Pierce);
+ages.xper.new=c("all","0_19","20_34","35_49","50_64","65_79" ,"80_");
+ages.xper.old=c("all","0_19","20_39","40_59","60_79","80_");
+
+## top level analysis circa Dec 2021
+do_xper_old=
+  function(what=cq(cases,admits,deaths),places=places.xper,ages=ages.xper.new,per.capita=TRUE,
+           obj.id1='fitx',obj.id2='fitr',final.id1='fitr',final.id2='fitr',
+           wmin=1,wmax=15,ws=wmin:wmax,
+           DO.RATIO=TRUE,SKIP.COLF=TRUE,OMIT.ROWS=0,KEEP.COLS=0,REDUCE=FALSE,...) {
+    what=match.arg(what);
+    obj.id1=match.arg(obj.id1,objids.xper);
+    obj.id2=match.arg(obj.id2,objids.xper);
+    if (!is.null(final.id1)) final.id1=match.arg(final.id1,objids.xper);
+    if (!is.null(final.id2)) final.id2=match.arg(final.id2,objids.xper);
+    objs1=get_xper_objs(what=what,objid=obj.id1,final=FALSE);
+    objs2=get_xper_objs(what=what,objid=obj.id2,final=FALSE);
+    ## final1=get_xper_objs(what=what,objid=obj.id1,final=TRUE);
+    ## final2=get_xper_objs(what=what,objid=obj.id2,final=TRUE);
+    final1=get_xper_objs(what=what,objid=final.id1,final=TRUE);
+    final2=get_xper_objs(what=what,objid=final.id2,final=TRUE);
+    cases=expand.grid(place=places,age=ages,stringsAsFactors=FALSE);
+    param(verbose);
+    out=withrows(cases,case,{
+      if (verbose) print(paste('>>>',nv(what,place,age)));
+      resid1=
+        resid_xper(objs1,final1,places=place,ages=age,per.capita=per.capita,
+                   DO.RATIO=DO.RATIO,SKIP.COLF=SKIP.COLF,OMIT.ROWS=OMIT.ROWS,KEEP.COLS=KEEP.COLS);
+      wmat1=wmat(resid1,ws=ws);
+      rms1=rms_wmat(wmat1,REDUCE=REDUCE);
+      resid2=
+        resid_xper(objs2,final2,places=place,ages=age,per.capita=per.capita,
+                   DO.RATIO=DO.RATIO,SKIP.COLF=SKIP.COLF,OMIT.ROWS=OMIT.ROWS,KEEP.COLS=KEEP.COLS);
+      wmat2=wmat(resid2,ws=ws);
+      rms2=rms_wmat(wmat2,REDUCE=REDUCE);
+      rms12=data.frame(rms1,rms2);
+      colnames(rms12)=c(obj.id1,obj.id2);
+      if (REDUCE) data.frame(place=place,age=age,rms12,stringsAsFactors=FALSE) else rms12;
+    });
+    if (REDUCE) out=do.call(rbind,out) else names(out)=paste(sep=';',cases$place,cases$age);
+    out;
+  }
+## top level analysis circa Dec 2021
+do_xper=do_xper_new=
+  function(what=cq(cases,admits,deaths),places=places.xper,ages=ages.xper.new,per.capita=TRUE,
+           objids=cq(fitr,fitx),finalids='fitr',OUT.VAR=cq(rms,neg),
+           wmin=1,wmax=15,ws=wmin:wmax,
+           DO.RATIO=TRUE,SKIP.COLF=TRUE,OMIT.ROWS=0,KEEP.COLS=0,REDUCE=FALSE) {
+    what=match.arg(what);
+    objids=match.arg(objids,objids.xper,several.ok=TRUE);
+    if (!is.null(finalids)) finalids=match.arg(finalids,objids.xper,several.ok=TRUE);
+    OUT.VAR=match.arg(OUT.VAR);
+    ## recycle finalids to length of objids
+    finalids=rep(finalids,length=length(objids));
+    objs=lapply(objids,function(objid) get_xper_objs(what=what,objid=objid,final=FALSE));
+    finals=lapply(finalids,function(objid) get_xper_objs(what=what,objid=objid,final=TRUE));
+    cases=expand.grid(place=places,age=ages,stringsAsFactors=FALSE);
+    ## setup MoreArgs for mapply in loop below
+    resid.args=
+      list(per.capita=per.capita,
+           DO.RATIO=DO.RATIO,SKIP.COLF=SKIP.COLF,OMIT.ROWS=OMIT.ROWS,KEEP.COLS=KEEP.COLS);
+    param(verbose);
+    out=withrows(cases,case,{
+      if (verbose) print(paste('>>>',nv(what,place,age)));
+      out=lapply(seq_along(objids),function(i) {
+        objid=objids[i];
+        finalid=finalids[i];
+        objs=get_xper_objs(what=what,objid=objid,final=FALSE);
+        final=get_xper_objs(what=what,objid=finalid,final=TRUE);
+        resid=resid_xper(objs,final,places=place,ages=age,per.capita=per.capita,
+                         DO.RATIO=DO.RATIO,SKIP.COLF=SKIP.COLF,OMIT.ROWS=OMIT.ROWS,
+                         KEEP.COLS=KEEP.COLS);
+        wmat=wmat(resid,ws=ws);
+        out=if(OUT.VAR=='rms') rms_wmat(wmat,REDUCE=REDUCE)
+            else rapply(wmat,function(row) length(which(sign(row)==-1))/length(row));
+        out;
+      });
+      out=do.call(cbind,out);
+      colnames(out)=objids;
+      if (REDUCE) data.frame(place=place,age=age,out,stringsAsFactors=FALSE) else out;
+    });
+    if (REDUCE) out=do.call(rbind,out) else names(out)=paste(sep=';',cases$place,cases$age);
+    out;
+  }
+
+
+## top level function to compare fitr, fitx for one w circa Dec 2021
+cmp_xper=
+  function(what=cq(cases,admits,deaths),places=places.xper,ages=ages.xper.new,per.capita=TRUE,
+           obj.id1='fitx',obj.id2='fitr',final.id1='fitr',final.id2='fitr',
+           w=1,DO.RATIO=TRUE,SKIP.COLF=TRUE,OMIT.ROWS=0,KEEP.COLS=0,...) {
+    xper=lapply(places,function(place)
+      do_xper(what=what,places=place,ages=ages,ws=w,
+              DO.RATIO=DO.RATIO,SKIP.COLF=SKIP.COLF,OMIT.ROWS=OMIT.ROWS,KEEP.COLS=KEEP.COLS,
+              REDUCE=TRUE,...));
+    xper=do.call(rbind,xper);
+    xper[,3:4]=round(xper[,3:4],digits=3);
+    xper;
+  }
+## top level plot functions circa Dec 2021
+plots.xper=cq(objs,resid,wmat,rms);
+do_plot=
+  function(what=cq(cases,admits,deaths),places=places.xper,ages=ages.xper.new,per.capita=TRUE,
+           obj.id1='fitx',final.id1='fitr',objid=obj.id1,finid=final.id1,
+           wmin=1,wmax=15,ws=wmin:wmax,
+           DO.RATIO=TRUE,SKIP.COLF=TRUE,OMIT.ROWS=0,KEEP.COLS=0,REDUCE=FALSE,
+           plots=cq(objs,wmat),xmin=NULL,cex.legend=0.65,doc='xper',need.init=TRUE,...) {
+    if (need.init) init_doc(doc=doc,figlabel=FALSE,...); # so dofig will work
+    what=match.arg(what);
+    objid=match.arg(objid,objids.xper);
+    objs=get_xper_objs(what=what,objid=objid,final=FALSE);
+    final=if(!is.null(finid)) {
+      finid=match.arg(finid,objids.xper);
+      get_xper_objs(what=what,objid=finid,final=TRUE);
+    } else NULL;
+    plots=match.arg(plots,plots.xper,several.ok=TRUE);
+    cases=expand.grid(place=places,age=ages,stringsAsFactors=FALSE);
+    param(verbose);
+    out=withrows(cases,case,{
+      if (verbose) print(paste('>>>',nv(what,place,age)));
+     resid=
+        resid_xper(objs,final,places=place,ages=age,per.capita=per.capita,
+                   DO.RATIO=DO.RATIO,SKIP.COLF=SKIP.COLF,OMIT.ROWS=OMIT.ROWS,KEEP.COLS=KEEP.COLS);
+      if (is.null(xmin)) xmin=as.character(as_date(colnames(resid)[2])-7);
+      wmat=wmat(resid,ws=ws);
+      rms=rms_wmat(wmat,REDUCE=FALSE);
+      fname2=figname_xper(what,place,age,objid,(if (!is.null(finid)) finid else 'none'));
+      sapply(plots,function(p) {
+        fname=figname_xper(p,fname2);
+        if (verbose) print(paste('+++ plotting',fname));
+        switch(p,
+               objs=dofig(fname,
+                          plot_objs(objs,final,places=place,ages=age,per.capita=per.capita,
+                                    xmin=xmin,cex.legend=cex.legend,...)),
+               resid=dofig(fname,plot_resid(resid,xmin=xmin,cex.legend=cex.legend)),
+               wmat=dofig(fname,plot_wmat(wmat,xmin=xmin,cex.legend=cex.legend)),
+               rms=dofig(fname,{
+                 plot(x=as.numeric(rownames(rms)),y=rms,xlab='w',type='l',lty='solid'); grid()})
+               )
+      });
+      cases;
+    });
+  }
+
+figname_xper=function(...) paste(sep='_',...);
 
 ## make object lists
 make_xper_objs=
-  function(what=cq(cases,admits,deaths),places=cq(state,King,Snohomish,Pierce),ages='new',
-          objids=objids.xper,vsn.min=NULL,vsn.max=NULL,versions=NULL) {
+  function(what=cq(cases,admits,deaths),places=places.xper,ages='new',
+           extrax.places=places.xper,extrax.ages=ages.xper,extrax.minobjs=15,
+           objids=objids.xper,do.final=TRUE,vsn.min=NULL,vsn.max=NULL,versions=NULL) {
     what=match.arg(what,several.ok=TRUE);
-    if (ages=='new') ages=c("all","0_19","20_34","35_49","50_64","65_79" ,"80_")
-    else if (ages=='old') ages=c("all","0_19","20_39","40_59","60_79","80_");
+    if (ages=='new') ages=ages.xper.new else ages=ages.xper.old;
     objids=match.arg(objids,several.ok=TRUE);
     ## deal with objids synonyms
     if ('raw'%in%objids) objids=objids%-%'edit';
@@ -35,13 +183,20 @@ make_xper_objs=
         if (verbose) print(paste(">>> make",what,"src"));
         if (is.null(versions)) versions=list_versions('doh',what);
         versions=btwn_vsn(versions,vsn.min,vsn.max);
-        objs.src=lapply(versions,function(vsn) raw(what,'doh',vsn));
+        objs.all=lapply(versions,function(vsn) raw(what,'doh',vsn));
+        ## objs.src=lapply(versions,function(vsn) raw(what,'doh',vsn));
         ## filter to ones with ages we want
-        objs.src=objs.src[sapply(objs.src,function(obj) ages(obj)%>=%ages)]
+        objs.src=objs.all[sapply(objs.all,function(obj) ages(obj)%>=%ages)]
+        assign(paste(sep='.','objs',what,'all'),objs.all,globalenv());
         assign(paste(sep='.','objs',what,'src'),objs.src,globalenv());
-      } else objs.src=get(paste(sep='.','objs',what,'src'),globalenv());
+        if (do.final) {
+          assign(paste(sep='.','final',what,'all'),objs.all[[length(objs.all)]],globalenv());
+          assign(paste(sep='.','final',what,'src'),objs.src[[length(objs.src)]],globalenv());
+        }
+      }
       if ('raw'%in%objids) {
         if (verbose) print(paste(">>> make",what,"raw (aka edit)"));
+        objs.src=get(paste(sep='.','objs',what,'src'),globalenv());
         objs.raw=lapply(objs.src,function(obj) {
           obj=edit(obj,KEEP=c(places,ages));
           if ('state'%notin%places) obj=edit(obj,DROP='state');
@@ -49,25 +204,66 @@ make_xper_objs=
           obj});
         assign(paste(sep='.','objs',what,'raw'),objs.raw,globalenv());
         assign(paste(sep='.','objs',what,'edit'),objs.raw,globalenv()); # 'edit' synonym for 'raw'
-      } else objs.raw=get(paste(sep='.','objs',what,'raw'),globalenv());
+        if (do.final) {
+          assign(paste(sep='.','final',what,'raw'),objs.raw[[length(objs.raw)]],globalenv());
+          assign(paste(sep='.','final',what,'edit'),objs.raw[[length(objs.raw)]],globalenv());
+        }
+      }
       if ('extra'%in%objids)  {
         if (verbose) print(paste(">>> make",what,"extra"));
+        objs.raw=get(paste(sep='.','objs',what,'raw'),globalenv());
         objs.extra=lapply(objs.raw,function(obj) extra(obj));
         assign(paste(sep='.','objs',what,'extra'),objs.extra,globalenv());
-      } else objs.extra=get(paste(sep='.','objs',what,'extra'),globalenv());
+        if (do.final)
+          assign(paste(sep='.','final',what,'extra'),objs.extra[[length(objs.extra)]],globalenv());
+      } 
       if ('fitr'%in%objids)  {
         if (verbose) print(paste(">>> make",what,"fitr (fit of raw (non-extra))"));
-        objs.fitr=lapply(objs.raw,function(obj) fit(obj));
+        objs.raw=get(paste(sep='.','objs',what,'raw'),globalenv())
+        objs.fitr=lapply(objs.raw,function(obj) fit(obj,fit.unit=7));
         assign(paste(sep='.','objs',what,'fitr'),objs.fitr,globalenv());
+        if (do.final)
+          assign(paste(sep='.','final',what,'fitr'),objs.fitr[[length(objs.fitr)]],globalenv());
       } 
-      if ('fit'%in%objids)  {
+      if (('fit'%in%objids)||('fitx'%in%objids))  {
         if (verbose) print(paste(">>> make",what,"fit (aka fitx)"));
-        objs.fit=lapply(objs.extra,function(obj) fit(obj));
+        objs.extra=get(paste(sep='.','objs',what,'extra'),globalenv());
+        objs.fit=lapply(objs.extra,function(obj) fit(obj,fit.unit=7));
         assign(paste(sep='.','objs',what,'fit'),objs.fit,globalenv());
         assign(paste(sep='.','objs',what,'fitx'),objs.fit,globalenv()); # 'fitx' synonym for 'fit'
+        if (do.final) {
+          assign(paste(sep='.','final',what,'fit'),objs.fit[[length(objs.fit)]],globalenv());
+          assign(paste(sep='.','final',what,'fitx'),objs.fit[[length(objs.fit)]],globalenv());
+        }
+      }
+      if ('extrax'%in%objids)  {
+        if (verbose) print(paste(">>> make",what,"extrax"));
+        objs.raw=get(paste(sep='.','objs',what,'raw'),globalenv());
+        ## truncate to objs with enough earlier versions
+        objs.ok=objs.raw[sapply(objs.raw,function(obj) ages(obj)%>=%extrax.ages)];
+        objs.in=tail(objs.ok,n=-extrax.minobjs);
+        if (!length(objs.in))
+          stop("Hmm... No objects have enough older versions with the correct ages");
+        objs.extra=lapply(objs.in,function(obj) {
+          objs.mdl=objs.ok[sapply(objs.ok, function(obj.mdl) version(obj.mdl)<version(obj))];
+          extra(obj,objs=objs.mdl,
+                mdl.places=extrax.places,mdl.ages=extrax.ages,mdl.minobjs=extrax.minobjs);
+        });
+        assign(paste(sep='.','objs',what,'extrax'),objs.extra,globalenv());
+        if (do.final)
+          assign(
+            paste(sep='.','final',what,'extrax'),objs.extra[[length(objs.extra)]],globalenv());
       } 
-      if (verbose) print(">>> done");
+      if ('fitxx'%in%objids) {
+        if (verbose) print(paste(">>> make",what,"fitxx"));
+        objs.extra=get(paste(sep='.','objs',what,'extrax'),globalenv());
+        objs.fit=lapply(objs.extra,function(obj) fit(obj,fit.unit=7));
+        assign(paste(sep='.','objs',what,'fitxx'),objs.fit,globalenv());
+        if (do.final) 
+          assign(paste(sep='.','final',what,'fitxx'),objs.fit[[length(objs.fit)]],globalenv());
+      }
     })
+    if (verbose) print(">>> done");
     invisible(list(what=what,objids=objids));
   }
 rm_xper_objs=function(what=cq(cases,admits,deaths),objids=objids.xper) {
@@ -75,7 +271,7 @@ rm_xper_objs=function(what=cq(cases,admits,deaths),objids=objids.xper) {
   objids=match.arg(objids,several.ok=TRUE);
   if (length(what)==0||length(objids)==0) invisible(NULL); # nothing to remove
   names.all=ls(globalenv());
-  pat=paste0('^(','objs',')','\\.',
+  pat=paste0('^(','objs|final',')','\\.',
              '(',paste(collapse='|',what),')','\\.',
              '(',paste(collapse='|',objids),')');
   names=grep(pat,names.all,value=TRUE);
@@ -85,36 +281,97 @@ rm_xper_objs=function(what=cq(cases,admits,deaths),objids=objids.xper) {
   }
   invisible(names);
 }
+get_xper_objs=function(what=cq(cases,admits,deaths),objid=objids.xper,final=FALSE) {
+  what=match.arg(what);
+  objid=match.arg(objid);
+  name=paste(sep='.',(if (final) 'final' else 'objs'),what,objid);
+  get(name,globalenv());
+}
 ## plot xper object lists. wrapper for cvdat.
 ## VERY ROUGH - direct copy of what I did interactively
-plot_xper=function(objs,obj.last=NULL,places,ages,per.capita=TRUE,xmin='2021-03-01',...) {
-  if (!is.null(obj.last)) objs=cla(objs,obj.last);
-  n=length(objs);
-  col=c(col_brew(n-1,'rainbow'),'black');
-  lty=c(rep('dotted',n-1),'solid');
-  lwd=c(rep(1,n-1),2);
-  plot_cvdat(objs,places=places,ages=ages,per.capita=per.capita,xmin=xmin,
-             col=col,lty=lty,lwd=lwd,...);
-}
+plot_objs=plot_xper=
+  function(objs,obj.final=NULL,places='state',ages='all',per.capita=TRUE,xmin='2021-03-01',
+           col=NULL,lty=NULL,lwd=NULL,...) {
+    if (!is.null(obj.final)) objs=cla(objs,obj.final);
+    n=length(objs);
+    if (is.null(col)) col=c(col_brew(n-1,'rainbow'),'black');
+    if (is.null(lty)) lty=c(rep('dotted',n-1),'solid');
+    if (is.null(lwd)) lwd=c(rep(1,n-1),2);
+    plot_cvdat(objs,places=places,ages=ages,per.capita=per.capita,xmin=xmin,
+               col=col,lty=lty,lwd=lwd,...);
+  }
 
 ## compute residuals fot xper object list
-## VERY ROUGH - direct copy of what I did interactively
-resid_xper=function(objs,obj.last=NULL,places,ages,per.capita=TRUE,...) {
-  if (!is.null(obj.last)) objs=cla(objs,obj.last);
-  n=length(objs);
-  data=data_cvdat(objs,places=places,ages=ages,per.capita=per.capita,...);
-  resid=data[,-1]-data[,n+1];
-  resid=cbind(data$date,resid);
-  colnames(resid)=colnames(data);
-  invisible(resid);
+## VERY ROUGH
+resid_xper=
+  function(objs,obj.final=NULL,places='state',ages='all',per.capita=TRUE,
+           DO.RATIO=FALSE,SKIP.COLF=TRUE,OMIT.ROWS=0,KEEP.COLS=0,...) {
+    if (length(places)!=1) stop("resid_xper needs single place, not ",length(places)," places");
+    if (length(ages)!=1) stop("resid_xper needs single age, not ",length(ages)," ages");
+    ## BREAKPOINT('resid_xper: top',nv(places,ages,KEEP.COLS))
+    n=length(objs);
+    if (!is.null(obj.final)) {
+      ## replace last obj in list if it has same version as obj.final. 
+      if (SKIP.COLF&&version(objs[[n]])==version(obj.final)) objs[[n]]=obj.final
+      else objs=cla(objs,obj.final);      # else append obj.final to list
+    }
+    n=length(objs)-1;                     # number of objs excluding final
+    cnm=c(sapply(objs[1:n],function(obj) version(obj)),'final');
+    data=data_cvdat(objs,places=places,ages=ages,per.capita=per.capita,cnm=cnm,...);
+    if (OMIT.ROWS>0) data=head(data,n=-OMIT.ROWS);
+    if (KEEP.COLS>0) {
+      data=data[,c(1,((ncol(data)-KEEP.COLS):ncol(data)))];
+      n=KEEP.COLS;
+    }
+    resid=data[,2:(n+1)]-data[,'final'];  # each cell minus final
+    if (DO.RATIO) {
+      final=data[,'final'];
+      final[final==0]=NA;
+      resid=as.data.frame(capply(resid,function(x) x/final));
+    }
+    resid=cbind(date=data$date,resid);        
+    ## BREAKPOINT('resid_xper: end',nv(places,ages,KEEP.COLS))
+    invisible(resid);
+  }
+rms=function(x) sqrt(mean(x^2,na.rm=T));
+rms_xper=function(x,SKIP.COL1=TRUE,REDUCE=FALSE) {
+  if (is_2d(x)) {
+    if (SKIP.COL1) x=x[,-1];
+    if (!REDUCE) capply(x,function(x) rms(x)) else rms(as.vector(x));
+  } else rms(x);
 }
-rms_xper=function(resid) {
-  rms=capply(resid[,-1],function(x) sqrt(mean(x^2,na.rm=T)));
+rms_wmat=function(x,REDUCE=FALSE) {
+  if (!REDUCE) rapply(x,function(row) rms(row)) else rms(as.vector(x));
 }
+
+## limit residuals to region used for model - ie, last wmax values for each version
+## NG 21-12-15: optionally order rows by 'w' - so that row index and 'w' match
+##              optionally use 'w' as rownames and remove from data
+wmat=function(resid,wmax=15,ws=1:wmax,W.ORDER=TRUE,W.ROWNAMES=TRUE) {
+  data=resid[,-1];
+  vsns=colnames(data);
+  ## base row for interesting region
+  i.base=which(resid$date==as_date(vsns[1]))-1;
+  i1=i.base+(1:length(vsns))-1;
+  wmax=max(ws);
+  i0=i1-wmax+1;
+  mat=do.call(cbind,lapply(seq_along(vsns),function(j) data[i0[j]:i1[j],j,drop=FALSE]));
+  colnames(mat)=vsns;
+  w=wmax:1;
+  if (W.ORDER) {
+    mat=mat[wmax:1,,drop=FALSE];
+    w=1:wmax;
+  } 
+  if (W.ROWNAMES) rownames(mat)=w
+  else mat=cbind(w=w,mat);
+  invisible(mat[ws,,drop=FALSE]);
+}
+
 ## TODO: title, ylab, legend title
 plot_resid=function(resid,rms=NULL,xmin='2021-03-01',...) {
   n=ncol(resid)-1;
-  col=c(col_brew(n-1,'rainbow'),'black');
+  ## col=c(col_brew(n-1,'rainbow'),'black');
+  col=col_brew(n,'rainbow');
   lty=c(rep('dotted',n-1),'solid');
   lwd=c(rep(1,n-1),2);
   xlim=if(!is.null(xmin)) as_date(c(xmin,tail(colnames(resid),n=1)));
@@ -123,6 +380,30 @@ plot_resid=function(resid,rms=NULL,xmin='2021-03-01',...) {
   if (!is.null(rms)) lines(x=as_date(colnames(rms)),y=rms[1,],lty='solid',col='black');
 }
 
+## TODO: title, ylab, legend title. improve col, etc
+plot_wmat=function(wmat,xmin='2021-03-01',ws=rownames(wmat),col=NULL,...) {
+  data=data.frame(date=colnames(wmat),t(wmat),stringsAsFactors=FALSE,check.names=F);
+  if (is.null(col)) col=col_ws(ws=ws);
+  lty='solid';
+  lwd=1;
+  xlim=if(!is.null(xmin)) as_date(c(xmin,tail(data$date,n=1))) else NULL;
+  plotm(data,col=col,lty=lty,lwd=lwd,legend='top',xlim=xlim,...);
+  abline(h=c(-0.1,0,0.1),lty=cq(dotted,dotted,dotted),lwd=0.75,col='red');
+}
+
+## col_ws adapted from col_ages in docfun_updat
+col_ws=
+  function(wmax=15,ws=1:wmax,
+           col1.pal='rainbow',skip.beg=2,skip.end=0,
+           col2=cq(black,grey40,grey60),col2.n=length(col2)) {
+    ws=as.character(ws);
+    col2=setNames(col2,head(ws,n=col2.n));
+    col1=col_brew(tail(ws,n=-col2.n),col1.pal,skip.beg=skip.beg,skip.end=skip.end);
+    col=c(col2,col1);
+    ## col=rep(col,each=2);
+    col;
+  }
+ages_doh=function(obj=doh.cases.raw) sort(ages(obj)%-%'all');
   
 ## between allowing missing endpoint. used in new and old code
 btwn_vsn=function(vsn,vsn.min=NULL,vsn.max=NULL) {
@@ -132,316 +413,4 @@ btwn_vsn=function(vsn,vsn.min=NULL,vsn.max=NULL) {
        else btwn_cc(vsn,vsn.min,vsn.max);
   vsn[want];
 }
-########################################
-## OLD CODE below here
-## make wmats using 'extra' objs for all but final column
-make_wmats=
-  function(what=cq(cases,admits,deaths),need.objs=TRUE,
-           ## places, ages for building model
-           mdl.places=param(extra.places),mdl.ages=param(extra.ages),
-           wmax=param(extra.wmax),
-           minobjs=param(extra.minobjs)*wmax,
-           maxobjs=param(extra.maxobjs)*wmax,
-           ## places, ages for testing model
-           places=cq(state,King,Snohomish,Pierce,Adams,'San Juan'),
-           ages=c('0_19','80_','all'),
-           ## places=cq(state),ages=c('all'),
-           ## min, max versions. NULL means compute from mdl.minobjs, mdl.maxobjs
-           vsn.min=NULL,vsn.max=NULL) {
-    what=match.arg(what);
-    versions=list_versions('doh',what);
-    n=length(versions);
-    if (is.null(vsn.min)) vsn.min=versions[minobjs+1];
-    if (is.null(vsn.max)) vsn.max=versions[n];
-    places.keep=unique(c(mdl.places,places));
-    ages.keep=unique(c(mdl.ages,ages));
-    keep=unique(c(places.keep,ages.keep));
-    ## BREAKPOINT('xper_objs: before filtering versions')
-    versions=btwn_vsn(versions,vsn.min,vsn.max);
-    if (need.objs) {
-      objs.src=lapply(versions,function(vsn) raw(what,'doh',vsn));
-      ## filter to ones with desired ages
-      ## BREAKPOINT('xper_objs: before filtering objs.src')
-      objs.src=objs.src[sapply(objs.src,function(obj) ages.keep%<=%ages(obj))];
-      ## BREAKPOINT('xper_objs: after filtering objs.src')
-      objs.raw=lapply(objs.src,function(obj) edit(obj,KEEP=keep));
-      objs.extra=lapply(objs.raw,function(obj)
-        extra(obj,mdl.places=mdl.places,mdl.ages=mdl.ages,
-              wmax=wmax,mdl.minobjs=minobjs,mdl.maxobjs=maxobjs));
-      assign_global(objs.src,objs.raw,objs.extra);
-    }
-    n=length(objs.src);
-    versions=sapply(objs.src,version);
-    vdates=as_date(versions);
-    ## BREAKPOINT('xper_objs: after making objects')
-    d.first=min(vdates);
-    ## d.last=max(vdates)-7*wmax;
-    d.last=max(vdates);
-    obj=objs.raw[[n]];
-    objs=objs.extra[-n];
-    wmats=sapply(places,simplify=FALSE,function(place) 
-      sapply(ages,simplify=FALSE,function(age) {
-        ## BREAKPOINT('xper_objs: before wmat ',nv(age,place))
-        wmat=extra_wmat(obj,objs,place,age,wmax=wmax,d.first=d.first,d.last=d.last);
-        ## BREAKPOINT('xper_objs: after wmat ',nv(age,place))
-        wmat;
-      }));
-    ## BREAKPOINT('xper_objs: after wmats loop');
-    invisible(wmats);
-  }
-make_emats=function(wmats,err.type=param(extra.errtype)) {
-  err.type=match.arg(err.type);
-  err.type=switch(err.type,multiplicative='*',additive='+',err.type);
-  emats=lapply(wmats,function(wmats) lapply(wmats,function(wmat) make_emat(wmat,err.type)));
-  invisible(emats);
-}
-make_emat=function(wmat,err.type=param(extra.errtype)) {
-  err.type=match.arg(err.type);
-  err.type=switch(err.type,multiplicative='*',additive='+',err.type);
-  emat=if(err.type=='*') wmat/wmat[,'final'] else wmat-wmat[,'final'];
-  invisible(emat);
-}
     
-## plot one wmat or emat
-plot_mat=plot_wmat=plot_emat=
-  function(mats,place='state',age='all',ws=cq(1,3,5),xmin=NULL,
-           what=cq(cases,admits,deaths),
-           type.mat=c('wmat','mul emat','add emat',param(extra.errtype))) {
-    if (is_list(mats)) {
-      mat=mats[[place]][[age]];
-      if (is.null(mat)) stop("Invalid place, age for 'mats': ",nv(place,age));
-    } else mat=mats;
-    if (!is.matrix(mat)) stop("'mat' has incorrect type. Should be matrix. Is ",class(wmat));
-    ws=c(ws%-%'final','final');           # make sure 'final' is last
-    if (length(ws%-%colnames(mat))) {
-      valid=colnames(mat);
-      bad=ws%-%valid;
-      stop("'mat' missing w(s): ",paste(collapse=', ',bad),
-           ". colnames(mat): ",paste(collapse=', ',valid));
-    }
-    if (!is.null(xmin)) mat=mat[rownames(wmat)>=xmin,];
-    what=match.arg(what);
-    type.mat=match.arg(type.mat);
-    type.mat=switch(type.mat,
-                    multiplicative='*','mul emat'='*',additive='+','add emat'='+',type.mat);
-    title.mat=switch(type.mat,
-                    '*'='multiplicative emat','+'='additive emat',type.mat);
-    title=paste(title.mat,what,nv(SEP=', ',place,age));
-    x=as_date(rownames(mat));
-    y=mat[,ws];
-    col=col_mat(ws);
-    lwd=lwd_mat(ws);
-    lty=lty_mat(ws);
-    ylab=switch(type.mat, wmat='count','*'='extra / final','+'='extra - final');
-    plotm(x=x,y=y,legend='topright',col=col,lwd=lwd,lty=lty,title=title,xlab='date',ylab=ylab);
-  }
-## plot one 'w' for one place, multiple ages across multiple wmats or emats
-## works best for multiplicative emats
-plot_w=
-  function(mats,place='state',ages=NULL,w=1,xmin=NULL,
-           what=cq(cases,admits,deaths),mulemat.only=TRUE,
-           type.mat=c('*','wmat','mul emat','add emat',param(extra.errtype))) {
-    if (!is_list(mats)) stop("'plot_w' needs list of 'mats'");
-    ## grab first mat to check 'w'. blithely assume all mats have same structure
-    mat=mats[[1]][[1]];
-    if (is.null(mat)) stop("Looks like 'mats' empty or has wrong structure");
-    if (!is.matrix(mat)) stop("'mat' has incorrect type. Should be matrix. Is ",class(wmat));
-    if (w%notin%colnames(mat)) {
-      valid=colnames(mat);
-      stop("'w' not column of 'mat': ",nv(w),". colnames(mat): ",paste(collapse=', ',valid));
-    }
-    if (is.null(ages)) ages=names(mats[[1]]);
-    what=match.arg(what);
-    type.mat=match.arg(type.mat);
-    type.mat=switch(type.mat,
-                    multiplicative='*','mul emat'='*',additive='+','add emat'='+',type.mat);
-    if (mulemat.only&&type.mat!='*')
-      stop("'plot_w' works best for multiplicative emats. 'mulemat.only' is TRUE, but 'type.mat' is not '*'",nv(type.emat));
-    title.mat=switch(type.mat,
-                    '*'='multiplicative emat','+'='additive emat',type.mat);
-    title=paste(title.mat,what,nv(SEP=', ',place,w));
-    x=as_date(rownames(mat));
-    y=do.call(cbind,lapply(emats[[place]],function(mat) mat[,w]));
-    if (!is.null(xmin)) y=y[rownames(y)>=xmin,];
-    x=as_date(rownames(y));
-    col=col_ages(ages);
-    lwd=2;
-    lty='solid';
-    ylab=switch(type.mat, wmat='count','*'='extra / final','+'='extra - final');
-    plotm(x=x,y=y,legend='bottomleft',col=col,lwd=lwd,lty=lty,title=title,xlab='date',ylab=ylab);
-  }
-## make line properties (col, lwd, lty) for mat (emat or emat)
-col_mat=col_wmat=col_emat=
-  function(ws=cq(1,3,5,final),wmax=param(extra.wmax),do.final=TRUE,
-           col.pal='rainbow',col.final='grey50',skip.beg=0,skip.end=0) {
-    col=if(do.final) c(col_brew(wmax,col.pal,skip.beg=skip.beg,skip.end=skip.end),col.final)
-        else col_brew(wmax+1,col.pal,skip.beg=skip.beg,skip.end=skip.end);
-    col=setNames(col,c(seq_len(wmax),'final'));
-    if (is.null(ws)) col else col[ws];
-  }
-lwd_mat=lwd_wmat=lwd_emat=
-  function(ws=cq(1,3,5,final),wmax=param(extra.wmax),do.final=TRUE,
-           lwd=2,lwd.ws=lwd,lwd.final=(lwd.ws+1)[1]) {
-    lwd=if(do.final) c(rep(lwd.ws,wmax),lwd.final)
-        else rep(lwd.ws,wmax+1);
-    lwd=setNames(lwd,c(seq_len(wmax),'final'));
-    if (is.null(ws)) lwd else lwd[ws];
-  }
-lty_mat=lty_wmat=lty_emat=
-  function(ws=cq(1,3,5,final),wmax=param(extra.wmax),do.final=TRUE,
-           lty='dotted',lty.ws=lty,lty.final='solid') {
-    lty=if(do.final) c(rep(lty.ws,wmax),lty.final)
-        else rep(lty.ws,wmax+1);
-    lty=setNames(lty,c(seq_len(wmax),'final'));
-    if (is.null(ws)) lty else lty[ws];
-  }
-col_ages=
-  function(ages,do.all=TRUE,col.pal='rainbow',col.all='black',skip.beg=0,skip.end=0) {
-    n=length(ages);
-    col=if(do.all) c(col.all,col_brew(n-1,col.pal,skip.beg=skip.beg,skip.end=skip.end))
-        else col_brew(n,col.pal,skip.beg=skip.beg,skip.end=skip.end);
-    setNames(col,ages);
-  }
-
-
-#################### OLD CODE below here. Last used 21-03-19 ####################
-## Make base objects. 
-## vsn.min default is min version with enough earlier versions for 'extra'
-## vsn.max default is max version with original age groups
-XXXmake_xper_objs=
-  function(vsn.min='20-05-31',vsn.max='21-02-28',
-           places=cq(state,King,Snohomish,Pierce,Adams,'San Juan'),ages=NULL,
-           idx=list(xorig=TRUE,xa=TRUE,xas=TRUE,xs=TRUE,
-                    xadd=FALSE,xmul=FALSE,xadw=FALSE,xmdw=FALSE,xmed=FALSE,rx=FALSE,xr=FALSE,
-                    end=FALSE         # placeholder for last idx
-                    )) {
-    vsn=list_versions('doh','cases');
-    vsn.obj=btwn_vsn(vsn,vsn.min,vsn.max);
-    idx=names(idx[idx==TRUE]);
-    param(verbose);
-    if (verbose) print('raw');
-    objs.raw=lapply(vsn.obj,function(vsn) raw('cases','doh',vsn));
-    if (verbose) print('edit');
-    keep=c(places,ages);
-    objs.edit=lapply(objs.raw,function(obj) edit(obj,KEEP=keep));
-    ## if (verbose) print('roll');
-    ## objs.roll=lapply(objs.edit,function(obj) roll(obj));
-    env=environment();
-    sapply(idx,function(id) {
-      if (verbose) print(paste0('extra (',id,')'));
-      objs=
-        switch(id,
-               xorig=lapply(objs.edit,function(obj)
-                 extra(obj,versions=vsn[vsn<=version(obj)],
-                       mdl.ages=ages(obj),mdl.places=places(obj))),
-               xa=lapply(objs.edit,function(obj)
-                 extra(obj,versions=vsn[vsn<=version(obj)],mdl.ages='all')),
-               xas=lapply(objs.edit,function(obj)
-                 extra(obj,versions=vsn[vsn<=version(obj)],mdl.ages='all',mdl.places='state')),
-               xs=lapply(objs.edit,function(obj)
-                 extra(obj,versions=vsn[vsn<=version(obj)],mdl.places='state')),
-               ##########
-               xadd=lapply(objs.edit,function(obj)
-                 extra(obj,versions=vsn[vsn<=version(obj)],err.type='+',args=list(fmla='y~w'))),
-               xmul=lapply(objs.edit, function(obj)
-                 extra(obj,versions=vsn[vsn<=version(obj)],err.type='*',args=list(fmla='y~w'))),
-               xadw=lapply(objs.edit,function(obj)
-                 extra(obj,versions=vsn[vsn<=version(obj)],err.type='+',
-                       args=list(fmla='y~date:w+w'))),
-               xmdw=lapply(objs.edit,function(obj)
-                 extra(obj,versions=vsn[vsn<=version(obj)],err.type='*',
-                       args=list(fmla='y~date:w+w'))),
-               xmed=lapply(objs.edit,function(obj)
-                 extra(obj,versions=vsn[vsn<=version(obj)],err.type='+',method='wfun')),
-               rx=lapply(objs.edit,function(obj) {
-                 obj=roll(obj);
-                 extra(obj,versions=vsn[vsn<=version(obj)]);
-               }),
-               xr={
-                 name=paste0('objs.',idx[1]);
-                 objs.extra=get(name);
-                 lapply(objs.extra,function(obj) roll(obj));
-               });
-      name=name=paste0('objs.',id);
-      assign(name,objs,env);
-    });
-    ids=c(cq(raw,edit,roll),idx);
-    xper_setids(ids);
-    xper_global(ids);
-    ids;
-  }
-
-## pick objects from object lists. all must be same length
-xper_pick=function(objs,i.pick=NULL,n.pick=NULL,vsn.pick=NULL) {
-  n1=length(objs[[1]]);
-  args.pick=sum(!sapply(list(i.pick,n.pick,vsn.pick),is.null));
-  if (args.pick>1) stop("At most one of i.pick, n.pick, vsn.pick can be specified");
-  if (args.pick==1) {
-    if (!is.null(n.pick)) i.pick=pick(1:n1,n.pick)
-    else if (!is.null(vsn.pick)) {
-      vsn=sapply(objs[[1]],version);
-      i.pick=which(vsn%in%vsn.pick);
-    }
-    objs=lapply(objs,function(objs) objs[i.pick]);
-  }
-  invisible(objs);
-}
-## plot (or construct data frame from) objects lists
-## colors used for obj versions
-## lty, lwd used for object lists
-## TODO: design is backwards. xper_data should be central, plot added on top. maybe someday
-xper_plotdata=
-  function(objs=list(objs.raw,objs.xorig,objs.xa,objs.xas),i.pick=NULL,n.pick=NULL,vsn.pick=NULL,
-           places='state',ages='all',do.data=FALSE,do.plot=!do.data,
-           cex.legend=NULL,labels=NULL,pal='inferno',...) {
-    objs=xper_pick(objs,i.pick,n.pick,vsn.pick);
-    nl=length(objs);
-    lty=rev(sapply(1:nl,function(i) rep(i,length(objs[[i]]))))
-    lwds=seq(1,2,length=nl);
-    lwd=sapply(1:nl,function(i) rep(lwds[i],length(objs[[i]])));
-    objs=do.call(c,objs);                    # flatten objs into single list
-    vsns=sort(unique(sapply(objs,version))); # get unique versions from all lists
-    col1=setNames(rev(col_brew(length(vsns),pal)),vsns);
-    col=sapply(objs,function(obj) col1[version(obj)]);
-    if (is.null(labels)) labels=sapply(objs,function(obj) paste(version(obj),obj$id));
-    legends=list(title='Version/ID',labels=labels);
-    if (is.null(cex.legend)) cex.legend=min(0.8,max(0.35,1+(30-(length(labels)))/50));
-    if (do.plot) {
-      ok=system('pjtest')==0;
-      if (!ok) stop('Cannot copy to Mac: reverse tunnel not running. Stopping before plot');
-      plon();
-      plot_cvdat(objs,places=places,ages=ages,col=col,lty=lty,lwd=lwd,
-                 cex.legend=cex.legend,legends=legends,...);
-      ploff();
-    }
-    if (do.data) {
-      data=data_cvdat(objs,places=places,ages=ages);
-      colnames(data)=c('date',sub(' ','.',labels));
-      invisible(data)
-    }
-    else NULL;
-  }
-xper_data=function(...,do.data=TRUE) xper_plotdata(...,do.data=do.data)
-xper_plot=xper_plotdata;
-
-## set id in objects
-xper_setids=function(ids) {
-  parent.env=parent.frame(n=1);
-  sapply(ids,function(id) {
-    name=paste0('objs.',id);
-    objs=get(name,parent.env);
-    objs=lapply(objs,function(obj) {obj$id=id; obj});
-    assign(name,objs,parent.env)});
-  invisible();
-}
-## assign obj lists to global
-xper_global=function(ids) {
-  parent.env=parent.frame(n=1);
-  sapply(ids,function(id) {
-    name=paste0('objs.',id);
-    objs=get(name,parent.env);
-    assign(name,objs,globalenv())});
-  invisible();
-}
-  
-
