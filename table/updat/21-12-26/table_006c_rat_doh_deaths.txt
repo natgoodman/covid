@@ -1,0 +1,5 @@
+place	0_19	20_34	35_49	50_64	65_79	80_	min	max	ratio
+state	NA	NA	NA	NA	NA	NA	NA	NA	NA
+King	NA	NA	NA	NA	NA	NA	NA	NA	NA
+Snohomish	NA	NA	NA	0	0	0	NA	0	NA
+Pierce	NA	NA	NA	NA	NA	0	NA	0	NA
