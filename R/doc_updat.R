@@ -18,13 +18,14 @@
 ## Starting with this version, I only have for the current version.
 ## Previous versions are available in GitHub, of course.
 ## no sections.
-doc_updat=function(doc='updat',need.objs=TRUE,need.init=TRUE,version='latest',
-                   figs.all=TRUE,do.fig=TRUE,do.tbl=TRUE,do.USA=TRUE,xmin.ragged=12,...) {
+doc_updat=function(doc='updat',need.objs=TRUE,need.init=TRUE,need.vars=TRUE,version='latest',
+                   do.extra=FALSE,figs.all=TRUE,do.fig=TRUE,do.tbl=TRUE,do.USA=TRUE,
+                   xmin.ragged=12,...) {
   what=cq(cases,admits,deaths);
   datasrc=cq(doh,jhu);
   if (is.null(version)||version=='latest') version=max(sapply(datasrc,latest_version));
   if (param(verbose)) print(paste('+++ doc_updat',nv(version)));
-  if (need.objs) make_updat_objs(what=what,datasrc=datasrc,version=version);
+  if (need.objs) make_updat_objs(what=what,datasrc=datasrc,version=version,do.extra=do.extra);
   if (need.init) init_doc(doc=doc,version=version,...);
   ## if (is.null(xmin.ragged)&&version>='21-05-30') xmin.ragged='2021-02-15';
   if (is.numeric(xmin.ragged)) xmin.ragged=as_date(version)-(xmin.ragged*7)
@@ -43,10 +44,10 @@ doc_updat=function(doc='updat',need.objs=TRUE,need.init=TRUE,version='latest',
   places.nonwa<<-cq('Ann Arbor',Boston,'San Diego',DC);
   labels.nonwa=setNames(c('Ann Arbor','Boston','San Diego','Washington DC'),places.nonwa);
   if (do.USA) places.nonwa<<-c(places.nonwa,'USA');
-  if (do.tbl) {
-    ## Tables 1-2 trend analysis.
-    if (param(verbose)) print(paste('+++ making tables'));
-    widths=if(version<'21-02-28') 4 else c(4,6,8);
+  if (need.vars) {
+    ## make variable used for tables and interactive analysis
+    if (param(verbose)) print(paste('+++ making vars'));
+    widths=if(version<'21-02-28') 4 else if(version<'21-12-26') c(4,6,8) else c(4,6,8,10,12);
     widths.dly=7*(1:6);
     trend.cases=trend.cases.std=trend(jhu.cases,places=c(places.wa,places.nonwa),widths=widths);
     trend.deaths=trend.deaths.std=trend(jhu.deaths,places=c(places.wa,places.nonwa),widths=widths);
@@ -54,18 +55,9 @@ doc_updat=function(doc='updat',need.objs=TRUE,need.init=TRUE,version='latest',
     trend.deaths.raw=trend(jhu.deaths.raw,places=c(places.wa,places.nonwa),widths=widths);
     trend.cases.dly=trend(jhu.cases.dly,places=c(places.wa,places.nonwa),widths=widths.dly);
     trend.deaths.dly=trend(jhu.deaths.dly,places=c(places.wa,places.nonwa),widths=widths.dly);
-    tblblk_start();
-    dotbl('trend_cases',trend.cases);
-    dotbl('trend_cases_raw',trend.cases.raw);
-    dotbl('trend_cases_dly',trend.cases.dly);
-    tblblk_start();
-    dotbl('trend_deaths',trend.deaths);
-    dotbl('trend_deaths_raw',trend.deaths.raw);
-    dotbl('trend_deaths_dly',trend.deaths.dly);
     assign_global(
       trend.cases,trend.deaths,trend.cases.std,trend.deaths.std,
       trend.cases.raw,trend.deaths.raw,trend.cases.dly,trend.deaths.dly);
-   ## Tables 3-4 data counts.
     counts.cases=counts.cases.std=
       data_cvdat(jhu.cases,places=c(places.wa,places.nonwa),per.capita=TRUE);
     counts.deaths=counts.deaths.std=
@@ -74,6 +66,32 @@ doc_updat=function(doc='updat',need.objs=TRUE,need.init=TRUE,version='latest',
     counts.deaths.raw=data_cvdat(jhu.deaths.raw,places=c(places.wa,places.nonwa),per.capita=TRUE);
     counts.cases.dly=data_cvdat(jhu.cases.dly,places=c(places.wa,places.nonwa),per.capita=TRUE);
     counts.deaths.dly=data_cvdat(jhu.deaths.dly,places=c(places.wa,places.nonwa),per.capita=TRUE);
+    assign_global(
+      counts.cases,counts.deaths,counts.cases.std,counts.deaths.std,
+      counts.cases.raw,counts.deaths.raw,
+      counts.cases.dly,counts.deaths.dly); 
+    cmp.doh.cases=cmp_doh(what='cases');
+    cmp.doh.admits=cmp_doh(what='admits');
+    cmp.doh.deaths=cmp_doh(what='deaths');
+    rat.doh.cases=cmp_doh_ratio(cmp.doh.cases);
+    rat.doh.admits=cmp_doh_ratio(cmp.doh.admits);
+    rat.doh.deaths=cmp_doh_ratio(cmp.doh.deaths);
+    assign_global(
+      cmp.doh.cases,cmp.doh.admits,cmp.doh.deaths,
+      rat.doh.cases,rat.doh.admits,rat.doh.deaths);
+  }
+  if (do.tbl) {
+    ## Tables 1-2 trend analysis.
+    if (param(verbose)) print(paste('+++ making tables'));
+    tblblk_start();
+    dotbl('trend_cases',trend.cases);
+    dotbl('trend_cases_raw',trend.cases.raw);
+    dotbl('trend_cases_dly',trend.cases.dly);
+    tblblk_start();
+    dotbl('trend_deaths',trend.deaths);
+    dotbl('trend_deaths_raw',trend.deaths.raw);
+    dotbl('trend_deaths_dly',trend.deaths.dly);
+    ## Tables 3-4 data counts.
     tblblk_start();
     dotbl('counts_cases',counts.cases);
     dotbl('counts_cases_raw',counts.cases.raw);
@@ -82,17 +100,7 @@ doc_updat=function(doc='updat',need.objs=TRUE,need.init=TRUE,version='latest',
     dotbl('counts_deaths',counts.deaths);
     dotbl('counts_deaths_raw',counts.deaths.raw);
     dotbl('counts_deaths_dly',counts.deaths.dly);
-    assign_global(
-      counts.cases,counts.deaths,counts.cases.std,counts.deaths.std,
-      counts.cases.raw,counts.deaths.raw,
-      counts.cases.dly,counts.deaths.dly);
     ## Tables 5-7 DOH comparisons
-    cmp.doh.cases=cmp_doh(what='cases');
-    cmp.doh.admits=cmp_doh(what='admits');
-    cmp.doh.deaths=cmp_doh(what='deaths');
-    rat.doh.cases=cmp_doh_ratio(cmp.doh.cases);
-    rat.doh.admits=cmp_doh_ratio(cmp.doh.admits);
-    rat.doh.deaths=cmp_doh_ratio(cmp.doh.deaths);
     tblblk_start();
     dotbl('cmp_doh_cases',cmp.doh.cases,row.names='place');
     dotbl('cmp_doh_admits',cmp.doh.admits,row.names='place');
@@ -101,9 +109,6 @@ doc_updat=function(doc='updat',need.objs=TRUE,need.init=TRUE,version='latest',
     dotbl('rat_doh_cases',rat.doh.cases,row.names='place');
     dotbl('rat_doh_admits',rat.doh.admits,row.names='place');
     dotbl('rat_doh_deaths',rat.doh.deaths,row.names='place');
-    assign_global(
-      cmp.doh.cases,cmp.doh.admits,cmp.doh.deaths,
-      rat.doh.cases,rat.doh.admits,rat.doh.deaths);
   }
   if (!do.fig) return(version);
   if (param(verbose)) print(paste('+++ making figures'));
@@ -123,9 +128,13 @@ doc_updat=function(doc='updat',need.objs=TRUE,need.init=TRUE,version='latest',
           legends=list(labels=labels.nonwa)));
   ## recent raw data very ragged in some versions. include figures showing this
   ## first compute ymax across all data of interest
-  data=data_cvdat(list(jhu.cases,jhu.cases.raw),places=c(places.wa,places.nonwa),per.capita=TRUE);
-  data=data[data$date>=xmin.ragged,];
-  ymax=max(data[,-1],na.rm=TRUE);
+  ## NG 21-12-28. DO NOT use same y-scale for ragged figures
+  ##   nonwa counts so high now that this obscures shape of wa graph
+  ## data=data_cvdat(list(jhu.cases,jhu.cases.raw),
+  ##                 places=c(places.wa,places.nonwa),per.capita=TRUE);
+  ## data=data[data$date>=xmin.ragged,];
+  ## ymax=max(data[,-1],na.rm=TRUE);
+  ymax='auto';
   dofig('cases_wa_ragged',
         plot_finraw(
           datasrc='jhu',what='cases',places=places.wa,ages='all',per.capita=TRUE,lwd=2,

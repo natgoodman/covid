@@ -133,7 +133,7 @@ plot_dohjhu=function(what=cq(cases,deaths),title=NULL) {
 ##   bug in 'extra' caused error to be missed and results of edited places and ages to be 0!
 ## as of 21-03-28, okay to fo 'edit' before 'extra'
 make_updat_objs=
-  function(what=cq(cases,admits,deaths),datasrc=cq(doh,jhu),version='latest') {
+  function(what=cq(cases,admits,deaths),datasrc=cq(doh,jhu),version='latest',do.extra=FALSE) {
     what=match.arg(what,several.ok=TRUE);
     datasrc=match.arg(datasrc,several.ok=TRUE);
     cases=expand.grid(what=what,datasrc=datasrc,stringsAsFactors=FALSE);
@@ -152,7 +152,7 @@ make_updat_objs=
                    weekly(obj);
                  });
       assign(paste(sep='.',datasrc,what,'raw'),obj,globalenv());  # save as 'raw'
-      if (datasrc=='doh') {
+      if (datasrc=='doh'&&do.extra) {
         ## if (what=='deaths') obj=edit(obj,'0_64'='0_19'+'20_34'+'35_49'+'50_64',
         ##                               DROP=cq('0_19','20_34','35_49','50_64'));
         obj=extra(obj);
@@ -396,8 +396,9 @@ show_doh=
            tail.n=c(6,10),
            round.digits=0,round.50=FALSE,round.to=if(round.50) 50 else 10^(-round.digits),
            do.peaks=TRUE,do.now=TRUE,do.range=TRUE,do.ratio=TRUE,do.print=TRUE,
-           cuts=c('2020-01-26','2020-06-01','2020-09-15','2021-03-01','2021-07-01'),
-           labels=cq(spring20,summer20,winter20,spring21,summer21)) {
+           cuts=c('2020-01-26','2020-06-01','2020-09-15','2021-03-01','2021-07-01',
+                     '2021-10-01'),
+           labels=cq(spring20,summer20,winter20,spring21,summer21,fall21)) {
     objid=match.arg(objid);
     what=match.arg(what,several.ok=FALSE);
     if (is.null(obj)) obj=get(paste(sep='.','doh',what,objid));
@@ -463,8 +464,9 @@ cmp_doh_ratio=function(data,base.place='state',round.digits=2) {
   ratio;
 }
 ##### compare USA and WA cumulative totals
-cmp_usa_wa=function(what=cq(cases,deaths),round.to=1000,round.digits=1) {
+cmp_usa_wa=function(what=cq(cases,deaths),round.to=NULL,round.digits=1) {
   what=match.arg(what,several.ok=FALSE);
+  if (is.null(round.to)) round.to=if(what=='cases') 1000 else 100;
   obj=get(paste(sep='.','jhu',what,'src'),envir=globalenv());
   data=data_cvdat(obj,places=cq(USA,state),per.capita=TRUE);
   counts=setNames(as.numeric(tail(data[,-1],n=1)),cq(USA,state));
@@ -472,4 +474,4 @@ cmp_usa_wa=function(what=cq(cases,deaths),round.to=1000,round.digits=1) {
   ratio=round(counts[1]/counts[2],digits=round.digits);
   list(counts=counts,ratio=ratio,
        text=paste0(ratio,'x ',paste(collapse=' vs. ',format(counts,big.mark=','))));
-  }
+}
