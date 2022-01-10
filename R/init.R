@@ -70,6 +70,7 @@ init=function(
          cq(Omaha,NE,Douglas),
          cq(Austin,TX,Travis),
          cq(Fairbury,IL,Livingston),
+         cq('Palm Springs',CA,Riverside),
          cq('Mackinac Island',MI,Mackinac),
          cq('Big Island',HI,Hawaii),
          cq('Cape Cod',MA,Barnstable)),
