@@ -31,6 +31,9 @@ download_place=function(geoid,place,placedir=param(placedir)) {
   qplace=paste0('"',place,'"');
   ## construct output filename with 'paste' because 'filename' elides name vector
   outfile=paste0(placedir,'/',qplace,'.json')
+  ## NG 22-01-04: getting 'certificate expired' here (but not when running via Safari on Mac)
+  ##   --no-check-certificate is workaround. investigate further if persists
+  ## wget=paste('wget --no-check-certificate',qurl,'-O',outfile)
   wget=paste('wget',qurl,'-O',outfile);
   if (param(verbose)) print(wget);
   system(wget);
