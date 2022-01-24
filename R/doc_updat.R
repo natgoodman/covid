@@ -17,12 +17,15 @@
 ## In past, I kept code for all previous versions. This got completely out of hand.
 ## Starting with this version, I only have for the current version.
 ## Previous versions are available in GitHub, of course.
+## as of Jan 10 2022, DOH doesn't provide download file...
 ## no sections.
 doc_updat=function(doc='updat',need.objs=TRUE,need.init=TRUE,need.vars=TRUE,version='latest',
                    do.extra=FALSE,figs.all=TRUE,do.fig=TRUE,do.tbl=TRUE,do.USA=TRUE,
                    xmin.ragged=12,...) {
-  what=cq(cases,admits,deaths);
-  datasrc=cq(doh,jhu);
+  ## what=cq(cases,admits,deaths);
+  ## datasrc=cq(doh,jhu);
+  what=cq(cases,deaths);
+  datasrc=cq(jhu);
   if (is.null(version)||version=='latest') version=max(sapply(datasrc,latest_version));
   if (param(verbose)) print(paste('+++ doc_updat',nv(version)));
   if (need.objs) make_updat_objs(what=what,datasrc=datasrc,version=version,do.extra=do.extra);
@@ -70,15 +73,15 @@ doc_updat=function(doc='updat',need.objs=TRUE,need.init=TRUE,need.vars=TRUE,vers
       counts.cases,counts.deaths,counts.cases.std,counts.deaths.std,
       counts.cases.raw,counts.deaths.raw,
       counts.cases.dly,counts.deaths.dly); 
-    cmp.doh.cases=cmp_doh(what='cases');
-    cmp.doh.admits=cmp_doh(what='admits');
-    cmp.doh.deaths=cmp_doh(what='deaths');
-    rat.doh.cases=cmp_doh_ratio(cmp.doh.cases);
-    rat.doh.admits=cmp_doh_ratio(cmp.doh.admits);
-    rat.doh.deaths=cmp_doh_ratio(cmp.doh.deaths);
-    assign_global(
-      cmp.doh.cases,cmp.doh.admits,cmp.doh.deaths,
-      rat.doh.cases,rat.doh.admits,rat.doh.deaths);
+    ## cmp.doh.cases=cmp_doh(what='cases');
+    ## cmp.doh.admits=cmp_doh(what='admits');
+    ## cmp.doh.deaths=cmp_doh(what='deaths');
+    ## rat.doh.cases=cmp_doh_ratio(cmp.doh.cases);
+    ## rat.doh.admits=cmp_doh_ratio(cmp.doh.admits);
+    ## rat.doh.deaths=cmp_doh_ratio(cmp.doh.deaths);
+    ## assign_global(
+    ##   cmp.doh.cases,cmp.doh.admits,cmp.doh.deaths,
+    ##   rat.doh.cases,rat.doh.admits,rat.doh.deaths);
   }
   if (do.tbl) {
     ## Tables 1-2 trend analysis.
@@ -100,15 +103,15 @@ doc_updat=function(doc='updat',need.objs=TRUE,need.init=TRUE,need.vars=TRUE,vers
     dotbl('counts_deaths',counts.deaths);
     dotbl('counts_deaths_raw',counts.deaths.raw);
     dotbl('counts_deaths_dly',counts.deaths.dly);
-    ## Tables 5-7 DOH comparisons
-    tblblk_start();
-    dotbl('cmp_doh_cases',cmp.doh.cases,row.names='place');
-    dotbl('cmp_doh_admits',cmp.doh.admits,row.names='place');
-    dotbl('cmp_doh_deaths',cmp.doh.deaths,row.names='place');
-    tblblk_start();
-    dotbl('rat_doh_cases',rat.doh.cases,row.names='place');
-    dotbl('rat_doh_admits',rat.doh.admits,row.names='place');
-    dotbl('rat_doh_deaths',rat.doh.deaths,row.names='place');
+    ## ## Tables 5-7 DOH comparisons
+    ## tblblk_start();
+    ## dotbl('cmp_doh_cases',cmp.doh.cases,row.names='place');
+    ## dotbl('cmp_doh_admits',cmp.doh.admits,row.names='place');
+    ## dotbl('cmp_doh_deaths',cmp.doh.deaths,row.names='place');
+    ## tblblk_start();
+    ## dotbl('rat_doh_cases',rat.doh.cases,row.names='place');
+    ## dotbl('rat_doh_admits',rat.doh.admits,row.names='place');
+    ## dotbl('rat_doh_deaths',rat.doh.deaths,row.names='place');
   }
   if (!do.fig) return(version);
   if (param(verbose)) print(paste('+++ making figures'));

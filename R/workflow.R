@@ -12,17 +12,22 @@
 ## file at https://github.com/natgoodman/NewPro/FDR/LICENSE 
 ##
 #################################################################################
-## ---- Download and import big 3 data sources plus trk ----
-## with new DOH release schedule have to do it on Tuesdays
+## ---- Download and import big 3 data sources (now 2) ----
+## as of Jan 10 2022, DOH doesn't provide download file...
+## prior to cutoff, DOH did releases late Mondays (except for holidays)
+##   operationally easiest to do download on Tuesdays
 ## make sure obj transforms truncate non-DOH data to previous week
-do_dlim=function(datasrc=param(datasrc),version=NULL,
+do_dlim=function(datasrc=cq(jhu,nyt),version=NULL,
                  force.sunday=TRUE,monday.only=!force.sunday,cmp.prev=force.sunday,
                  url=param(download.url),
                  do.download=TRUE,do.import=TRUE,do.pjto=TRUE) {
-  datasrc=match.arg(datasrc,several.ok=TRUE);
+  datasrc=match.arg(datasrc,param(datasrc),several.ok=TRUE);
   ## for now, have to do CDC by itself - big and slow!
-  if (length(datasrc)>1) datasrc=datasrc%-%'cdc'; 
   if (is.null(version)) version=dl_version(force.sunday=force.sunday,monday.only=monday.only);
+  if (('cdc'%in%datasrc)&&(length(datasrc)>1))
+    stop("Have to process CDC by itself - big and slow! ");
+  if (('doh'%in%datasrc)&&(version>='22-01-10'))
+    stop("As of Jan 10 2022, DOH doesn't provide download file");
   ## trk ended 21-03-07. see covidtracking.com
   ## if (version>'21-03-07') datasrc=datasrc%-%'trk'; 
   if (do.pjto) {
