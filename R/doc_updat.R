@@ -144,7 +144,7 @@ doc_updat=function(doc='updat',need.objs=TRUE,need.init=TRUE,need.vars=TRUE,vers
           xmin=xmin.ragged,ymax=ymax,
           title=figtitle(
             "Weekly cases per million in Washington locations showing recent raw data"),
-          where.legend='bottomleft',legends=list(labels=labels.wa)));
+          where.legend='topleft',legends=list(labels=labels.wa)));
   dofig('cases_nonwa_ragged',
         plot_finraw(
           datasrc='jhu',what='cases',places=places.nonwa,ages='all',per.capita=TRUE,lwd=2,
@@ -184,7 +184,7 @@ doc_updat=function(doc='updat',need.objs=TRUE,need.init=TRUE,need.vars=TRUE,vers
           xmin=xmin.ragged,ymax=ymax,
           title=figtitle(
             "Weekly deaths per million in non-Washington locations showing recent raw data"),
-           where.legend='topright',legends=list(labels=labels.nonwa)));
+           where.legend='topleft',legends=list(labels=labels.nonwa)));
   if (do.USA) {
     ## next block include USA
     figblk_start();
@@ -207,14 +207,14 @@ doc_updat=function(doc='updat',need.objs=TRUE,need.init=TRUE,need.vars=TRUE,vers
           xmin=xmin.ragged,
           title=figtitle(
             "Weekly cases per million in USA and Washington showing recent raw data"),
-          where.legend='bottomleft',legends=list(labels=labels.usa)));
+          where.legend='topleft',legends=list(labels=labels.usa)));
     dofig('deaths_usa_ragged',
         plot_finraw(
           datasrc='jhu',what='deaths',places=places.usa,ages='all',per.capita=TRUE,lwd=2,
           xmin=xmin.ragged,
           title=figtitle(
             "Weekly deaths per million in USA and Washington showing recent raw data"),
-          where.legend='bottomleft',legends=list(labels=labels.usa)));
+          where.legend='topleft',legends=list(labels=labels.usa)));
   }
   if ('doh'%notin%datasrc) return();
   ## next two blocks: WA DOH cases, admits&deaths by age
