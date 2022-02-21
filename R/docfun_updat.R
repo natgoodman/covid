@@ -146,11 +146,13 @@ make_updat_objs=
       assign(paste(sep='.',datasrc,what,'src'),obj,globalenv());  # save as 'src'
       obj=switch(datasrc,               # transform as needed for src
                  doh=edit(obj,KEEP=cq(state,King,Snohomish,Pierce)),
-                 jhu={
-                   obj=incremental(obj);
-                   assign(paste(sep='.',datasrc,what,'dly'),obj,globalenv());  # save as 'dly'
-                   weekly(obj);
-                 });
+                 ## jhu={
+                 ##   obj=incremental(obj);
+                 ##   assign(paste(sep='.',datasrc,what,'dly'),obj,globalenv());  # save as 'dly'
+                 ##   weekly(obj);
+                 ## });
+                 jhu=incremental(weekly(obj))
+                 );
       assign(paste(sep='.',datasrc,what,'raw'),obj,globalenv());  # save as 'raw'
       if (datasrc=='doh'&&do.extra) {
         ## if (what=='deaths') obj=edit(obj,'0_64'='0_19'+'20_34'+'35_49'+'50_64',
