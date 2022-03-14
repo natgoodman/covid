@@ -13,6 +13,7 @@
 ##
 #################################################################################
 ## ---- Download and import big 3 data sources (now 2) ----
+## also run doc_updat to create figures and tables (if do.doc=TRUE)
 ## as of Jan 10 2022, DOH doesn't provide download file...
 ## prior to cutoff, DOH did releases late Mondays (except for holidays)
 ##   operationally easiest to do download on Tuesdays
@@ -20,7 +21,11 @@
 do_dlim=function(datasrc=cq(jhu,nyt),version=NULL,
                  force.sunday=TRUE,monday.only=!force.sunday,cmp.prev=force.sunday,
                  url=param(download.url),
-                 do.download=TRUE,do.import=TRUE,do.pjto=TRUE) {
+                 need.source=TRUE,need.init=need.source,
+                 init.args=list(verbose=TRUE,save=TRUE),
+                 do.download=TRUE,do.import=TRUE,do.pjto=TRUE,do.doc=TRUE) {
+  if (need.source) source('R/source.R');
+  if (need.init) do.call(init,init.args);
   datasrc=match.arg(datasrc,param(datasrc),several.ok=TRUE);
   ## for now, have to do CDC by itself - big and slow!
   if (is.null(version)) version=dl_version(force.sunday=force.sunday,monday.only=monday.only);
@@ -29,7 +34,8 @@ do_dlim=function(datasrc=cq(jhu,nyt),version=NULL,
   if (('doh'%in%datasrc)&&(version>='22-01-10'))
     stop("As of Jan 10 2022, DOH doesn't provide download file");
   ## trk ended 21-03-07. see covidtracking.com
-  ## if (version>'21-03-07') datasrc=datasrc%-%'trk'; 
+  ## if (version>'21-03-07') datasrc=datasrc%-%'trk';
+  ok=TRUE;
   if (do.pjto) {
     ok=system('pjtest')==0;
     if (!ok) stop('Reverse tunnel not running; stopping before download');
@@ -44,6 +50,7 @@ do_dlim=function(datasrc=cq(jhu,nyt),version=NULL,
     if (do.import) do_import(datasrc,version);
     if (do.pjto) pjto(datasrc,version);
   }
+  if (do.doc) doc_updat();
   version;
 }
 do_download=function(datasrc=param(datasrc),version=NULL,
