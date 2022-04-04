@@ -281,7 +281,7 @@ get_obj=function(datasrc,what,objid=NULL)
 make_updatsupp_objs=
   function(what=param(what),datasrc=param(datasrc),version='latest') {
     what=match.arg(what,several.ok=TRUE);
-    datasrc=match.arg(datasrc,several.ok=TRUE);
+    datasrc=match.arg(datasrc,param(datasrc),several.ok=TRUE);
     cases=expand.grid(what=what,datasrc=datasrc,stringsAsFactors=FALSE);
     ## prune invalid what, datasrc combinations
     cases=subset(cases,
@@ -390,7 +390,7 @@ make_updatsupp_objs=
 rm_updatsupp_objs=function(what=param(what),datasrc=param(datasrc),
                            objid=NULL,rm.std=is.null(objid)) {
   what=match.arg(what,several.ok=TRUE)%-%'admdea'; # admea irrelevant here
-  datasrc=match.arg(datasrc,several.ok=TRUE);
+  datasrc=match.arg(datasrc,param(datasrc),several.ok=TRUE);
   if (length(what)==0||length(datasrc)==0) invisible(NULL); # nothing to remove
   names.all=ls(globalenv());
   pat=paste0('^(',paste(collapse='|',datasrc),')','\\.',
@@ -491,7 +491,7 @@ col_agesupp=
            col.young=head(cq(red,hotpink),n=2),      # for cdc young ages
            col.old=tail(cq(grey60,black),n=2)        # for old ages
            ) {
-    datasrc=match.arg(datasrc);
+    datasrc=match.arg(datasrc,param(datasrc));
     ## separate ages into young (<20), mid, old (last 2 >= 60)
     ## note age_starts function is in meta.R
     old=if(do.old) Filter(function(age) age_starts(age)>=60,tail(ages,n=2)) else NULL;
@@ -551,7 +551,7 @@ plot_pairs=
       ## create objpairs from other args
       what=if(missing(what)) 'cases' else match.arg(what,several.ok=TRUE);
       what=what%-%'admdea';           # admea irrelevant here, so prune it
-      datasrc=if(missing(datasrc)) 'jhu' else match.arg(datasrc,several.ok=TRUE);
+      datasrc=if(missing(datasrc)) 'jhu' else match.arg(datasrc,param(datasrc),several.ok=TRUE);
       if (is.null(objid)) objid=cq(std,raw);
       ## id=if(missing(id)) cq(std,raw) else unique(match.arg(id,several.ok=TRUE));
       ## if (length(id)!=2) stop ("'id' must have two elements, not ",length(id),

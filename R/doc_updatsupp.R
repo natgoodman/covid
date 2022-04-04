@@ -27,7 +27,7 @@ doc_updatsupp=
            doc='updatsupp',version='latest',pjto=cq(dir,file),...) {
     where=match.arg(where,several.ok=TRUE);
     what=match.arg(what,several.ok=TRUE);
-    datasrc=match.arg(datasrc,several.ok=TRUE);
+    datasrc=match.arg(datasrc,param(datasrc),several.ok=TRUE);
     objid=match.arg(objid,several.ok=TRUE);
     conf.prob=match.arg(conf.prob,several.ok=TRUE);
     defaults=

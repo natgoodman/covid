@@ -38,7 +38,7 @@ plot_finraw=
            xgrid=cq(biweekly,weekly,quadweekly,semimonthly,monthly),xformat='%b-%d',cex.axis=0.75,
            col=NULL,
            lwd=2,lwd.fin=lwd,lwd.raw=0.375*lwd.fin,lty.fin='solid',lty.raw='dotted',pch=20) {
-    datasrc=match.arg(datasrc);
+    datasrc=match.arg(datasrc,param(datasrc));
     what=match.arg(what);
     if (!is.numeric(xgrid)) xgrid=match.arg(xgrid);
     if (!is.null(raw.plot)) raw.plot=match.arg(raw.plot,several.ok=TRUE);
@@ -135,7 +135,7 @@ plot_dohjhu=function(what=cq(cases,deaths),title=NULL) {
 make_updat_objs=
   function(what=cq(cases,admits,deaths),datasrc=cq(doh,jhu),version='latest',do.extra=FALSE) {
     what=match.arg(what,several.ok=TRUE);
-    datasrc=match.arg(datasrc,several.ok=TRUE);
+    datasrc=match.arg(datasrc,param(datasrc),several.ok=TRUE);
     cases=expand.grid(what=what,datasrc=datasrc,stringsAsFactors=FALSE);
     cases=cases[(cases$what!='admits'|cases$datasrc%in%cq(doh)),]; # only 'doh' has 'admits'
     withrows(cases,case,{
@@ -183,7 +183,7 @@ make_updat_objs=
 rm_updat_objs=function(what=cq(cases,admits,deaths),datasrc=param(datasrc),
                        objid=NULL,rm.std=is.null(objid)) {
   what=match.arg(what,several.ok=TRUE);
-  datasrc=match.arg(datasrc,several.ok=TRUE);
+  datasrc=match.arg(datasrc,param(datasrc),several.ok=TRUE);
   if (length(what)==0||length(datasrc)==0) invisible(NULL); # nothing to remove
   names.all=ls(globalenv());
   pat=paste0('^(',paste(collapse='|',datasrc),')','\\.',

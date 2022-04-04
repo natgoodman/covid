@@ -258,7 +258,10 @@ edit_chkvars=function(vars,argname,valid,TARGNAME) {
 ## core logic below from codetools package by Luke Tierney. Thx!
 flatten_expr=function(expr) {
   if (typeof(expr)%in%cq(language,expression)) {
-    if (class(expr)%in%c('call','(')) class(expr[[1]])=class(expr);
+    if (class(expr)%in%c('call','(')) {
+      expr[[1]]=as.character(expr[[1]]); # NG 22-04-04: fix 'cannot set attribute on a symbol'
+      class(expr[[1]])=class(expr);
+    }
     unlist(lapply(as.list(expr),function(x) if (!missing(x)) flatten_expr(x)));
   } else expr;
 }

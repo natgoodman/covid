@@ -13,6 +13,7 @@
 ## file at https://github.com/natgoodman/NewPro/FDR/LICENSE 
 ##
 #################################################################################
+library(pryr);
 ## --- Generate Figures and Tables for updat Blog Post ---
 ## In past, I kept code for all previous versions. This got completely out of hand.
 ## Starting with this version, I only have for the current version.
@@ -28,8 +29,8 @@ doc_updat=function(doc='updat',need.objs=TRUE,need.init=TRUE,need.vars=TRUE,vers
   datasrc=cq(jhu);
   if (is.null(version)||version=='latest') version=max(sapply(datasrc,latest_version));
   if (param(verbose)) print(paste('+++ doc_updat',nv(version)));
-  if (need.objs) make_updat_objs(what=what,datasrc=datasrc,version=version,do.extra=do.extra);
   if (need.init) init_doc(doc=doc,version=version,...);
+  if (need.objs) make_updat_objs(what=what,datasrc=datasrc,version=version,do.extra=do.extra);
   ## if (is.null(xmin.ragged)&&version>='21-05-30') xmin.ragged='2021-02-15';
   if (is.numeric(xmin.ragged)) xmin.ragged=as_date(version)-(xmin.ragged*7)
   else if (is.null(xmin.ragged)) {

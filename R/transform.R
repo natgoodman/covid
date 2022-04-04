@@ -25,7 +25,7 @@
 raw=function(what=cq(cases,admits,icus,deaths),datasrc=param(datasrc),version='latest',
              drop.ages=c('0_11','12_19')) {
   what=match.arg(what);
-  datasrc=match.arg(datasrc);
+  datasrc=match.arg(datasrc,param(datasrc));
   if (what=='admits'&&datasrc %notin% cq(doh,cdc,trk))
     stop("Only have admits data for doh, cdc and trk, not ",datasrc);
   if (what=='icus'&&datasrc!='cdc') stop("Only have icus data for cdc, not ",datasrc);

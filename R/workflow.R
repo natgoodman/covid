@@ -23,7 +23,7 @@ do_dlim=function(datasrc=cq(jhu,nyt),version=NULL,
                  url=param(download.url),
                  need.source=TRUE,need.init=need.source,
                  init.args=list(verbose=TRUE,save=TRUE),
-                 do.download=TRUE,do.import=TRUE,do.pjto=TRUE,do.doc=TRUE) {
+                 do.download=TRUE,do.import=TRUE,do.pjto=FALSE,do.doc=TRUE) {
   if (need.source) source('R/source.R');
   if (need.init) do.call(init,init.args);
   datasrc=match.arg(datasrc,param(datasrc),several.ok=TRUE);
@@ -56,7 +56,7 @@ do_dlim=function(datasrc=cq(jhu,nyt),version=NULL,
 do_download=function(datasrc=param(datasrc),version=NULL,
                      force.sunday=TRUE,monday.only=!force.sunday,cmp.prev=force.sunday,
                      url=param(download.url)) {
-  datasrc=match.arg(datasrc,several.ok=TRUE);
+  datasrc=match.arg(datasrc,param(datasrc),several.ok=TRUE);
   ## for now, have to do CDC by itself - big and slow!
   if (length(datasrc)>1) datasrc=datasrc%-%'cdc'; 
   if (is.null(version)) version=dl_version(force.sunday=force.sunday,monday.only=monday.only);
@@ -76,7 +76,7 @@ do_download=function(datasrc=param(datasrc),version=NULL,
   ok;
 }
 do_import=function(datasrc=param(datasrc),version=NULL) {
-  datasrc=match.arg(datasrc,several.ok=TRUE);
+  datasrc=match.arg(datasrc,param(datasrc),several.ok=TRUE);
   ## for now, have to do CDC by itself - big and slow!
   if (length(datasrc)>1) datasrc=datasrc%-%'cdc'; 
   if (is.null(version)||version=='latest') version=latest_version(datasrc[1],dir=indir);
@@ -115,7 +115,7 @@ cmp_files=function(file1,file2) {
   else FALSE;
 }
 pjto=function(datasrc=param(datasrc),version=NULL) {
-  datasrc=match.arg(datasrc,several.ok=TRUE);
+  datasrc=match.arg(datasrc,param(datasrc),several.ok=TRUE);
   ## for now, have to do CDC by itself - big and slow!
   if (length(datasrc)>1) datasrc=datasrc%-%'cdc'; 
   if (is.null(version)||version=='latest') version=latest_version(datasrc[1],dir=indir);
