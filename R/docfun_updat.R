@@ -289,10 +289,11 @@ show_counts=
            round.digits=0,round.50=FALSE,round.to=if(round.50) 50 else 10^(-round.digits),
            do.peaks=TRUE,do.range=TRUE,do.print=TRUE,
            cuts.wa=c('2020-01-26','2020-06-01','2020-09-15','2021-03-01','2021-07-01',
-                     '2021-10-01'),
-           labels.wa=cq(spring20,summer20,'winter20-21',spring21,summer21,fall21),
-           cuts.nonwa=c('2020-01-26','2020-09-15','2021-03-01','2021-07-01','2021-10-01'),
-           labels.nonwa=cq(spring_summer20,'winter20-21',spring21,summer21,fall21)) {
+                     '2021-10-01','2022-02-15'),
+           labels.wa=cq(spring20,summer20,'winter20-21',spring21,summer21,'winter21-22'),
+           cuts.nonwa=c('2020-01-26','2020-09-15','2021-03-01','2021-07-01',
+                        '2021-10-01','2022-02-15'),
+           labels.nonwa=cq('spring-summer20','winter20-21',spring21,summer21,'winter21-22')) {
     objid=match.arg(objid);
     where=match.arg(where,several.ok=TRUE);
     what=match.arg(what,several.ok=TRUE);
@@ -367,8 +368,10 @@ show_now=function(counts,objid,tail.n,label='now',do.print=TRUE) {
   invisible(now);
 }
 do_peaks=function(counts,cuts,labels,do.print=TRUE) {
-  cuts=c(as_date(cuts),Inf);
-  cats=cut(counts$date,cuts,right=F,labels=FALSE);
+  ## NG 22-04-18; fix longstanding 'off-by-1' bug in cuts
+  ## cuts=c(as_date(cuts),Inf);
+  cuts=as_date(cuts);
+  cats=cut(counts$date,cuts,right=FALSE,labels=FALSE);
   peaks=split(counts,cats);
   peaks=lapply(seq_along(peaks),function(i) {
     peak=peaks[[i]];
