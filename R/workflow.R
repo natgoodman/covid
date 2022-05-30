@@ -15,10 +15,13 @@
 ## ---- Download and import big 3 data sources (now 2) ----
 ## also run doc_updat to create figures and tables (if do.doc=TRUE)
 ## as of Jan 10 2022, DOH doesn't provide download file...
+## as of May 29, 2022, NYT format changed. now has separate files per year
+##   import code doesn't handle this...
 ## prior to cutoff, DOH did releases late Mondays (except for holidays)
 ##   operationally easiest to do download on Tuesdays
 ## make sure obj transforms truncate non-DOH data to previous week
-do_dlim=function(datasrc=cq(jhu,nyt),version=NULL,
+do_dlim=function(# datasrc=cq(jhu,nyt),
+                 datasrc=cq(jhu),version=NULL,
                  force.sunday=TRUE,monday.only=!force.sunday,cmp.prev=force.sunday,
                  url=param(download.url),
                  need.source=TRUE,need.init=need.source,
@@ -33,6 +36,8 @@ do_dlim=function(datasrc=cq(jhu,nyt),version=NULL,
     stop("Have to process CDC by itself - big and slow! ");
   if (('doh'%in%datasrc)&&(version>='22-01-10'))
     stop("As of Jan 10 2022, DOH doesn't provide download file");
+  if (('nyt'%in%datasrc)&&(version>='22-05-29'))
+    stop("As of May 29 2022, NYT has separate files per year; import code doesn't handle");
   ## trk ended 21-03-07. see covidtracking.com
   ## if (version>'21-03-07') datasrc=datasrc%-%'trk';
   ok=TRUE;
