@@ -60,7 +60,7 @@ init=function(
   mort.file=filename(metadir,'mort'),       # mortality (see mort.R for details)
   mortpop.file=filename(metadir,'mortpop'), # mortality pop (see mort.R for details)
   mtop.file=filename(metadir,'mtop'),       # leading cause of deatg (see mtop.R for details)
- ## descriptors for non-WA places of interest
+  ## descriptors for non-WA places of interest
   ## entries are place, state, county. converted to data frame in code below
   places.nonwa=
     list(cq('Ann Arbor',MI,Washtenaw),
