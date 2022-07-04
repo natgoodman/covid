@@ -248,7 +248,7 @@ init_doc=function(
   tblnum=1,
   tblblk=NULL,                  # index into tblsfx if in table block
   ##
-  pjto=TRUE,                    # copy to Mac using pjto command (reverse tunnel)
+  pjto=FALSE,                   # copy to Mac using pjto command (reverse tunnel)
   ## xtra figures - not included in document
   xfigpfx='X',
   xfigsfx=outsfx,
