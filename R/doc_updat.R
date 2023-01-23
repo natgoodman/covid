@@ -41,9 +41,13 @@ doc_updat=function(doc='updat',need.objs=TRUE,need.init=TRUE,need.vars=TRUE,vers
     ## graphs look nicer when xmin aligned with version. 
     xmin.ragged=sunday_week(as_date(xmin.ragged));
   }
-  places.wa<<-cq(state,King,Snohomish,Pierce);
-  labels.wa=setNames(c('Washington state','Seattle (King County)',
-                       'Snohomish (North of Seattle)','Pierce (South of Seattle)'),
+  ## NG 23-01-23: chances places and labels to reflect my new home
+  ## places.wa<<-cq(state,Island,King,Snohomish,Pierce);
+  ##  labels.wa=setNames(c('Washington state','Whidbey and Camano Islands','Seattle (King County)',
+  ##                        'Snohomish (North of Seattle)','Pierce (South of Seattle)'),
+  ## places.wa);
+  places.wa<<-cq(state,Island,King);
+  labels.wa=setNames(c('Washington state','Whidbey and Camano Islands','Seattle (King County)'),
                      places.wa);
   places.nonwa<<-cq('Ann Arbor',Boston,'San Diego',DC);
   labels.nonwa=setNames(c('Ann Arbor','Boston','San Diego','Washington DC'),places.nonwa);
